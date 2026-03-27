@@ -1,0 +1,12 @@
+export { default as Home } from './Home';
+export { default as Login } from './Login';
+export { default as Register } from './Register';
+export { default as Products } from './Products';
+export { default as ProductDetail } from './ProductDetail';
+export { default as AboutUs } from './AboutUs';
+export { default as Contact } from './Contact';
+export { default as PrivacyPolicy } from './PrivacyPolicy';
+export { default as TermsOfService } from './TermsOfService';
+export { default as CookiePolicy } from './CookiePolicy';
+export { default as VendorGuidelines } from './VendorGuidelines';
+export { default as Sitemap } from './Sitemap';
