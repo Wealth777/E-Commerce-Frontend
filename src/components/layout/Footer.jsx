@@ -33,9 +33,9 @@ const Footer = () => {
   ];
 
   const sellerResources = [
-    { name: 'Become a Vendor', path: '/register?type=vendor' },
-    { name: 'Vendor Dashboard', path: '/login?type=vendor' },
-    { name: 'Vendor Guidelines', path: '/vendorguidelines' },
+    { name: 'Become a Vendor', path: '/register' },
+    { name: 'Vendor Dashboard', path: '/login' },
+    { name: 'Vendor Guidelines', path: '/vendor-guidelines' },
   ];
 
   const socialLinks = [
@@ -60,12 +60,12 @@ const Footer = () => {
             <div className="flex items-center mb-4">
               <FiShoppingBag className="h-8 w-8 text-green-500 mr-3" />
               <div>
-                <h2 className="text-2xl font-bold text-white">GMC</h2>
+                <h2 className="text-2xl font-bold text-white">CampusTrade</h2>
                 <p className="text-sm text-gray-400">Independent marketplace for the student community</p>
               </div>
             </div>
             <p className="text-gray-400 mb-6">
-              GMC is an independently owned marketplace serving campus users.
+              CampusTrade is an independently owned marketplace serving campus users.
               Connecting students, staff, and local businesses in a secure and reliable marketplace.
             </p>
 
@@ -154,7 +154,7 @@ const Footer = () => {
         <div className="border-t border-gray-800 pt-8 mt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="text-gray-400 text-sm mb-4 md:mb-0">
-              © {currentYear} GMC. All rights reserved.
+              © {currentYear} CampusTrade. All rights reserved.
             </div>
 
             <div className="flex flex-wrap gap-4 text-sm">
@@ -170,8 +170,8 @@ const Footer = () => {
 
           <div className="text-center mt-6 text-xs text-gray-500">
             <p>
-              GMC is an independent, founder-owned marketplace serving the student community.
-              All transactions are subject to GMC policies and regulations.
+              CampusTrade is an independent, founder-owned marketplace serving the student community.
+              All transactions are subject to CampusTrade policies and regulations.
             </p>
           </div>
         </div>

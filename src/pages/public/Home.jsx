@@ -80,7 +80,7 @@ const Home = () => {
       <section className={`bg-gradient-to-r from-green-600 to-green-800 dark:from-green-800 dark:to-green-900 text-white py-16 px-4 text-center`}>
         <div className="max-w-4xl mx-auto">
           <h2 className="text-3xl font-bold text-white mb-4">Become a Vendor</h2>
-          <p className="text-red-100 mb-6">Start selling your products on GMC today</p>
+          <p className="text-red-100 mb-6">Start selling your products on CampusTrade today</p>
           <a
             href="/vendor-guidelines"
             className="px-8 py-3 bg-white text-red-600 rounded-lg hover:bg-gray-100 transition font-semibold inline-block"

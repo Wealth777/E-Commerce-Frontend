@@ -5,9 +5,6 @@ const API_BASE_URL = 'http://localhost:6778/api';
 // Create axios instance
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  // headers: {
-  //   'Content-Type': 'application/json',
-  // },
 });
 
 // Request interceptor to add auth token if available
@@ -36,8 +33,8 @@ apiClient.interceptors.response.use(
 );
 
 export const buyerAPI = {
-  getProfile: () => apiClient.get('/buyer/profile'),
-  updateProfile: (data) => apiClient.put('/buyer/profile', data),
+  getProfile: () => apiClient.get('/buyer/profile/me'),
+  updateProfile: (data) => apiClient.put('/buyer/profile/me', data),
   getOrders: () => apiClient.get('/buyer/orders'),
   placeOrder: (data) => apiClient.post('/buyer/orders', data),
   // Add more as needed

@@ -1,16 +1,18 @@
 import { createSlice } from '@reduxjs/toolkit';
 import apiClient from '../../src/api/apiClient';
+import { toast } from 'react-toastify';
+
 
 export const fetchUser = () => async (dispatch, getState) => {
   try {
     const { token } = getState().auth;
-    const role = localStorage.getItem('role')
+    const role = localStorage.getItem('role');
 
-    let endpoint = '';
+    let endpoint;
 
     if (role === 'vendor') endpoint = '/vendor/profile/me';
-    if (role === 'buyer') endpoint = '/buyer/profile';
-    if (role === 'founder') endpoint = '/founder/profile';
+    else if (role === 'buyer') endpoint = '/buyer/profile/me';
+    else if (role === 'founder') endpoint = '/founder/profile/me';
 
     const res = await apiClient.get(endpoint, {
       headers: { Authorization: `Bearer ${token}` }
@@ -19,9 +21,11 @@ export const fetchUser = () => async (dispatch, getState) => {
     dispatch(setUser(res.data.data));
 
   } catch (error) {
-    console.log(error);
+    // console.log(error);
+    // toast.error(error.message);
   }
 };
+
 
 const initialState = {
   user: JSON.parse(localStorage.getItem('user')) || null,

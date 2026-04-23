@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom'
 import { useFormik } from 'formik'
 import * as Yup from 'yup';
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { loginSuccess } from '../../store/authSlice';
+import { mergeCart } from '../../store/cartActions';
 import { toast } from 'react-toastify';
 import apiClient from '../../api/apiClient';
 import { FiMail, FiLock, FiShoppingBag } from 'react-icons/fi'
@@ -13,44 +14,53 @@ const Login = () => {
   const [loading, setLoading] = React.useState(false)
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { isAuthenticated } = useSelector((state) => state.auth);
 
   const formik = useFormik({
     initialValues: {
-    email: '',
-    password: '',
-    role: 'buyer',
-  },
-  validationSchema: Yup.object({
-    email: Yup.string().email('Invalid email address').required('Email is required'),
-    password: Yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
-    role: Yup.string().required('Please select a role'),
-  }),
+      email: '',
+      password: '',
+      role: 'buyer',
+    },
+    validationSchema: Yup.object({
+      email: Yup.string().email('Invalid email address').required('Email is required'),
+      password: Yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
+      role: Yup.string().required('Please select a role'),
+    }),
 
-  onSubmit: async (values) => {
-    setLoading(true)
-    try {
-      const response = await apiClient.post(`/${values.role}/auth/login`, {
-        email: values.email,
-        password: values.password,
-      });
+    onSubmit: async (values) => {
+      setLoading(true)
+      try {
+        const response = await apiClient.post(`/${values.role}/auth/login`, {
+          email: values.email,
+          password: values.password,
+        });
 
-      console.log(localStorage.getItem('token'));
+        // console.log(localStorage.getItem('token'));
 
-      dispatch(loginSuccess({
-        user: response.data.data,
-        token: response.data.token,
-        role: values.role,
-      }));
+        dispatch(loginSuccess({
+          user: response.data.data,
+          token: response.data.token,
+          role: values.role,
+        }));
 
-      toast.success('Login successful!');
-      navigate(`/${values.role}/dashboard`);
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Login failed.');
-    } finally {
-      setLoading(false);
+        // dispatch(mergeCart());
+
+        toast.success('Login successful!');
+        navigate(`/${values.role}/dashboard`);
+      } catch (error) {
+        toast.error(error.response?.data?.message || 'Login failed.');
+      } finally {
+        setLoading(false);
+      }
     }
-  }
   })
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(mergeCart());
+    }
+  }, [isAuthenticated]);
 
   const handleSocialLogin = (provider) => {
     toast.success(`${provider} login coming soon`, 'info')
@@ -65,7 +75,7 @@ const Login = () => {
               <FiShoppingBag className="h-12 w-12 text-green-600" />
               <div className="ml-3">
                 <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-                  GMC
+                  CampusTrade
                 </h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Independent platform for the student community
@@ -99,11 +109,10 @@ const Login = () => {
                     key={type}
                     type="button"
                     onClick={() => formik.setFieldValue('role', type)}
-                    className={`py-2 px-3 rounded-lg text-sm font-medium ${
-                      formik.values.role === type
-                        ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-2 border-green-500'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                    }`}
+                    className={`py-2 px-3 rounded-lg text-sm font-medium ${formik.values.role === type
+                      ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-2 border-green-500'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                      }`}
                   >
                     {type === 'buyer' ? 'Buyer' : type === 'vendor' ? 'Vendor' : 'Founder'}
                   </button>

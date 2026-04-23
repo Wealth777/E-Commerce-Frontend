@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-// import { FaShoppingCart, FaUser, FaMoon, FaSun,`` FaTimes, FaTable } from 'react-icons/fa';
 import {
     FiShoppingCart,
     FiUser,
@@ -17,6 +16,7 @@ import {
 } from 'react-icons/fi';
 import { useTheme } from '../../context/ThemeContext';
 import { logout } from '../../store/authSlice';
+import apiClient from '../../api/apiClient';
 
 
 
@@ -31,10 +31,18 @@ const Navbar = () => {
     const dispatch = useDispatch();
     const { isDarkMode, toggleTheme } = useTheme();
 
-    const handleLogout = () => {
-        dispatch(logout());
-        navigate('/');
-        setIsMenuOpen(false);
+    const handleLogout = async () => {
+        try {
+            await apiClient.post('/auth/logout');
+            localStorage.setItem('cart', JSON.stringify(items));
+            dispatch(logout());
+            setIsMenuOpen(false);
+            navigate('/');
+        } catch (err) {
+            dispatch(logout());
+            setIsMenuOpen(false);
+            navigate('/');
+        }
     };
 
     const cartItems = useSelector(state => state.cart.items);
@@ -47,6 +55,7 @@ const Navbar = () => {
     };
 
     //   const handleLogout = () => {
+    //     const res = apiClient.post('')
     //     dispatch(logout());
     //     showToast('Successfully logged out', 'success');
     //     navigate('/');
@@ -63,17 +72,19 @@ const Navbar = () => {
                 ];
             case 'vendor':
                 return [
-                    { name: 'Vendor Dashboard', path: '/vendor' },
+                    { name: 'Vendor Dashboard', path: '/vendor/dashboard' },
                     { name: 'Products', path: '/vendor/products' },
                     { name: 'Orders', path: '/vendor/orders' },
                     { name: 'Analytics', path: '/vendor/analytics' },
                     { name: 'Payment', path: '/vendor/payment' },
+                    { name: 'My Profile', path: '/vendor/profile' },
                 ];
             case 'buyer':
                 return [
-                    { name: 'Dashboard', path: '/buyer' },
-                    { name: 'My Orders', path: '/orders' },
-                    { name: 'Profile', path: '/profile' }
+                    { name: 'Dashboard', path: '/buyer/dashboard' },
+                    { name: 'My Orders', path: '/buyer/orders' },
+                    { name: 'My Wishlist', path: '/buyer/wishlist' },
+                    { name: 'My Profile', path: '/buyer/profile' }
                 ];
             default:
                 return [];
@@ -90,7 +101,7 @@ const Navbar = () => {
                             <FiShoppingBag className="h-8 w-8 text-green-600" />
                             <div className="flex flex-col">
                                 <span className="text-xl font-heading font-bold text-gray-900 dark:text-white">
-                                    GMC
+                                    CampusTrade
                                 </span>
                                 <span className="text-xs text-gray-500 dark:text-gray-400">
                                     Independent platform for the student community
@@ -118,7 +129,7 @@ const Navbar = () => {
                     {/* Right side icons */}
                     <div className="flex items-center space-x-4">
                         {/* Theme toggle */}
-                        <button
+                        {/* <button
                             onClick={toggleTheme}
                             className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
                             aria-label="Toggle theme"
@@ -128,7 +139,27 @@ const Navbar = () => {
                             ) : (
                                 <FiMoon className="h-5 w-5 text-gray-700" />
                             )}
+                        </button> */}
+
+                        <button
+                            onClick={toggleTheme}
+                            className={`rounded-lg border p-2 transition-all hover:shadow-md ${isDarkMode
+                                ? 'border-gray-700 bg-gray-800 text-gray-200 hover:bg-gray-700'
+                                : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                                }`}
+                        >
+                            {isDarkMode ? (
+                                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                                </svg>
+                            ) : (
+                                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                                </svg>
+                            )}
                         </button>
+
+
 
                         {/* Cart icon */}
                         <Link
@@ -183,15 +214,15 @@ const Navbar = () => {
                                     <FiUser className="h-5 w-5 text-gray-700 dark:text-gray-300" />
                                     <span className="hidden md:inline text-sm font-medium text-gray-700 dark:text-gray-200">
                                         {/* {user.name || 'Account'} */}
-                                        {user?.fullName || 'Account'}
+                                        {user?.identity?.fullName || 'Account'}
                                     </span>
                                 </button>
 
                                 {isProfileMenuOpen && (
                                     <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 z-50 border border-gray-200 dark:border-gray-700">
                                         <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                                            <p className="text-sm font-medium text-gray-900 dark:text-white">{user ? user.fullName : 'Loading...' || 'Guest'}</p>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400"> {user && user.email}</p>
+                                            <p className="text-sm font-medium text-gray-900 dark:text-white">{user ? user.identity?.fullName : 'Loading...' || 'Guest'}</p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400"> {user && user.contact?.email}</p>
                                             <span className="inline-block mt-1 px-2 py-1 text-xs rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
                                                 {role === 'founder' ? 'Founder' : role === 'vendor' ? 'Vendor' : 'Buyer'}
                                             </span>
@@ -208,13 +239,6 @@ const Navbar = () => {
                                             </Link>
                                         ))}
 
-                                        <Link
-                                            to={`/${role}/profile`}
-                                            onClick={() => setIsProfileMenuOpen(false)}
-                                            className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                        >
-                                            Profile Settings
-                                        </Link>
 
                                         <button
                                             onClick={() => {

@@ -48,7 +48,7 @@ const Register = () => {
         toast.success('Registration successful!');
         navigate('/login');
       } catch (error) {
-        console.log(error.response || error);
+        // console.log(error.response || error);
         toast.error(error?.response?.data || 'Registration failed');
       } finally {
         setLoading(false);
@@ -66,7 +66,7 @@ const Register = () => {
             <Link to="/" className="flex items-center">
               <FiShoppingBag className="h-12 w-12 text-green-600" />
               <div className="ml-3">
-                <h2 className="text-3xl font-bold text-gray-900 dark:text-white">GMC</h2>
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-white">CampusTrade</h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Independent marketplace for the student community
                 </p>
@@ -255,7 +255,7 @@ const Register = () => {
           {formik.values.role === 'vendor' && (
             <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
               <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                <strong>Note for sellers:</strong> Your account will need approval from GMC administration before you can start selling. This usually takes 24-48 hours.
+                <strong>Note for sellers:</strong> Your account will need approval from CampusTrade administration before you can start selling. This usually takes 24-48 hours.
               </p>
             </div>
           )}

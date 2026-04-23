@@ -16,7 +16,7 @@ const Hero = () => {
               <FaUniversity className="h-12 w-12 mr-4" />
               <div>
                 <h1 className="text-4xl md:text-5xl font-bold mb-2">
-                  GMC Store
+                  CampusTrade
                 </h1>
                 <p className="text-lg text-green-100">
                   E-commerce Platform for univerties use

@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { FaShoppingCart, FaHeart, FaStar, FaArrowLeft } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-import { addToCart } from '../../store/cartSlice';
+import { addToCart } from '../../store/cartActions';
 import { useTheme } from '../../context/ThemeContext';
 import { toast } from 'react-toastify';
 import apiClient from '../../api/apiClient';
@@ -40,8 +40,8 @@ const ProductDetail = () => {
       toast.error('You must be a buyer to add items to cart');
       return;
     }
-    dispatch(addToCart({ ...product, quantity }));
-    toast.success('Added to cart');
+    dispatch(addToCart({ ...product, quantity }, toast));
+    // toast.success('Added to cart');
   };
 
   const bgColor = isDark ? 'bg-gray-900' : 'bg-gray-50';
@@ -122,7 +122,7 @@ const ProductDetail = () => {
             {/* Vendor Info */}
             <div className={`${isDark ? 'bg-gray-700' : 'bg-gray-100'} p-4 rounded-lg mb-8`}>
               <p className={`${secondaryText} text-sm`}>Sold by</p>
-              <p className={`${textColor} font-semibold text-lg`}>{product.vendor || 'GMC Store'}</p>
+              <p className={`${textColor} font-semibold text-lg`}>{product.vendor || 'CampusTrade'}</p>
             </div>
 
             {/* Quantity and Action */}

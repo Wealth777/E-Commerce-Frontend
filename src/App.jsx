@@ -6,8 +6,10 @@ import { ThemeProvider } from './context/ThemeContext';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 import { useEffect } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { fetchUser } from './store/authSlice';
+// import { fetchCart } from './store/cartActions';
+import { mergeCart } from './store/cartActions';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -33,6 +35,7 @@ import BuyerDashboard from './pages/buyer/Dashboard';
 import Cart from './pages/buyer/Cart';
 import Checkout from './pages/buyer/Checkout';
 import BuyerOrders from './pages/buyer/Orders';
+import BuyerOrderDetails from './pages/buyer/OrdersDetails';
 import BuyerProfile from './pages/buyer/Profile';
 import BuyerWishlist from './pages/buyer/Wishlist';
 
@@ -41,20 +44,39 @@ import VendorDashboard from './pages/vendor/Dashboard';
 import VendorProducts from './pages/vendor/Products';
 import AddProduct from './pages/vendor/AddProduct';
 import VendorOrders from './pages/vendor/Orders';
+import VendorOrderDetails from './pages/vendor/OrdersDetails';
 import VendorAnalytics from './pages/vendor/Analytics';
+import VendorProfile from './pages/vendor/Profile';
+import VendorPayment from './pages/vendor/Payment';
 
 // Founder Pages
 import FounderDashboard from './pages/founder/Dashboard';
 import FounderUsers from './pages/founder/Users';
 import FounderAnalytics from './pages/founder/Analytics';
 
+import CartSync from './CartSync';
+
 function App() {
 
   const dispatch = useDispatch();
+  const { isAuthenticated } = useSelector((state) => state.auth);
 
   useEffect(() => {
     dispatch(fetchUser());
   }, []);
+
+  // useEffect(() => {
+  //   if (isAuthenticated) {
+  //     dispatch(fetchCart());
+  //   }
+  // }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(mergeCart());
+    }
+  }, [isAuthenticated]);
+
 
   return (
     <Provider store={store}>
@@ -72,9 +94,9 @@ function App() {
                 <Route path="/product/:id" element={<ProductDetail />} />
                 <Route path="/aboutus" element={<AboutUs />} />
                 <Route path="/contactus" element={<Contact />} />
-                <Route path="/privacy" element={<PrivacyPolicy />} />
-                <Route path="/terms" element={<TermsOfService />} />
-                <Route path="/cookies" element={<CookiePolicy />} />
+                <Route path="/privacypolicy" element={<PrivacyPolicy />} />
+                <Route path="/termsofservice" element={<TermsOfService />} />
+                <Route path="/cookiepolicy" element={<CookiePolicy />} />
                 <Route path="/vendor-guidelines" element={<VendorGuidelines />} />
                 <Route path="/sitemap" element={<Sitemap />} />
 
@@ -116,6 +138,14 @@ function App() {
                   element={
                     <ProtectedRoute requiredRole="buyer">
                       <BuyerOrders />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/buyer/orders/:orderId"
+                  element={
+                    <ProtectedRoute requiredRole="buyer">
+                      <BuyerOrderDetails />
                     </ProtectedRoute>
                   }
                 />
@@ -162,10 +192,34 @@ function App() {
                   }
                 />
                 <Route
+                  path="/vendor/orders/:orderId"
+                  element={
+                    <ProtectedRoute requiredRole="vendor">
+                      <VendorOrderDetails />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
                   path="/vendor/analytics"
                   element={
                     <ProtectedRoute requiredRole="vendor">
                       <VendorAnalytics />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/vendor/profile"
+                  element={
+                    <ProtectedRoute requiredRole="vendor">
+                      <VendorProfile />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/vendor/payment"
+                  element={
+                    <ProtectedRoute requiredRole="vendor">
+                      <VendorPayment />
                     </ProtectedRoute>
                   }
                 />
@@ -214,6 +268,7 @@ function App() {
             pauseOnHover
           />
         </Router>
+        <CartSync />
       </ThemeProvider>
     </Provider>
   );
