@@ -104,8 +104,8 @@ const Sitemap = () => {
               icon={section.icon}
             >
               <ul className="space-y-3">
-                {section.links.map((link) => (
-                  <li key={link.path}>
+                {section.links.map((link, index) => (
+                  <li key={`${link.path}-${index}`}>
                     <Link
                       to={link.path}
                       className="group flex items-center gap-3 p-2 -mx-2 rounded-lg transition-all duration-200 hover:bg-slate-100 dark:hover:bg-slate-800"
@@ -128,7 +128,7 @@ const Sitemap = () => {
         </div>
 
         {/* Quick Navigation */}
-        <div className="mt-12 bg-gradient-to-r from-green-600 via-green-500 to-yellow-500 rounded-2xl p-8 text-center">
+        <div className="mt-12 text-center bg-gradient-to-br from-green-700 to-green-500 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
           <h3 className="text-2xl font-bold text-yellow-300 mb-3">Can't find what you're looking for?</h3>
           <p className="text-white mb-6 max-w-lg mx-auto">
             Browse our most popular sections or contact our support team for assistance
@@ -136,13 +136,13 @@ const Sitemap = () => {
           <div className="flex flex-wrap justify-center gap-3">
             <Link
               to="/products"
-              className="px-6 py-3 bg-white text-green-600 rounded-xl font-semibold hover:bg-green-50 transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="px-6 py-3 bg-white text-green-600 rounded-xl font-semibold hover:bg-yellow-400 hover:text-green-900 transition-all duration-200 shadow-lg hover:shadow-xl"
             >
               Browse Products
             </Link>
             <Link
               to="/contactus"
-              className="px-6 py-3 bg-green-600 text-white rounded-xl font-semibold border-2 border-green-400 hover:bg-green-700 transition-all duration-200"
+              className="px-6 py-3 bg-green-600 text-white rounded-xl font-semibold border-2 hover:bg-white border-green-400 hover:text-green-700 transition-all duration-200"
             >
               Contact Support
             </Link>

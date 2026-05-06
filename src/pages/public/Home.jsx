@@ -5,12 +5,13 @@ import Hero from '../../components/layout/Hero';
 import ProductCard from '../../components/cards/ProductCard';
 import CategoryCard from '../../components/cards/CategoryCard';
 import { useTheme } from '../../context/ThemeContext';
-import { toast } from 'react-toastify';
 import apiClient from '../../api/apiClient';
+import { useToast } from '../../context/ToastContext';
 
 const Home = () => {
   const dispatch = useDispatch();
   const { isDark } = useTheme();
+  const { showToast } = useToast();
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [categories, setCategories] = useState([
     { id: 1, name: 'Electronics', count: 45, image: 'https://via.placeholder.com/300x150' },
@@ -30,8 +31,7 @@ const Home = () => {
       setFeaturedProducts(featured);
       dispatch(setProducts(response.data.products || []));
     } catch (error) {
-      console.log(error)
-      toast.error('Failed to load featured products');
+      showToast('Failed to load featured products', 'error');
     }
   };
 

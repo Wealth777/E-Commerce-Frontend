@@ -3,6 +3,10 @@ import { FaEdit, FaSave, FaTimes, FaCamera, FaUser, FaEnvelope, FaPhone, FaMapMa
 import { toast } from 'react-toastify';
 import apiClient from '../../api/apiClient';
 import { useTheme } from '../../context/ThemeContext';
+import { useToast } from '../../context/ToastContext';
+import Loading from '../../components/layout/Loding';
+import { Link } from 'react-router-dom';
+import { PhoneCall } from 'lucide-react';
 
 // West African countries
 const WEST_AFRICAN_COUNTRIES = [
@@ -41,6 +45,7 @@ const COUNTRY_LANGUAGES = {
 
 const Profile = () => {
     const { isDark } = useTheme();
+    const { showToast } = useToast();
 
     const [profile, setProfile] = useState(null);
     const [editing, setEditing] = useState(false);
@@ -130,8 +135,7 @@ const Profile = () => {
             });
 
         } catch (err) {
-            console.log(err);
-            toast.error('Failed to load profile');
+            showToast('Failed to load profile', 'error');
         } finally {
             setLoading(false);
         }
@@ -185,10 +189,9 @@ const Profile = () => {
 
             setProfile(res.data?.data);
             setEditing(false);
-            toast.success('Profile updated successfully!');
+            showToast('Profile updated successfully!', 'success');
         } catch (err) {
-            console.log(err);
-            toast.error('Update failed. Please try again.');
+            showToast('Update failed. Please try again.', 'error');
         } finally {
             setSaving(false);
         }
@@ -223,7 +226,7 @@ const Profile = () => {
     if (loading) {
         return (
             <div className={`min-h-screen ${bg} flex items-center justify-center`}>
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                <Loading text='Loading Profile...' />
             </div>
         );
     }
@@ -628,14 +631,15 @@ const Profile = () => {
                     {/* Right Column - Security */}
                     <div className="space-y-6">
                         {/* Help Section */}
-                        <div className={`${cardBg} rounded-xl border ${border} p-6 shadow-sm`}>
-                            <h3 className={`text-lg font-semibold ${text} mb-4`}>Need Help?</h3>
-                            <p className={`text-sm ${textSecondary} mb-4`}>
-                                Having trouble updating your profile? Contact our support team.
-                            </p>
-                            <button className={`w-full py-3 rounded-lg border ${border} ${text} hover:bg-blue-50 dark:hover:bg-gray-700 transition`}>
-                                Contact Support
-                            </button>
+                        <div className="bg-gradient-to-br from-green-700 to-green-500 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+                            <div className="relative z-10">
+                                <h3 className="text-lg font-bold mb-2">Need assistance?</h3>
+                                <p className="text-sm text-green-50 mb-6">Our dedicated vendor support team is available 24/7 to help you.</p>
+                                <Link to='/contactus' className="flex items-center justify-center gap-2 w-full py-3 bg-white text-green-700 font-bold rounded-xl hover:bg-yellow-400 hover:text-green-900 transition-all">
+                                    <PhoneCall className="w-4 h-4" /> Contact Support
+                                </Link>
+                            </div>
+                            <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
                         </div>
                     </div>
                 </div>

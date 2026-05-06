@@ -593,7 +593,6 @@ import { useNavigate } from 'react-router-dom';
 import { Formik, Form, Field } from 'formik';
 import * as Yup from 'yup';
 import { useTheme } from '../../context/ThemeContext';
-import { toast } from 'react-toastify';
 import apiClient from '../../api/apiClient';
 import { clearCart } from '../../store/cartSlice';
 
@@ -602,13 +601,15 @@ import {
   ChevronRight, ArrowLeft, CheckCircle2, Loader2, Wallet, HandCoins,
   MapPin, User, Edit2, Save, X
 } from 'lucide-react';
+import { useToast } from '../../context/ToastContext';
 
 const Checkout = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { isDark } = useTheme();
-  const cartItems = useSelector((state) => state.cart.items || []);
+  const { showToast } = useToast();
 
+  const cartItems = useSelector((state) => state.cart.items || []);
   const [userProfile, setUserProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -632,7 +633,7 @@ const Checkout = () => {
           address: data.location?.address || ''
         });
       } catch (error) {
-        toast.error('Failed to load user profile');
+        showToast('Failed to load user profile', 'error');
       } finally {
         setProfileLoading(false);
       }
@@ -682,12 +683,9 @@ const Checkout = () => {
     const totalTax = TAX_PER_VENDOR * vendorCount;
     const orderTotal = subtotal + deliveryFee + totalTax;
 
-    // Construct final payload
-    // Use editForm values if they exist, otherwise fallback to userProfile
     const finalState = editForm.state || userProfile?.location?.state;
     const finalAddress = editForm.address || userProfile?.location?.address;
 
-    // Use FormData for file uploads (proof of payment)
     const formData = new FormData();
     formData.append('items', JSON.stringify(cartItems));
     formData.append('subtotal', subtotal);
@@ -700,7 +698,6 @@ const Checkout = () => {
     formData.append('state', finalState);
     formData.append('address', finalAddress);
 
-    // Append payment proofs if "Pay Now" was chosen
     if (values.paymentMethod === 'pay_now') {
       Object.keys(paymentProofs).forEach((vendorId) => {
         formData.append(`proof_${vendorId}`, paymentProofs[vendorId]);
@@ -714,10 +711,10 @@ const Checkout = () => {
 
       dispatch(clearCart());
       localStorage.removeItem('cart');
-      toast.success('Order placed successfully!');
+      showToast('Order placed successfully!', 'success');
       navigate('/buyer/orders');
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to place order');
+      showToast('Failed to place order', 'error');
     } finally {
       setSubmitting(false);
     }

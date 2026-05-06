@@ -3,8 +3,8 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { removeFromCart, updateQuantity } from '../../store/cartActions';
 import { useTheme } from '../../context/ThemeContext';
-import { toast } from 'react-toastify';
 import { ShoppingBag } from "lucide-react";
+import { useToast } from "../../context/ToastContext";
 
 const Icon = {
   ArrowLeft: (p) => (
@@ -57,6 +57,7 @@ function formatNaira(n) {
 
 const Cart = () => {
   const { isDark, toggleTheme } = useTheme();
+  const { showToast } = useToast();
   const dispatch = useDispatch();
   const items = useSelector((state) => state.cart.items);
   const navigate = useNavigate();
@@ -113,15 +114,15 @@ const Cart = () => {
 
   const updateQty = (id, q) => {
     if (q <= 0) {
-      dispatch(removeFromCart(id, toast));
+      dispatch(removeFromCart(id));
       // toast.error("Item removed from cart");
     } else {
-      dispatch(updateQuantity({ id, quantity: q }, toast));
+      dispatch(updateQuantity({ id, quantity: q }));
     }
   };
 
   const remove = (id) => {
-    dispatch(removeFromCart(id, toast));
+    dispatch(removeFromCart(id));
     // toast.error("Item removed from cart");
   };
 
@@ -139,10 +140,10 @@ const Cart = () => {
         <div className="mb-8 flex items-center justify-between">
           <button
             className={`group inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition ${isDark ? "bg-zinc-900/70 hover:bg-zinc-800 text-zinc-300 ring-1 ring-white/10" : "bg-white/70 hover:bg-white text-zinc-600 ring-1 ring-zinc-900/5"}`}
-            onClick={() => navigate('/products')}
+            onClick={() => navigate(-1)}
           >
             <Icon.ArrowLeft className="h-4 w-4 transition group-hover:-translate-x-0.5" />
-            Continue Shopping
+            Back
           </button>
         </div>
 

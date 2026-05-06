@@ -7,18 +7,14 @@ import {
     FiSearch,
     FiMenu,
     FiX,
-    FiSun,
-    FiMoon,
     FiBell,
-    FiHeart,
-    FiPackage,
-    FiShoppingBag
+    FiShoppingBag,
+    FiMoon,
+    FiSun
 } from 'react-icons/fi';
 import { useTheme } from '../../context/ThemeContext';
 import { logout } from '../../store/authSlice';
 import apiClient from '../../api/apiClient';
-
-
 
 const Navbar = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -51,15 +47,9 @@ const Navbar = () => {
         e.preventDefault();
         if (searchQuery.trim()) {
             navigate(`/products?search=${encodeURIComponent(searchQuery)}`);
+            setIsMenuOpen(false); // Close mobile menu on search
         }
     };
-
-    //   const handleLogout = () => {
-    //     const res = apiClient.post('')
-    //     dispatch(logout());
-    //     showToast('Successfully logged out', 'success');
-    //     navigate('/');
-    //   };
 
     const getRoleBasedLinks = () => {
         switch (role) {
@@ -82,6 +72,7 @@ const Navbar = () => {
             case 'buyer':
                 return [
                     { name: 'Dashboard', path: '/buyer/dashboard' },
+                    { name: 'Buy Product', path: '/products' },
                     { name: 'My Orders', path: '/buyer/orders' },
                     { name: 'My Wishlist', path: '/buyer/wishlist' },
                     { name: 'My Profile', path: '/buyer/profile' }
@@ -92,254 +83,185 @@ const Navbar = () => {
     };
 
     return (
-        <nav className="sticky top-0 z-40 bg-white dark:bg-gray-800 shadow-md">
+        <nav className="sticky top-0 z-50 bg-white dark:bg-gray-800 shadow-md">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between h-16">
+                <div className="flex justify-between items-center h-16">
+                    
                     {/* Logo and brand */}
-                    <div className="flex items-center">
+                    <div className="flex items-center flex-shrink-0">
                         <Link to="/" className="flex items-center space-x-2">
-                            <FiShoppingBag className="h-8 w-8 text-green-600" />
+                            <FiShoppingBag className="h-7 w-7 md:h-8 md:w-8 text-green-600" />
                             <div className="flex flex-col">
-                                <span className="text-xl font-heading font-bold text-gray-900 dark:text-white">
+                                <span className="text-lg md:text-xl font-heading font-bold text-gray-900 dark:text-white leading-tight">
                                     CampusTrade
                                 </span>
-                                <span className="text-xs text-gray-500 dark:text-gray-400">
-                                    Independent platform for the student community
+                                {/* Hidden subtext on mobile to save space */}
+                                <span className="hidden sm:block text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
+                                    Independent student community platform
                                 </span>
                             </div>
                         </Link>
                     </div>
 
-                    {/* Search bar - Desktop */}
-                    <div className="hidden md:flex flex-1 max-w-2xl mx-8 mt-3">
+                    {/* Search bar - Desktop (Centering improved) */}
+                    <div className="hidden md:flex flex-1 max-w-md lg:max-w-xl mx-4 lg:mx-8">
                         <form onSubmit={handleSearch} className="w-full">
                             <div className="relative">
                                 <input
                                     type="text"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder="Search products, categories, sellers..."
-                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                                    placeholder="Search products..."
+                                    className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 transition-all"
                                 />
-                                <FiSearch className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                                <FiSearch className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                             </div>
                         </form>
                     </div>
 
                     {/* Right side icons */}
-                    <div className="flex items-center space-x-4">
-                        {/* Theme toggle */}
-                        {/* <button
-                            onClick={toggleTheme}
-                            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                            aria-label="Toggle theme"
-                        >
-                            {isDarkMode ? (
-                                <FiSun className="h-5 w-5 text-yellow-500" />
-                            ) : (
-                                <FiMoon className="h-5 w-5 text-gray-700" />
-                            )}
-                        </button> */}
-
+                    <div className="flex items-center space-x-1 sm:space-x-3">
+                        {/* Theme toggle - Always visible */}
                         <button
                             onClick={toggleTheme}
-                            className={`rounded-lg border p-2 transition-all hover:shadow-md ${isDarkMode
-                                ? 'border-gray-700 bg-gray-800 text-gray-200 hover:bg-gray-700'
-                                : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
-                                }`}
+                            className="p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                         >
-                            {isDarkMode ? (
-                                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                                </svg>
-                            ) : (
-                                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                                </svg>
-                            )}
+                            {isDarkMode ? <FiSun size={20} /> : <FiMoon size={20} />}
                         </button>
 
-
-
-                        {/* Cart icon */}
+                        {/* Cart icon - Always visible */}
                         <Link
                             to="/cart"
-                            className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                            aria-label="Shopping cart"
+                            className="relative p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                         >
-                            <FiShoppingCart className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+                            <FiShoppingCart size={20} />
                             {cartItems.length > 0 && (
-                                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                                <span className="absolute top-1 right-1 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
                                     {cartItems.length}
                                 </span>
                             )}
                         </Link>
 
-
-                        {/* Notifications */}
-                        {user && (
-                            <button
-                                className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                                aria-label="Notifications"
-                            >
-                                <FiBell className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-                                <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
-                            </button>
-                        )}
-
-
-
-                        {/* Auth Links (Desktop) */}
-                        {!isAuthenticated ? (
-                            <div className="hidden md:flex items-center space-x-2">
-                                <Link
-                                    to="/login"
-                                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-green-600"
-                                >
-                                    Login
-                                </Link>
-                                <Link
-                                    to="/register"
-                                    className="px-4 py-2 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700"
-                                >
-                                    Register
-                                </Link>
-                            </div>
-                        ) : (
-                            <div className="relative">
-                                <button
-                                    onClick={() => setIsProfileMenuOpen((prev) => !prev)}
-                                    className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                                >
-                                    <FiUser className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-                                    <span className="hidden md:inline text-sm font-medium text-gray-700 dark:text-gray-200">
-                                        {/* {user.name || 'Account'} */}
-                                        {user?.identity?.fullName || 'Account'}
-                                    </span>
-                                </button>
-
-                                {isProfileMenuOpen && (
-                                    <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 z-50 border border-gray-200 dark:border-gray-700">
-                                        <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                                            <p className="text-sm font-medium text-gray-900 dark:text-white">{user ? user.identity?.fullName : 'Loading...' || 'Guest'}</p>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400"> {user && user.contact?.email}</p>
-                                            <span className="inline-block mt-1 px-2 py-1 text-xs rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
-                                                {role === 'founder' ? 'Founder' : role === 'vendor' ? 'Vendor' : 'Buyer'}
-                                            </span>
+                        {/* Desktop Auth/Profile */}
+                        <div className="hidden md:flex items-center">
+                            {!isAuthenticated ? (
+                                <div className="flex items-center space-x-2">
+                                    <Link to="/login" className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-green-600">
+                                        Login
+                                    </Link>
+                                    <Link to="/register" className="px-4 py-2 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700">
+                                        Register
+                                    </Link>
+                                </div>
+                            ) : (
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                                        className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                                    >
+                                        <div className="bg-green-100 dark:bg-green-900 p-1 rounded-full">
+                                            <FiUser className="h-5 w-5 text-green-700 dark:text-green-300" />
                                         </div>
+                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-200 max-w-[100px] truncate">
+                                            {user?.identity?.fullName?.split(' ')[0] || 'Account'}
+                                        </span>
+                                    </button>
 
-                                        {getRoleBasedLinks().map((link) => (
-                                            <Link
-                                                key={link.path}
-                                                to={link.path}
-                                                onClick={() => setIsProfileMenuOpen(false)}
-                                                className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                    {isProfileMenuOpen && (
+                                        <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-xl py-1 z-50 border border-gray-200 dark:border-gray-700">
+                                            <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                                                <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{user?.identity?.fullName}</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.contact?.email}</p>
+                                            </div>
+                                            {getRoleBasedLinks().map((link) => (
+                                                <Link
+                                                    key={link.path}
+                                                    to={link.path}
+                                                    onClick={() => setIsProfileMenuOpen(false)}
+                                                    className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-gray-700 hover:text-green-600"
+                                                >
+                                                    {link.name}
+                                                </Link>
+                                            ))}
+                                            <button
+                                                onClick={handleLogout}
+                                                className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-gray-700"
                                             >
-                                                {link.name}
-                                            </Link>
-                                        ))}
-
-
-                                        <button
-                                            onClick={() => {
-                                                setIsProfileMenuOpen(false);
-                                                handleLogout();
-                                            }}
-                                            className="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                        >
-                                            Logout
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
+                                                Logout
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
 
                         {/* Mobile menu button */}
                         <button
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
-                            className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                            aria-label="Toggle menu"
+                            className="md:hidden p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                         >
-                            {isMenuOpen ? (
-                                <FiX className="h-6 w-6" />
-                            ) : (
-                                <FiMenu className="h-6 w-6" />
-                            )}
+                            {isMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
                         </button>
                     </div>
-
-
-
-                    {/* Mobile menu */}
-                    {isMenuOpen && (
-                        <div className="md:hidden border-t border-gray-200 dark:border-gray-700 py-4">
-                            {/* Mobile search */}
-                            <form onSubmit={handleSearch} className="mb-4 px-4">
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        placeholder="Search products..."
-                                        className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                                    />
-                                    <FiSearch className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                                </div>
-                            </form>
-
-                            {/* Mobile links */}
-                            <div className="space-y-2 px-4">
-                                <Link
-                                    to="/products"
-                                    className="block py-2 text-gray-700 dark:text-gray-300 hover:text-green-600"
-                                    onClick={() => setIsMenuOpen(false)}
-                                >
-                                    All Products
-                                </Link>
-
-                                {!user ? (
-                                    <>
-                                        <Link
-                                            to="/login"
-                                            className="block py-2 text-gray-700 dark:text-gray-300 hover:text-green-600"
-                                            onClick={() => setIsMenuOpen(false)}
-                                        >
-                                            Login
-                                        </Link>
-                                        <Link
-                                            to="/register"
-                                            className="block py-2 text-green-600 hover:text-green-700 font-medium"
-                                            onClick={() => setIsMenuOpen(false)}
-                                        >
-                                            Register
-                                        </Link>
-                                    </>
-                                ) : (
-                                    <>
-                                        {getRoleBasedLinks().map((link) => (
-                                            <Link
-                                                key={link.path}
-                                                to={link.path}
-                                                className="block py-2 text-gray-700 dark:text-gray-300 hover:text-green-600"
-                                                onClick={() => setIsMenuOpen(false)}
-                                            >
-                                                {link.name}
-                                            </Link>
-                                        ))}
-                                        <button
-                                            onClick={handleLogout}
-                                            className="block w-full text-left py-2 text-red-600 dark:text-red-400"
-                                        >
-                                            Logout
-                                        </button>
-                                    </>
-                                )}
-                            </div>
-                        </div>
-                    )}
                 </div>
             </div>
+
+            {/* Mobile menu - Dropdown */}
+            {isMenuOpen && (
+                <div className="md:hidden bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 animate-in slide-in-from-top-2 duration-200">
+                    <div className="p-4 space-y-4">
+                        {/* Mobile search bar */}
+                        <form onSubmit={handleSearch}>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder="Search products..."
+                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
+                                />
+                                <FiSearch className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                            </div>
+                        </form>
+
+                        <div className="flex flex-col space-y-1">
+                            <Link to="/products" className="py-3 px-2 text-gray-700 dark:text-gray-300 font-medium border-b border-gray-50 dark:border-gray-700" onClick={() => setIsMenuOpen(false)}>
+                                Browse Products
+                            </Link>
+                            
+                            {isAuthenticated ? (
+                                <>
+                                    {getRoleBasedLinks().map((link) => (
+                                        <Link
+                                            key={link.path}
+                                            to={link.path}
+                                            className="py-3 px-2 text-gray-700 dark:text-gray-300 hover:text-green-600"
+                                            onClick={() => setIsMenuOpen(false)}
+                                        >
+                                            {link.name}
+                                        </Link>
+                                    ))}
+                                    <button
+                                        onClick={handleLogout}
+                                        className="w-full text-left py-3 px-2 text-red-600 font-medium"
+                                    >
+                                        Logout
+                                    </button>
+                                </>
+                            ) : (
+                                <div className="grid grid-cols-2 gap-4 pt-2">
+                                    <Link to="/login" className="py-2 text-center text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg" onClick={() => setIsMenuOpen(false)}>
+                                        Login
+                                    </Link>
+                                    <Link to="/register" className="py-2 text-center bg-green-600 text-white rounded-lg" onClick={() => setIsMenuOpen(false)}>
+                                        Register
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </nav>
     );
 };

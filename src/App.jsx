@@ -1,9 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Provider } from 'react-redux';
-import { ToastContainer } from 'react-toastify';
 import store from './store/index';
 import { ThemeProvider } from './context/ThemeContext';
-import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -22,6 +20,7 @@ import Login from './pages/public/Login';
 import Register from './pages/public/Register';
 import Products from './pages/public/Products';
 import ProductDetail from './pages/public/ProductDetail';
+import VendorDetails from './pages/public/VendorDetails';
 import AboutUs from './pages/public/AboutUs';
 import Contact from './pages/public/Contact';
 import PrivacyPolicy from './pages/public/PrivacyPolicy';
@@ -48,6 +47,8 @@ import VendorOrderDetails from './pages/vendor/OrdersDetails';
 import VendorAnalytics from './pages/vendor/Analytics';
 import VendorProfile from './pages/vendor/Profile';
 import VendorPayment from './pages/vendor/Payment';
+import VendorRefundRequests from './pages/vendor/RefundRequests';
+import VendorReturnRequests from './pages/vendor/ReturnRequests';
 
 // Founder Pages
 import FounderDashboard from './pages/founder/Dashboard';
@@ -92,6 +93,7 @@ function App() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/products" element={<Products />} />
                 <Route path="/product/:id" element={<ProductDetail />} />
+                <Route path="/vendor/:vendorId" element={<VendorDetails />} />
                 <Route path="/aboutus" element={<AboutUs />} />
                 <Route path="/contactus" element={<Contact />} />
                 <Route path="/privacypolicy" element={<PrivacyPolicy />} />
@@ -223,6 +225,22 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
+                <Route
+                  path="/vendor/refund-requests"
+                  element={
+                    <ProtectedRoute requiredRole="vendor">
+                      <VendorRefundRequests />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/vendor/return-requests"
+                  element={
+                    <ProtectedRoute requiredRole="vendor">
+                      <VendorReturnRequests />
+                    </ProtectedRoute>
+                  }
+                />
 
                 {/* Founder Routes */}
                 <Route
@@ -256,17 +274,6 @@ function App() {
             </main>
             <Footer />
           </div>
-          <ToastContainer
-            position="bottom-right"
-            autoClose={3000}
-            hideProgressBar={false}
-            newestOnTop={true}
-            closeOnClick
-            rtl={false}
-            pauseOnFocusLoss
-            draggable
-            pauseOnHover
-          />
         </Router>
         <CartSync />
       </ThemeProvider>

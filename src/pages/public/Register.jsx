@@ -2,16 +2,17 @@ import React from 'react';
 import { useFormik } from 'formik'
 import * as Yup from 'yup';
 import { useNavigate, Link } from 'react-router-dom';
-import { toast } from 'react-toastify';
 import { useTheme } from '../../context/ThemeContext';
 import apiClient from '../../api/apiClient';
 import { FiMail, FiLock, FiUser, FiPhone, FiBriefcase, FiShoppingBag } from 'react-icons/fi'
 import { FaEye, FaEyeSlash } from 'react-icons/fa'
+import { useToast } from '../../context/ToastContext';
 
 const Register = () => {
   const [showPassword, setShowPassword] = React.useState(false)
   const [loading, setLoading] = React.useState(false)
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   const formik = useFormik({
     initialValues: {
@@ -45,11 +46,11 @@ const Register = () => {
           password: values.password,
         });
 
-        toast.success('Registration successful!');
+        showToast('Registration successful!', 'success');
         navigate('/login');
       } catch (error) {
         // console.log(error.response || error);
-        toast.error(error?.response?.data || 'Registration failed');
+        showToast(error?.response?.data || 'Registration failed', 'error');
       } finally {
         setLoading(false);
       }

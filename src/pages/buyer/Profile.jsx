@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaEdit, FaSave, FaTimes, FaCamera, FaUser, FaEnvelope, FaPhone, FaGlobe, FaBell, FaImage, FaChevronDown } from 'react-icons/fa';
-import { toast } from 'react-toastify';
+import { useToast } from '../../context/ToastContext';
 import apiClient from '../../api/apiClient';
 import { useTheme } from '../../context/ThemeContext';
 import { PhoneCall, ShoppingBag } from 'lucide-react';
@@ -44,6 +44,7 @@ const COUNTRY_LANGUAGES = {
 
 const Profile = () => {
   const { isDark } = useTheme();
+  const { showToast } = useToast();
 
   const [profile, setProfile] = useState(null);
   const [editing, setEditing] = useState(false);
@@ -107,8 +108,7 @@ const Profile = () => {
       });
 
     } catch (err) {
-      console.log(err);
-      toast.error('Failed to load profile');
+      showToast('Failed to load profile', 'error');
     } finally {
       setLoading(false);
     }
@@ -142,7 +142,6 @@ const Profile = () => {
 
       // Append images
       if (formData.profilePhotoFile) formDataObj.append('profilePhoto', formData.profilePhotoFile);
-      // if (formData.bannerImageFile) formDataObj.append('bannerImage', formData.bannerImageFile);
 
       const res = await apiClient.put('/buyer/profile/me', formDataObj, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -150,10 +149,9 @@ const Profile = () => {
 
       setProfile(res.data?.data);
       setEditing(false);
-      toast.success('Profile updated successfully!');
+      showToast('Profile updated successfully!', 'success');
     } catch (err) {
-      console.log(err);
-      toast.error('Update failed. Please try again.');
+      showToast('Update failed. Please try again.', 'error');
     } finally {
       setSaving(false);
     }
@@ -188,7 +186,7 @@ const Profile = () => {
   if (loading) {
     return (
       <div className={`min-h-screen ${bg} flex items-center justify-center`}>
-        <Loading text='Loading dashboard...' />
+        <Loading text='Loading Profile...' />
       </div>
     );
   }
@@ -199,7 +197,7 @@ const Profile = () => {
         {/* Header */}
         <div className={`flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8`}>
           <div>
-            <h1 className={`text-3xl font-bold ${text}`}>Buyer Profile</h1>
+            <h1 className={`text-3xl font-bold ${text}`}>My Profile</h1>
             <p className={`${textSecondary} mt-1`}>Manage your store and account settings</p>
           </div>
           <div className="flex gap-3">
@@ -494,17 +492,15 @@ const Profile = () => {
           {/* Right Column - Security */}
           <div className="space-y-6">
             {/* Need Help */}
-            <div className="bg-gradient-to-br from-green-600 to-yellow-500 rounded-2xl p-6 text-white">
-              <div className="bg-white/20 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
-                <ShoppingBag className="w-6 h-6" />
+            <div className="bg-gradient-to-br from-green-700 to-green-500 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+              <div className="relative z-10">
+                <h3 className="text-lg font-bold mb-2">Need assistance?</h3>
+                <p className="text-sm text-green-50 mb-6">Our dedicated vendor support team is available 24/7 to help you.</p>
+                <Link to='/contactus' className="flex items-center justify-center gap-2 w-full py-3 bg-white text-green-700 font-bold rounded-xl hover:bg-yellow-400 hover:text-green-900 transition-all">
+                  <PhoneCall className="w-4 h-4" /> Contact Support
+                </Link>
               </div>
-              <h3 className="text-lg font-bold mb-2">Need Help?</h3>
-              <p className="text-blue-100 text-sm mb-4">
-                Our customer support team is ready to assist you 24/7.
-              </p>
-              <Link to={'/contactus'} className="flex-1 group/btn inline-flex items-center justify-center gap-3 w-full py-2.5 bg-white text-red-600 font-semibold rounded-xl hover:bg-red-50 transition-colors">
-                <PhoneCall className="text-sm group-hover/btn:scale-110 transition-transform" /> Contact Support
-              </Link>
+              <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
             </div>
           </div>
         </div>

@@ -1,6 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
 import apiClient from '../../src/api/apiClient';
-import { toast } from 'react-toastify';
 
 
 export const fetchUser = () => async (dispatch, getState) => {
@@ -20,10 +19,7 @@ export const fetchUser = () => async (dispatch, getState) => {
 
     dispatch(setUser(res.data.data));
 
-  } catch (error) {
-    // console.log(error);
-    // toast.error(error.message);
-  }
+  } catch (error) {return}
 };
 
 

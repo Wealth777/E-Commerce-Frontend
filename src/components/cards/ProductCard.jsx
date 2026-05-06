@@ -1,24 +1,21 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { FaHeart, FaShoppingCart, FaStar } from 'react-icons/fa';
+import { FaStar } from 'react-icons/fa';
 import { addToCart } from '../../store/cartActions';
-import { useTheme } from '../../context/ThemeContext';
 import { toast } from 'react-toastify';
 import { FiHeart, FiShoppingCart } from 'react-icons/fi';
-import axios from 'axios';
 import apiClient from '../../api/apiClient';
+import { useToast } from '../../context/ToastContext';
 
 const ProductCard = ({ product }) => {
   const dispatch = useDispatch();
-  const { isDark } = useTheme();
   const { role } = useSelector((state) => state.auth);
+  const { showToast } = useToast();
 
   const [isFavorite, setIsFavorite] = useState(product.isFavorite || false);
 
-  const cardBg = isDark ? 'bg-gray-800' : 'bg-white';
-  const textColor = isDark ? 'text-white' : 'text-gray-900';
-  const secondaryText = isDark ? 'text-gray-400' : 'text-gray-600';
+  const productId = product._id || product.id;
 
   const handleAddToCart = () => {
     if (role !== 'buyer') {
@@ -27,31 +24,31 @@ const ProductCard = ({ product }) => {
     }
     dispatch(addToCart({
       ...product,
-      id: product._id
+      id: productId
     }, toast));
   };
 
   const handleToggleFavorite = async () => {
     if (!role) {
-      toast.warning('Please login to add to favorites', 'warning');
+      showToast('Please login to add to favorites', 'warning');
       return;
     }
     try {
       if (!isFavorite) {
         await apiClient.post('/buyer/wishlist', {
-          productId: product._id
+          productId: productId
         });
 
         setIsFavorite(true);
-        toast.success('Added to wishlist');
+        showToast('Added to wishlist', 'success');
       } else {
-        await apiClient.delete(`/buyer/wishlist/${product._id}`);
+        await apiClient.delete(`/buyer/wishlist/${productId}`);
 
         setIsFavorite(false);
-        toast.success('Removed from wishlist');
+        showToast('Removed from wishlist', 'success');
       }
-    } catch (err) {
-      toast.error('Wishlist action failed');
+    } catch {
+      showToast('Wishlist action failed', 'error');
     }
 
 
@@ -64,7 +61,7 @@ const ProductCard = ({ product }) => {
   return (
     <div className="group bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
       <div className="relative">
-        <Link to={`/products/${product.id}`}>
+        <Link to={`/product/${productId}`}>
           <img
             src={product.image || 'https://via.placeholder.com/300x200'}
             alt={product.name}
@@ -123,7 +120,13 @@ const ProductCard = ({ product }) => {
               )}
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Seller: {product.vendor?.storeName}
+              Seller:{" "}
+              <Link
+                to={`/vendor/${product?.vendor?._id || product?.vendor?.id}`}
+                className="hover:underline hover:text-blue-400 text-blue-500"
+              >
+                {product?.vendor?.storeName}
+              </Link>
             </p>
           </div>
 

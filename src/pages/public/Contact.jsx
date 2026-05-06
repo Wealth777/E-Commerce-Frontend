@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { toast } from 'react-toastify';
 import { 
   Mail, 
   Clock, 
@@ -17,13 +16,15 @@ import {
   Headphones,
   ShieldCheck
 } from 'lucide-react';
+import { useToast } from '../../context/ToastContext';
 const Contact = () => {
+  const { showToast } = useToast();
   const [copied, setCopied] = useState(false);
   const [activeFaq, setActiveFaq] = useState(null);
   const handleCopyEmail = () => {
     navigator.clipboard.writeText('olujidewealth3@gmail.com');
     setCopied(true);
-    toast.success('Email copied to clipboard!');
+    showToast('Email copied to clipboard!');
     setTimeout(() => setCopied(false), 2000);
   };
   const formik = useFormik({
@@ -44,10 +45,10 @@ const Contact = () => {
         // Simulate API call - replace with your actual apiClient
         await new Promise(resolve => setTimeout(resolve, 1500));
         // await apiClient.post('/contact', values);
-        toast.success('Message sent successfully! We\'ll get back to you soon.');
+        showToast('Message sent successfully! We\'ll get back to you soon.', 'success');
         resetForm();
       } catch (error) {
-        toast.error('Failed to send message. Please try again.');
+        showToast('Failed to send message. Please try again.', 'error');
       } finally {
         setSubmitting(false);
       }

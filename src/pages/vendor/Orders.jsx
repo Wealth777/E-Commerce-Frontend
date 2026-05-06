@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
-import { toast } from 'react-toastify';
+import { useToast } from '../../context/ToastContext';
 import apiClient from '../../api/apiClient';
 import { FaBox, FaChevronRight, FaRegCalendarAlt, FaWallet, FaUser, FaShippingFast, FaCheckCircle, FaClock } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
@@ -9,6 +9,7 @@ import Loading from '../../components/layout/Loding';
 
 const VendorOrders = () => {
   const { isDark } = useTheme();
+  const { showToast } = useToast();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -22,7 +23,7 @@ const VendorOrders = () => {
 
       setOrders(response.data?.data || []);
     } catch (error) {
-      toast.error('Failed to load sales orders');
+      showToast('Failed to load sales orders', 'error');
     } finally {
       setLoading(false);
     }
@@ -68,8 +69,8 @@ const VendorOrders = () => {
         <div className="mb-10 relative overflow-hidden bg-gradient-to-r from-green-600 via-green-500 to-yellow-500 rounded-2xl p-8 mb-8 text-white shadow-xl">
           <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2"></div>
-          <h1 className="text-4xl font-black text-yellow-400 tracking-tight mb-2">Sales Management</h1>
-          <p className="opacity-90">Track your store sales and manage customer fulfillments.</p>
+          <h1 className="text-4xl font-black text-white tracking-tight mb-2">Sales Management</h1>
+          <p className="opacity-90 text-black">Track your store sales and manage customer fulfillments.</p>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
             <div className={`${cardBg} border p-4 rounded-2xl shadow-sm`}>

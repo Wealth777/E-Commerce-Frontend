@@ -7,10 +7,12 @@ import { toast } from 'react-toastify';
 import apiClient from '../../api/apiClient';
 import { FaSearch, FaSlidersH, FaLayerGroup, FaTags, FaBoxOpen, FaFootballBall, FaHome } from 'react-icons/fa';
 import Loading from '../../components/layout/Loding';
+import { useToast } from '../../context/ToastContext';
 
 const Products = () => {
   const dispatch = useDispatch();
   const { isDark } = useTheme();
+  const { showToast } = useToast();
   const { products, filteredProducts, filter } = useSelector((state) => state.products);
   const [loading, setLoading] = useState(true);
 
@@ -28,7 +30,7 @@ const Products = () => {
       const response = await apiClient.get('/vendor/product/all');
       dispatch(setProducts(response.data.data || []));
     } catch (error) {
-      toast.error('Failed to load products');
+      showToast('Failed to load products', 'error');
     } finally {
       setLoading(false);
     }

@@ -16,8 +16,8 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import apiClient from '../../api/apiClient';
-import { toast } from 'react-toastify';
 import { FaSpinner } from 'react-icons/fa6'
+import { useToast } from '../../context/ToastContext';
 
 const validationSchema = Yup.object({
     bankName: Yup.string().required('Bank name is required'),
@@ -29,6 +29,7 @@ const validationSchema = Yup.object({
 
 const Payouts = () => {
     const { isDark } = useTheme();
+    const { showToast } = useToast();
 
     const [savedDetails, setSavedDetails] = useState(null);
     const [isEditing, setIsEditing] = useState(true);
@@ -67,8 +68,7 @@ const Payouts = () => {
             setSavedDetails(prefill);
 
         } catch (err) {
-            console.log(err);
-            toast.error('Failed to load profile');
+            showToast('Failed to load profile', 'error');
         } finally {
             setLoading(false);
         }

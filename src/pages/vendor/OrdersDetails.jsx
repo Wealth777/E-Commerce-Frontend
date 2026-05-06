@@ -3,8 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTheme } from "../../context/ThemeContext";
 import apiClient from "../../api/apiClient";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { useToast } from "../../context/ToastContext";
 import {
   ArrowLeft,
   Package,
@@ -18,12 +17,10 @@ import {
 } from "lucide-react";
 import Loading from "../../components/layout/Loding";
 
-// ... animation variants stay the same ...
-
 export default function VendorOrdersDetails() {
   const { orderId } = useParams();
   const { isDark } = useTheme();
-
+  const { showToast } = useToast();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -31,7 +28,6 @@ export default function VendorOrdersDetails() {
   const [showProofModal, setShowProofModal] = useState(false);
   const [activeProof, setActiveProof] = useState(null);
 
-  // Safe order ID to prevent crashes if order not loaded
   const safeOrderId = order?._id;
 
   useEffect(() => {
@@ -41,11 +37,10 @@ export default function VendorOrdersDetails() {
   const fetchOrder = async () => {
     try {
       setLoading(true);
-      // FIXED: Pointing to the vendor-specific endpoint defined in your router
       const res = await apiClient.get(`/vendor/orders/${orderId}`);
       setOrder(res.data.data);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to load order details");
+      showToast(err.response?.data?.message || "Failed to load order details", 'error');
     } finally {
       setLoading(false);
     }
@@ -59,7 +54,6 @@ export default function VendorOrdersDetails() {
     }
   };
 
-  // Re-using your existing status config logic
   const getStatusConfig = (status) => {
     const s = status?.toLowerCase() || "pending";
     const configs = {
@@ -74,7 +68,7 @@ export default function VendorOrdersDetails() {
 
   const confirmPayment = async (status) => {
     if (!safeOrderId) {
-      toast.error("Order not loaded");
+      showToast("Order not loaded", 'warning');
       return;
     }
     try {
@@ -83,10 +77,10 @@ export default function VendorOrdersDetails() {
         orderId: safeOrderId,
         status,
       });
-      toast.success("Payment updated");
+      showToast("Payment updated", 'success');
       fetchOrder();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Payment update failed");
+      showToast(err.response?.data?.message || "Payment update failed", 'error');
     } finally {
       setActionLoading("");
     }
@@ -94,7 +88,7 @@ export default function VendorOrdersDetails() {
 
   const confirmOrder = async () => {
     if (!safeOrderId) {
-      toast.error("Order not loaded");
+      showToast("Order not loaded", 'warning');
       return;
     }
     try {
@@ -102,10 +96,10 @@ export default function VendorOrdersDetails() {
       await apiClient.post("/vendor/orders/action/confirmorder", {
         orderId: safeOrderId,
       });
-      toast.success("Order confirmed");
+      showToast("Order confirmed", 'success');
       fetchOrder();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Order confirm failed");
+      showToast(err.response?.data?.message || "Order confirm failed", 'error');
     } finally {
       setActionLoading("");
     }
@@ -113,7 +107,7 @@ export default function VendorOrdersDetails() {
 
   const markShipped = async () => {
     if (!safeOrderId) {
-      toast.error("Order not loaded");
+      showToast("Order not loaded", "warning");
       return;
     }
     try {
@@ -121,10 +115,10 @@ export default function VendorOrdersDetails() {
       await apiClient.post("/vendor/orders/action/confirmshipped", {
         orderId: safeOrderId,
       });
-      toast.success("Marked as shipped");
+      showToast("Marked as shipped", 'success');
       fetchOrder();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Shipping update failed");
+      showToast(err.response?.data?.message || "Shipping update failed", 'error');
     } finally {
       setActionLoading("");
     }
@@ -158,7 +152,7 @@ export default function VendorOrdersDetails() {
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      toast.error("Download failed");
+      showToast("Download failed", 'error');
     }
   };
 
@@ -206,8 +200,6 @@ export default function VendorOrdersDetails() {
 
   return (
     <div className={`min-h-screen ${bgColor} pb-16`}>
-      <ToastContainer theme={isDark ? "dark" : "light"} />
-
       {/* Header */}
       <div className={`sticky top-0 z-30 ${isDark ? "bg-[#0a0a0f]/80" : "bg-gray-50/80"} backdrop-blur-xl border-b ${cardBorder}`}>
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">

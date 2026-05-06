@@ -1,4 +1,3 @@
-import { toast } from "react-toastify";
 import apiClient from "../api/apiClient";
 import {
   setCart,
@@ -6,6 +5,7 @@ import {
   removeLocal,
   updateLocal,
 } from "./cartSlice";
+import { toast } from "react-toastify";
 
 const saveLocalCart = (items) => {
   localStorage.setItem("cart", JSON.stringify(items));
@@ -52,8 +52,9 @@ export const addToCart = (product) => async (dispatch, getState) => {
 
     toast.success('Cart added successfully')
   } catch (err) {
-    // console.error(err);
+    console.log(err.message)
     toast.error("Failed to add to cart");
+    return
   }
 };
 
@@ -89,8 +90,8 @@ export const removeFromCart = (id) => async (dispatch, getState) => {
     dispatch(setCart(backendItems));
     toast.success("Cart remove successfully");
   } catch (err) {
-    // console.error(err);
     toast.error("Failed to remove cart");
+    return
   }
 };
 
@@ -132,8 +133,8 @@ export const updateQuantity = ({ id, quantity },) => async (dispatch, getState) 
     dispatch(setCart(backendItems));
     toast.success("Cart updated successfully");
   } catch (err) {
-    // console.error(err);
     toast.error("Failed to update cart");
+    return
   }
 };
 
@@ -169,8 +170,10 @@ export const mergeCart = () => async (dispatch, getState) => {
     }));
 
     dispatch(setCart(backendItems));
-    // toast.error("Cart merge successfully");
-  } catch (err) {}
+  } catch (err) {
+    toast.error('Failed merging cart')
+    return
+  }
 };
 
 export const fetchCart = () => async (dispatch, getState) => {
@@ -196,6 +199,8 @@ export const fetchCart = () => async (dispatch, getState) => {
     }));
 
     dispatch(setCart(backendItems));
-    // toast.success("Cart load successfully");
-  } catch (err) {}
+  } catch (err) {
+    toast.error('Failed fetching cart')
+    return
+  }
 };

@@ -3,6 +3,7 @@ export { default as Login } from './Login';
 export { default as Register } from './Register';
 export { default as Products } from './Products';
 export { default as ProductDetail } from './ProductDetail';
+export { default as VendorDetails } from './VendorDetails';
 export { default as AboutUs } from './AboutUs';
 export { default as Contact } from './Contact';
 export { default as PrivacyPolicy } from './PrivacyPolicy';

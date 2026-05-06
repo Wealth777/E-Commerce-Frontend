@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { useNavigate } from 'react-router-dom';
 import { motion } from "framer-motion";
 import { useTheme } from "../../context/ThemeContext";
 import apiClient from "../../api/apiClient";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { useToast } from "../../context/ToastContext";
 import {
   ArrowLeft,
   Package,
@@ -19,9 +19,13 @@ import {
   Copy,
   CircleDot,
   Circle,
+  AlertCircle,
+  FileCheck,
+  RotateCcw,
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import Loading from "../../components/layout/Loding";
+import RefundReturnModal from "../../components/common/RefundReturnModal";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -40,6 +44,8 @@ export default function OrdersDetails() {
   const { user } = useSelector((state) => state.auth);
   const { orderId } = useParams();
   const { isDark } = useTheme();
+  const { showToast } = useToast();
+  const navigate = useNavigate();
 
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -47,6 +53,8 @@ export default function OrdersDetails() {
   const [actionLoading, setActionLoading] = useState("");
   const [showProofModal, setShowProofModal] = useState(false);
   const [activeProof, setActiveProof] = useState(null);
+  const [showRefundReturnModal, setShowRefundReturnModal] = useState(false);
+  const [modalRequestType, setModalRequestType] = useState('refund');
 
   useEffect(() => {
     fetchOrder();
@@ -58,7 +66,7 @@ export default function OrdersDetails() {
       const res = await apiClient.get(`/buyer/orders/${orderId}`);
       setOrder(res.data.data);
     } catch (err) {
-      toast.error("Failed to load order details");
+      showToast("Failed to load order details", 'error');
     } finally {
       setLoading(false);
     }
@@ -72,10 +80,10 @@ export default function OrdersDetails() {
         orderId: order._id,
       });
 
-      toast.success("Order marked as delivered");
+      showToast("Order marked as delivered", 'success');
       fetchOrder();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to confirm delivery");
+      showToast("Action Failed", 'error');
     } finally {
       setActionLoading("");
     }
@@ -89,13 +97,45 @@ export default function OrdersDetails() {
         orderId: order._id,
       });
 
-      toast.success("Order cancelled");
+      showToast("Order cancelled", 'success');
       fetchOrder();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Cancel failed");
+      showToast("Action failed", 'error');
     } finally {
       setActionLoading("");
     }
+  };
+
+  // Helper functions for refund/return
+  const canRequestRefund = () => {
+    if (!order) return false;
+    if (order.status !== 'cancelled') return false;
+    if (order.cancelledBy?.role !== 'buyer') return false;
+    
+    // Check if already has pending/approved/completed refund request
+    const refund = order.refundRequest;
+    if (refund && ['pending', 'approved', 'completed'].includes(refund.status)) return false;
+    return true;
+  };
+
+  const canRequestReturn = () => {
+    if (!order) return false;
+    if (order.status !== 'delivered') return false;
+    
+    // Check if already has pending/approved/completed return request
+    const returnReq = order.returnRequest;
+    if (returnReq && ['pending', 'approved', 'completed'].includes(returnReq.status)) return false;
+    return true;
+  };
+
+  const openRefundModal = () => {
+    setModalRequestType('refund');
+    setShowRefundReturnModal(true);
+  };
+
+  const openReturnModal = () => {
+    setModalRequestType('return');
+    setShowRefundReturnModal(true);
   };
 
   const copyOrderId = () => {
@@ -132,7 +172,7 @@ export default function OrdersDetails() {
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      toast.error("Download failed");
+      showToast("Download failed", 'error');
     }
   };
 
@@ -222,14 +262,13 @@ export default function OrdersDetails() {
 
   return (
     <div className={`min-h-screen ${bgColor} pb-16`}>
-      <ToastContainer theme={isDark ? "dark" : "light"} />
-
       <div className={`sticky top-0 z-30 ${isDark ? "bg-[#0a0a0f]/80" : "bg-gray-50/80"} backdrop-blur-xl border-b ${cardBorder}`}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Link to="/buyer/orders" className={`flex items-center gap-2 text-sm font-medium ${textSecondary} hover:${textPrimary} transition-colors group`}>
+          <button onClick={() => navigate(-1)} className={`flex items-center gap-2 text-sm font-medium ${textSecondary} hover:${textPrimary} transition-colors group`}>
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-            Back to Orders
-          </Link>
+            Back
+          </button>
+
           <button onClick={copyOrderId} className={`flex items-center gap-1.5 text-xs font-mono px-3 py-1.5 rounded-lg border ${cardBorder} ${textMuted} hover:${textSecondary} transition-colors`}>
             {copied ? "Copied!" : orderRef}
             <Copy className="w-3 h-3" />
@@ -262,6 +301,28 @@ export default function OrdersDetails() {
               className={`px-4 py-2 rounded-lg text-sm text-white bg-red-600 ${order.status !== "pending" ? "opacity-40 cursor-not-allowed" : ""}`}>
               {actionLoading === "cancel" ? "Cancelling..." : "Cancel Order"}
             </button>
+
+            {/* Refund Request Button */}
+            {canRequestRefund() && (
+              <button
+                onClick={openRefundModal}
+                className="px-4 py-2 rounded-lg text-sm text-white bg-orange-600 hover:bg-orange-700 transition-colors flex items-center gap-2"
+              >
+                <RotateCcw className="w-4 h-4" />
+                Request Refund
+              </button>
+            )}
+
+            {/* Return Request Button */}
+            {canRequestReturn() && (
+              <button
+                onClick={openReturnModal}
+                className="px-4 py-2 rounded-lg text-sm text-white bg-blue-600 hover:bg-blue-700 transition-colors flex items-center gap-2"
+              >
+                <FileCheck className="w-4 h-4" />
+                Request Return
+              </button>
+            )}
           </div>
         </motion.div>
 
@@ -389,6 +450,77 @@ export default function OrdersDetails() {
                 </div>
               </div>
             </motion.div>
+
+            {/* Refund/Return Requests Status */}
+            {(order.refundRequest || order.returnRequest) && (
+              <div className="space-y-4">
+                {/* Refund Request Status */}
+                {order.refundRequest && (
+                  <motion.div variants={itemVariants} className={`${cardBg} border ${cardBorder} rounded-2xl p-6`}>
+                    <div className="flex items-start gap-3 mb-4">
+                      <RotateCcw className="w-5 h-5 text-orange-500 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <h4 className={`text-sm font-bold ${textPrimary}`}>Refund Request</h4>
+                        <p className={`text-xs ${textSecondary} mt-1`}>Status: <span className={`font-semibold capitalize ${
+                          order.refundRequest.status === 'completed' ? 'text-emerald-500' :
+                          order.refundRequest.status === 'approved' ? 'text-blue-500' :
+                          order.refundRequest.status === 'rejected' ? 'text-red-500' :
+                          'text-amber-500'
+                        }`}>{order.refundRequest.status}</span></p>
+                      </div>
+                    </div>
+                    <div className={`space-y-2 text-xs ${textSecondary}`}>
+                      <p><strong>Reason:</strong> {order.refundRequest.reason}</p>
+                      {order.refundRequest.details && (
+                        <p><strong>Details:</strong> {order.refundRequest.details}</p>
+                      )}
+                      <p><strong>Requested:</strong> {new Date(order.refundRequest.requestedAt).toLocaleDateString()}</p>
+                      {order.refundRequest.reviewedAt && (
+                        <p><strong>Reviewed:</strong> {new Date(order.refundRequest.reviewedAt).toLocaleDateString()}</p>
+                      )}
+                      {order.refundRequest.vendorResponse && (
+                        <p className={`${isDark ? 'bg-gray-900' : 'bg-gray-50'} p-2 rounded mt-2`}>
+                          <strong>Vendor Response:</strong> {order.refundRequest.vendorResponse}
+                        </p>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Return Request Status */}
+                {order.returnRequest && (
+                  <motion.div variants={itemVariants} className={`${cardBg} border ${cardBorder} rounded-2xl p-6`}>
+                    <div className="flex items-start gap-3 mb-4">
+                      <FileCheck className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <h4 className={`text-sm font-bold ${textPrimary}`}>Return Request</h4>
+                        <p className={`text-xs ${textSecondary} mt-1`}>Status: <span className={`font-semibold capitalize ${
+                          order.returnRequest.status === 'completed' ? 'text-emerald-500' :
+                          order.returnRequest.status === 'approved' ? 'text-blue-500' :
+                          order.returnRequest.status === 'rejected' ? 'text-red-500' :
+                          'text-amber-500'
+                        }`}>{order.returnRequest.status}</span></p>
+                      </div>
+                    </div>
+                    <div className={`space-y-2 text-xs ${textSecondary}`}>
+                      <p><strong>Reason:</strong> {order.returnRequest.reason}</p>
+                      {order.returnRequest.details && (
+                        <p><strong>Details:</strong> {order.returnRequest.details}</p>
+                      )}
+                      <p><strong>Requested:</strong> {new Date(order.returnRequest.requestedAt).toLocaleDateString()}</p>
+                      {order.returnRequest.reviewedAt && (
+                        <p><strong>Reviewed:</strong> {new Date(order.returnRequest.reviewedAt).toLocaleDateString()}</p>
+                      )}
+                      {order.returnRequest.vendorResponse && (
+                        <p className={`${isDark ? 'bg-gray-900' : 'bg-gray-50'} p-2 rounded mt-2`}>
+                          <strong>Vendor Response:</strong> {order.returnRequest.vendorResponse}
+                        </p>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -417,6 +549,15 @@ export default function OrdersDetails() {
             </div>
           </div>
         )}
+
+        {/* Refund/Return Modal */}
+        <RefundReturnModal
+          isOpen={showRefundReturnModal}
+          onClose={() => setShowRefundReturnModal(false)}
+          orderId={orderId}
+          requestType={modalRequestType}
+          onSuccess={fetchOrder}
+        />
       </motion.div>
     </div>
   );

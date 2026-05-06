@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
-import { ShoppingBag, Trash, Trash2 } from 'lucide-react';
+import { ShoppingBag, Trash2 } from 'lucide-react';
 import apiClient from '../../api/apiClient';
 import { useDispatch, useSelector } from 'react-redux';
-import { toast } from 'react-toastify';
+import { useToast } from '../../context/ToastContext';
 import { addToCart } from '../../store/cartActions';
 import Loading from '../../components/layout/Loding';
-import { Link, Navigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 const Wishlist = ({ product }) => {
   const { isDark } = useTheme();
+  const { showToast } = useToast();
 
   const [wishlist, setWishlist] = useState([]);
   const [viewMode, setViewMode] = useState('grid');
@@ -30,14 +31,11 @@ const Wishlist = ({ product }) => {
     try {
       setLoading(true);
       const res = await apiClient.get('/buyer/wishlist');
-
       const items = res.data?.data?.items || [];
 
       const formatted = items.map((item) => {
         const product = item.product || {};
-
         const stock = product.countInStock ?? product.stock ?? 0;
-
         return {
           id: product._id,
           name: product.name,
@@ -51,41 +49,34 @@ const Wishlist = ({ product }) => {
           addedDate: item.addedAt,
         };
       });
-
       setWishlist(formatted);
     } catch (err) {
-      console.error(err);
+      showToast("Failed to fetch wishlist", 'error');
     } finally {
       setLoading(false);
     }
   };
 
-
   const removeItem = async (id) => {
     try {
       const res = await apiClient.delete(`/buyer/wishlist/${id}`);
-
-      // setWishlist((prev) => prev.filter((item) => item.id !== id));
-      // toast.error('Removed from wishlist');
-
       if (res.data?.success) {
         setWishlist((prev) => prev.filter((item) => item.id !== id));
-        toast.error('Removed from wishlist');
+        showToast('Removed from wishlist', 'success');
       } else {
-        toast.error('Failed to remove item');
+        showToast('Failed to remove item', 'error');
       }
     } catch (err) {
-      console.error(err);
+      showToast("Error removing item", 'error');
     }
   };
 
   const { role } = useSelector((state) => state.auth);
-
   const dispatch = useDispatch();
 
   const handleAddToCart = (item) => {
     if (role !== 'buyer') {
-      toast.error('You must be a buyer to add items to cart');
+      showToast('You must be a buyer to add items to cart', 'warning');
       return;
     }
     dispatch(addToCart({
@@ -110,56 +101,48 @@ const Wishlist = ({ product }) => {
   const totalItems = wishlist.length;
 
   return (
-    <div className={`min-h-screen ${bgColor} transition-colors duration-300`}>
+    <div className={`min-h-screen ${bgColor} transition-colors duration-300 pb-10`}>
       {/* Header Banner */}
-      <div className="relative overflow-hidden max-w-6xl mx-auto mt-6">
-        <div className={`absolute inset-0 rounded-2xl ${isDark ? 'bg-gradient-to-r from-green-600 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-green-600 via-green-500 to-yellow-500'}`} />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2"></div>
-        <div className="absolute inset-0 opacity-[0.03]"
-          style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)', backgroundSize: '24px 24px' }}
-        />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-3 mb-3">
-                <h1 className={`text-3xl sm:text-4xl font-bold text-yellow-400 tracking-tight`}>My Wishlist</h1>
-              </div>
-              <p className={`text-white text-lg max-w-xl`}>
-                Save your favorite items and come back to them anytime
-              </p>
-            </div>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <div className="relative overflow-hidden rounded-2xl">
+          <div className={`absolute inset-0 ${isDark ? 'bg-gradient-to-r from-green-700 via-green-600 to-yellow-600' : 'bg-gradient-to-r from-green-600 via-green-500 to-yellow-500'}`} />
+          <div className="absolute top-0 right-0 w-64 h-64 sm:w-96 sm:h-96 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+          <div className="relative px-6 py-10 sm:py-14">
+            <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight break-words">My Wishlist</h1>
+            <p className="text-white/90 text-base sm:text-lg max-w-xl mt-2">
+              Save your favorite items and come back to them anytime
+            </p>
           </div>
         </div>
       </div>
 
       {/* Stats & Controls Bar */}
-      <div className="sticky top-0 z-30 backdrop-blur-xl max-w-6xl mx-auto">
-        <div className={`${isDark ? 'bg-gray-950/80 border-gray-800' : 'bg-white/80 border-gray-200'} border-b transition-colors duration-300`}>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-5">
+      <div className="sticky top-0 z-30 backdrop-blur-xl mt-6">
+        <div className={`${isDark ? 'bg-gray-950/80 border-gray-800' : 'bg-white/80 border-gray-200'} border-b border-t transition-colors duration-300`}>
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-4 sm:gap-6 w-full sm:w-auto justify-between sm:justify-start">
                 <span className={`text-sm font-semibold ${textColor}`}>
                   <span className="text-rose-500">{totalItems}</span> {totalItems === 1 ? 'item' : 'items'}
                 </span>
                 <span className={`text-sm ${textSecondary}`}>
-                  Total value: <span className="font-semibold ${textColor}">₦{totalValue.toFixed(2)}</span>
+                  Total: <span className={`font-semibold ${textColor}`}>₦{totalValue.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
                 </span>
               </div>
-              <div className="flex items-center gap-2">
-                {/* Sort */}
+              
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className={`text-sm rounded-lg px-3 py-2 border cursor-pointer outline-none transition-colors
-                    ${isDark ? 'bg-gray-800 border-gray-700 text-gray-300 hover:border-gray-600' : 'bg-white border-gray-200 text-gray-700 hover:border-gray-300'}`}
+                  className={`text-sm rounded-lg px-3 py-2 border cursor-pointer outline-none transition-colors flex-1 sm:flex-none
+                    ${isDark ? 'bg-gray-800 border-gray-700 text-gray-300' : 'bg-white border-gray-200 text-gray-700'}`}
                 >
                   <option value="newest">Newest First</option>
                   <option value="price-low">Price: Low → High</option>
                   <option value="price-high">Price: High → Low</option>
                   <option value="name">Name A → Z</option>
                 </select>
-                {/* View Toggle */}
+
                 <div className={`flex rounded-lg border p-0.5 ${isDark ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-gray-100'}`}>
                   <button
                     onClick={() => setViewMode('grid')}
@@ -182,68 +165,56 @@ const Wishlist = ({ product }) => {
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-32 space-y-4">
+          <div className="flex flex-col items-center justify-center py-32">
             <Loading text='Loading wishlist...' />
           </div>
         ) : wishlist.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20">
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className={`p-6 rounded-full mb-4 ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
+              <ShoppingBag className={`w-12 h-12 ${textSecondary}`} />
+            </div>
             <h2 className={`text-2xl font-bold ${textColor}`}>Your wishlist is empty</h2>
+            <p className={`mt-2 ${textSecondary}`}>Looks like you haven't added any items yet.</p>
             <Link
               to={'/products'}
-              className="mt-5 inline-flex items-center gap-2 justify-center rounded-xl bg-white text-green-600 px-6 py-3 rounded-xl font-semibold hover:bg-green-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              className="mt-8 inline-flex items-center gap-2 rounded-xl bg-green-600 text-white px-8 py-3 font-semibold hover:bg-green-700 transition-all shadow-lg hover:shadow-green-500/20"
             >
-              <ShoppingBag className="w-5 h-5" />
               Start shopping
             </Link>
           </div>
         ) : viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {sortedWishlist.map((item) => (
-              <div
-                key={item.id}
-                className={`${cardBg} rounded-2xl border ${borderColor} overflow-hidden`}
-              >
-                <div className="relative aspect-square">
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-full h-full object-cover"
-                  />
-                  {!item.inStock ? (
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                      <span className="text-white text-sm">Out of Stock</span>
+              <div key={item.id} className={`${cardBg} rounded-2xl border ${borderColor} overflow-hidden flex flex-col group`}>
+                <div className="relative aspect-square overflow-hidden">
+                  <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  {!item.inStock && (
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center">
+                      <span className="text-white font-bold px-3 py-1 border border-white/30 rounded-full text-xs uppercase tracking-wider">Out of Stock</span>
                     </div>
-                  ) : (
-                    item.stock < 10 && (
-                      <div className="absolute bottom-3 left-3 bg-yellow-500 text-white text-xs px-2 py-1 rounded">
-                        Only {item.stock} left
-                      </div>
-                    )
                   )}
-
+                  {item.inStock && item.stock < 10 && (
+                    <div className="absolute top-3 left-3 bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-md uppercase">
+                      Only {item.stock} left
+                    </div>
+                  )}
                   <button
                     onClick={() => removeItem(item.id)}
-                    className="absolute top-3 right-3 flex-shrink-0 p-1.5 dark:text-black rounded-lg hover:bg-red-300 dark:hover:bg-rose-300 transition-colors text-xs font-medium"
-                    title="Remove"
+                    className="absolute top-3 right-3 p-2 bg-white/90 dark:bg-gray-800/90 text-rose-500 rounded-full shadow-lg hover:bg-rose-500 hover:text-white transition-all transform hover:scale-110"
                   >
-                    <Trash2 className='ttext-xs font-medium' />
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
-
-                <div className="p-4">
-                  <h3 className={`font-semibold ${textColor}`}>{item.name}</h3>
-
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className="font-bold">₦{item.price}</span>
-                    {item.originalPrice && (
-                      <span className="line-through text-sm">₦{item.originalPrice}</span>
-                    )}
+                <div className="p-4 flex flex-col flex-1">
+                  <h3 className={`font-semibold ${textColor} line-clamp-1 mb-1`}>{item.name}</h3>
+                  <div className="flex items-baseline gap-2 mb-4">
+                    <span className={`text-lg font-bold ${textColor}`}>₦{item.price.toLocaleString()}</span>
+                    {item.originalPrice && <span className={`text-xs line-through ${textSecondary}`}>₦{item.originalPrice.toLocaleString()}</span>}
                   </div>
-
                   <button
                     onClick={() => handleAddToCart(item)}
                     disabled={!item.inStock}
-                    className="mt-3 w-full py-2 bg-green-600 text-white hover:bg-green-700 transition-colors text-sm font-semibold rounded-xl hover:bg-green-800 transition-colors rounded-lg"
+                    className="mt-auto w-full py-2.5 bg-green-600 text-white disabled:bg-gray-400 disabled:cursor-not-allowed hover:bg-green-700 transition-colors text-sm font-bold rounded-xl shadow-md"
                   >
                     Add to Cart
                   </button>
@@ -252,71 +223,37 @@ const Wishlist = ({ product }) => {
             ))}
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {sortedWishlist.map((item) => (
-              <div
-                key={item.id}
-                className={`group ${cardBg} rounded-2xl border ${borderColor} overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5`}
-              >
-                <div className="flex items-stretch">
-                  {/* Image */}
-                  <div className="relative w-28 sm:w-36 flex-shrink-0 overflow-hidden bg-gray-100 dark:bg-gray-800">
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    />
-                    {item.discount && (
-                      <span className="absolute top-2 left-2 px-1.5 py-0.5 bg-rose-500 text-white text-[10px] font-bold rounded-md">
-                        -{item.discount}%
-                      </span>
-                    )}
+              <div key={item.id} className={`${cardBg} rounded-2xl border ${borderColor} overflow-hidden hover:shadow-md transition-shadow`}>
+                <div className="flex flex-col xs:flex-row items-stretch xs:items-center p-3 sm:p-4 gap-4">
+                  <div className="relative w-full xs:w-32 sm:w-40 aspect-video xs:aspect-square flex-shrink-0 rounded-xl overflow-hidden bg-gray-100">
+                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                   </div>
-                  {/* Content */}
-                  <div className="flex-1 p-3 sm:p-4 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className={`font-semibold ${textColor} text-sm sm:text-base line-clamp-1`}>{item.name}</h3>
-                        <button
-                          onClick={() => removeItem(item.id)}
-                          className="flex-shrink-0 p-1.5 rounded-lg hover:bg-red-300 dark:hover:bg-rose-900/60 transition-colors text-xs font-medium"
-                          title="Remove"
-                        >
-                          <Trash2 className='ttext-xs font-medium' />
-                        </button>
+                  <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <h3 className={`font-bold ${textColor} text-base sm:text-lg`}>{item.name}</h3>
+                      <div className="flex items-center gap-3">
+                        <span className={`text-lg font-bold ${textColor}`}>₦{item.price.toLocaleString()}</span>
+                        {item.originalPrice && <span className={`text-sm line-through ${textSecondary}`}>₦{item.originalPrice.toLocaleString()}</span>}
                       </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        {/* <StarRating rating={item.rating} /> */}
-                        {/* <span className={`text-xs ${textSecondary}`}>({item.reviews.toLocaleString()})</span> */}
-                      </div>
+                      <p className={`text-xs ${textSecondary}`}>Added: {new Date(item.addedDate).toLocaleDateString()}</p>
                     </div>
-                    <div className="flex items-end justify-between mt-2">
-                      <div className="flex items-baseline gap-2">
-                        <span className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>₦{item.price.toFixed(2)}</span>
-                        {item.originalPrice && (
-                          <span className={`text-sm line-through ${textSecondary}`}>₦{item.originalPrice.toFixed(2)}</span>
-                        )}
-                        {!item.inStock ? (
-                          <span className="text-xs font-medium text-black bg-rose-50 px-2 py-0.5 rounded-full">
-                            Out of Stock
-                          </span>
-                        ) : item.stock < 10 ? (
-                          <span className="text-xs font-medium text-black bg-yellow-50 px-2 py-0.5 rounded-full">
-                            Only {item.stock} left
-                          </span>
-                        ) : null}
-                      </div>
+                    <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleAddToCart(item)}
                         disabled={!item.inStock}
-                        className="px-4 py-2 bg-green-600 text-white hover:bg-green-700 transition-colors text-sm font-semibold rounded-xl hover:bg-green-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="flex-1 sm:flex-none px-6 py-2.5 bg-green-600 text-white hover:bg-green-700 transition-colors disabled:bg-gray-400 font-bold rounded-xl text-sm"
                       >
                         Add to Cart
                       </button>
+                      <button
+                        onClick={() => removeItem(item.id)}
+                        className="p-2.5 rounded-xl border border-rose-100 text-rose-500 hover:bg-rose-50 transition-colors"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
                     </div>
-                    <p className={`text-xs mt-1.5 ${textSecondary}`}>
-                      Added {item.addedDate ? new Date(item.addedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recently'}
-                    </p>
                   </div>
                 </div>
               </div>
@@ -324,7 +261,6 @@ const Wishlist = ({ product }) => {
           </div>
         )}
       </div>
-
     </div>
   );
 };

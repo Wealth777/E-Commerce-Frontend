@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { useTheme } from '../../context/ThemeContext';
-import { toast } from 'react-toastify';
 import apiClient from '../../api/apiClient';
 import {
   FaStore,
@@ -15,6 +14,7 @@ import {
   FaArrowLeft,
   FaSpinner
 } from 'react-icons/fa';
+import { useToast } from '../../context/ToastContext';
 
 const AddProduct = () => {
   const [preview, setPreview] = React.useState(null);
@@ -22,6 +22,7 @@ const AddProduct = () => {
   const [dragActive, setDragActive] = React.useState(false);
   const navigate = useNavigate();
   const { isDark } = useTheme();
+  const { showToast } = useToast();
 
   const formik = useFormik({
     initialValues: {
@@ -76,13 +77,12 @@ const AddProduct = () => {
           }
         });
 
-        toast.success('Product added successfully');
+        showToast('Product added successfully', 'success');
         resetForm();
         setPreview(null);
 
       } catch (error) {
-        console.log(error.response?.data || error);
-        toast.error(error.response?.data?.message || 'Failed to add product');
+        showToast(error.response?.data?.message || 'Failed to add product', 'error');
       } finally {
         setLoading(false);
       }

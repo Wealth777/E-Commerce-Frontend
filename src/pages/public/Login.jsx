@@ -5,15 +5,16 @@ import * as Yup from 'yup';
 import { useDispatch, useSelector } from 'react-redux'
 import { loginSuccess } from '../../store/authSlice';
 import { mergeCart } from '../../store/cartActions';
-import { toast } from 'react-toastify';
 import apiClient from '../../api/apiClient';
 import { FiMail, FiLock, FiShoppingBag } from 'react-icons/fi'
 import { FaGoogle, FaFacebook } from 'react-icons/fa'
+import { useToast } from '../../context/ToastContext';
 
 const Login = () => {
   const [loading, setLoading] = React.useState(false)
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { showToast } = useToast();
   const { isAuthenticated } = useSelector((state) => state.auth);
 
   const formik = useFormik({
@@ -46,10 +47,10 @@ const Login = () => {
 
         // dispatch(mergeCart());
 
-        toast.success('Login successful!');
+        showToast('Login successful!', 'success');
         navigate(`/${values.role}/dashboard`);
       } catch (error) {
-        toast.error(error.response?.data?.message || 'Login failed.');
+        showToast(error.response?.data?.message || 'Login failed.', 'error');
       } finally {
         setLoading(false);
       }
@@ -63,7 +64,7 @@ const Login = () => {
   }, [isAuthenticated]);
 
   const handleSocialLogin = (provider) => {
-    toast.success(`${provider} login coming soon`, 'info')
+    showToast(`${provider} login coming soon`, 'info')
   }
 
   return (

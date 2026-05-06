@@ -37,6 +37,10 @@ export const buyerAPI = {
   updateProfile: (data) => apiClient.put('/buyer/profile/me', data),
   getOrders: () => apiClient.get('/buyer/orders'),
   placeOrder: (data) => apiClient.post('/buyer/orders', data),
+  
+  // Refund and Return Requests
+  requestRefund: (orderId, data) => apiClient.post(`/buyer/orders/${orderId}/refund-request`, data),
+  requestReturn: (orderId, data) => apiClient.post(`/buyer/orders/${orderId}/return-request`, data),
   // Add more as needed
 };
 
@@ -48,6 +52,17 @@ export const vendorAPI = {
   updateProduct: (id, data) => apiClient.put(`/vendor/products/${id}`, data),
   deleteProduct: (id) => apiClient.delete(`/vendor/products/${id}`),
   getOrders: () => apiClient.get('/vendor/orders'),
+  
+  // Refund and Return Requests
+  getRefundRequests: () => apiClient.get('/vendor/orders/refund-requests'),
+  getReturnRequests: () => apiClient.get('/vendor/orders/return-requests'),
+  reviewRefundRequest: (orderId, data) => apiClient.patch(`/vendor/orders/${orderId}/refund-request/review`, data),
+  reviewReturnRequest: (orderId, data) => apiClient.patch(`/vendor/orders/${orderId}/return-request/review`, data),
+  
+  // Vendor Details - Public endpoints
+  getVendorDetails: (vendorId) => apiClient.get(`/vendor/details/${vendorId}`),
+  getVendorProducts: (vendorId) => apiClient.get(`/vendor/products/${vendorId}`),
+  getVendorProductsByCategory: (vendorId, category) => apiClient.get(`/vendor/products/${vendorId}/category/${category}`),
   // Add more as needed
 };
 
