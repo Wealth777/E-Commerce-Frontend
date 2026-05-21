@@ -12,12 +12,15 @@ import {
     Save,
     Wallet,
     ShieldCheck,
-    AlertCircle
+    AlertCircle,
+    ArrowLeft
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import apiClient from '../../api/apiClient';
+import { getList, getMessage, getPayload } from '../../utils/apiResponse';
 import { FaSpinner } from 'react-icons/fa6'
 import { useToast } from '../../context/ToastContext';
+import { Link } from 'react-router-dom';
 
 const validationSchema = Yup.object({
     bankName: Yup.string().required('Bank name is required'),
@@ -49,13 +52,9 @@ const Payouts = () => {
 
     const fetchProfile = async () => {
         try {
-            const res = await apiClient.get('/vendor/profile/me', {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem('token')}`
-                }
-            });
+            const res = await apiClient.get('/vendor/profile/me');
 
-            const data = res.data?.data || {};
+            const data = getPayload(res, {});
 
             const prefill = {
                 storeName: data.store?.storeName || '',
@@ -68,7 +67,7 @@ const Payouts = () => {
             setSavedDetails(prefill);
 
         } catch (err) {
-            showToast('Failed to load profile', 'error');
+            showToast(getMessage(err, 'Failed to load profile'), 'error');
         } finally {
             setLoading(false);
         }
@@ -92,9 +91,15 @@ const Payouts = () => {
     const labelClasses = `${textSecondary} block text-sm font-semibold text-gray-700 mb-2`;
     const errorClasses = "flex items-center gap-1 text-xs text-red-500 mt-2 font-medium";
     const iconClasses = "absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none";
+    const secondaryText = isDark ? 'text-gray-400' : 'text-gray-500';
+    const textColorr = isDark ? 'text-white' : 'text-gray-900';
 
     return (
         <div className={`min-h-screen ${bg} py-10 px-4`}>
+            <Link to="/vendor/dashboard" className={`max-w-6xl mx-auto flex items-center gap-2 text-sm mb-4 ${secondaryText} hover:${textColorr}`}>
+                <ArrowLeft className="w-4 h-4" />
+                Back to Dashboard
+            </Link>
             <div className="max-w-6xl mx-auto">
                 {/* Header Section */}
                 <div className="text-center mb-10">
@@ -152,7 +157,7 @@ const Payouts = () => {
                                     try {
                                         setLoading(true);
 
-                                        const res = await apiClient.post('/vendor/payout', values, {
+                                        await apiClient.post('/vendor/payout', values, {
                                             headers: {
                                                 'Content-Type': 'application/json'
                                             }
@@ -166,8 +171,7 @@ const Payouts = () => {
                                         resetForm();
 
                                     } catch (error) {
-                                        console.log(error.response?.data || error);
-                                        toast.error(error.response?.data?.message || 'Failed to save payout details');
+                                        toast.error(getMessage(error, 'Failed to save payout details'));
                                     } finally {
                                         setLoading(false);
                                     }

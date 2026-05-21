@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import apiClient from '../api/apiClient';
+import { getList, getMessage, getPayload } from '../utils/apiResponse';
 
 // Async thunks
 export const fetchVendorDetails = createAsyncThunk(
@@ -7,9 +8,9 @@ export const fetchVendorDetails = createAsyncThunk(
   async (vendorId, { rejectWithValue }) => {
     try {
       const response = await apiClient.get(`/vendor/vendor/details/${vendorId}`);
-      return response.data.data;
+      return getPayload(response, {});
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch vendor details');
+      return rejectWithValue(getMessage(error, 'Failed to fetch vendor details'));
     }
   }
 );
@@ -22,9 +23,9 @@ export const fetchVendorProducts = createAsyncThunk(
         ? `/vendor/vendor/products/${vendorId}/category/${category}`
         : `/vendor/vendor/products/${vendorId}`;
       const response = await apiClient.get(endpoint);
-      return response.data.data.products || [];
+      return getList(response, ['products']);
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch products');
+      return rejectWithValue(getMessage(error, 'Failed to fetch products'));
     }
   }
 );

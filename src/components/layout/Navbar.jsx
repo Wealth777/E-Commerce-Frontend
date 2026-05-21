@@ -14,7 +14,6 @@ import {
 } from 'react-icons/fi';
 import { useTheme } from '../../context/ThemeContext';
 import { logout } from '../../store/authSlice';
-import apiClient from '../../api/apiClient';
 
 const Navbar = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -27,18 +26,12 @@ const Navbar = () => {
     const dispatch = useDispatch();
     const { isDarkMode, toggleTheme } = useTheme();
 
-    const handleLogout = async () => {
-        try {
-            await apiClient.post('/auth/logout');
-            localStorage.setItem('cart', JSON.stringify(items));
-            dispatch(logout());
-            setIsMenuOpen(false);
-            navigate('/');
-        } catch (err) {
-            dispatch(logout());
-            setIsMenuOpen(false);
-            navigate('/');
-        }
+    const handleLogout = () => {
+        localStorage.setItem('cart', JSON.stringify(items));
+        dispatch(logout());
+        setIsMenuOpen(false);
+        setIsProfileMenuOpen(false);
+        navigate('/');
     };
 
     const cartItems = useSelector(state => state.cart.items);
@@ -55,16 +48,18 @@ const Navbar = () => {
         switch (role) {
             case 'founder':
                 return [
-                    { name: 'Founder Dashboard', path: '/founder' },
-                    { name: 'Manage Vendors', path: '/founder/vendors' },
+                    { name: 'Founder Dashboard', path: '/founder/dashboard' },
+                    { name: 'Manage Vendors', path: '/founder/users?role=vendor' },
                     { name: 'Analytics', path: '/founder/analytics' },
-                    { name: 'Settings', path: '/founder/settings' }
+                    { name: 'Manage Buyers', path: '/founder/users?role=buyer' }
                 ];
             case 'vendor':
                 return [
                     { name: 'Vendor Dashboard', path: '/vendor/dashboard' },
                     { name: 'Products', path: '/vendor/products' },
                     { name: 'Orders', path: '/vendor/orders' },
+                    { name: 'Request Refund', path: '/vendor/refund-requests' },
+                    { name: 'Request Return', path: '/vendor/return-requests' },
                     { name: 'Analytics', path: '/vendor/analytics' },
                     { name: 'Payment', path: '/vendor/payment' },
                     { name: 'My Profile', path: '/vendor/profile' },

@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTheme } from "../../context/ThemeContext";
 import apiClient from "../../api/apiClient";
+import { getMessage, getPayload } from "../../utils/apiResponse";
 import { useToast } from "../../context/ToastContext";
 import {
   ArrowLeft,
@@ -38,9 +39,9 @@ export default function VendorOrdersDetails() {
     try {
       setLoading(true);
       const res = await apiClient.get(`/vendor/orders/${orderId}`);
-      setOrder(res.data.data);
+      setOrder(getPayload(res, null));
     } catch (err) {
-      showToast(err.response?.data?.message || "Failed to load order details", 'error');
+      showToast(getMessage(err, "Failed to load order details"), 'error');
     } finally {
       setLoading(false);
     }
@@ -80,7 +81,7 @@ export default function VendorOrdersDetails() {
       showToast("Payment updated", 'success');
       fetchOrder();
     } catch (err) {
-      showToast(err.response?.data?.message || "Payment update failed", 'error');
+      showToast(getMessage(err, "Payment update failed"), 'error');
     } finally {
       setActionLoading("");
     }
@@ -99,7 +100,7 @@ export default function VendorOrdersDetails() {
       showToast("Order confirmed", 'success');
       fetchOrder();
     } catch (err) {
-      showToast(err.response?.data?.message || "Order confirm failed", 'error');
+      showToast(getMessage(err, "Order confirm failed"), 'error');
     } finally {
       setActionLoading("");
     }
@@ -118,13 +119,11 @@ export default function VendorOrdersDetails() {
       showToast("Marked as shipped", 'success');
       fetchOrder();
     } catch (err) {
-      showToast(err.response?.data?.message || "Shipping update failed", 'error');
+      showToast(getMessage(err, "Shipping update failed"), 'error');
     } finally {
       setActionLoading("");
     }
   };
-
-  if (!order?._id) return null;
 
   const openProof = (file) => {
     setActiveProof(file);
@@ -163,6 +162,7 @@ export default function VendorOrdersDetails() {
   const textPrimary = isDark ? "text-gray-100" : "text-gray-900";
   const textSecondary = isDark ? "text-gray-400" : "text-gray-500";
   const textMuted = isDark ? "text-gray-500" : "text-gray-400";
+  const textColor = isDark ? 'text-white' : 'text-gray-900';
 
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -203,11 +203,11 @@ export default function VendorOrdersDetails() {
       {/* Header */}
       <div className={`sticky top-0 z-30 ${isDark ? "bg-[#0a0a0f]/80" : "bg-gray-50/80"} backdrop-blur-xl border-b ${cardBorder}`}>
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link to="/vendor/orders" className={`flex items-center gap-2 text-sm font-medium ${textSecondary} hover:${textPrimary}`}>
+          <Link to="/vendor/orders" className={`flex items-center gap-2 text-sm font-medium ${textSecondary} hover:${textColor}`}>
             <ArrowLeft className="w-4 h-4" /> Back to Orders
           </Link>
           <button onClick={copyOrderId} className={`flex items-center gap-1.5 text-xs font-mono px-3 py-1.5 rounded-lg border ${cardBorder} ${textMuted}`}>
-            {copied ? "Copied!" : `#${order._id.slice(-8).toUpperCase()}`}
+            {copied ? "Copied!" : `#${order._id?.slice(-8).toUpperCase()}`}
             <Copy className="w-3 h-3" />
           </button>
         </div>
@@ -297,12 +297,14 @@ export default function VendorOrdersDetails() {
                 {order.items?.map((item, idx) => (
                   <div key={idx} className="p-6 flex gap-4 items-center">
                     <img
-                      src={item.productId?.image || "/placeholder.png"}
-                      alt={item.productId?.name}
+                      src={item.image || item.productId?.image || "/placeholder.png"}
+                      alt={item.name || item.productId?.name || "Product"}
                       className="w-16 h-16 rounded-lg object-cover border border-inherit"
                     />
                     <div className="flex-1">
-                      <h4 className={`font-semibold ${textPrimary}`}>{item.productId?.name}</h4>
+                      <h4 className={`font-semibold ${textPrimary}`}>
+                        {item.name || item.productId?.name || "Product"}
+                      </h4>
                       <p className={`text-xs ${textMuted}`}>Qty: {item.quantity}</p>
                     </div>
                     <p className={`font-bold ${textPrimary}`}>₦{(item.price * item.quantity).toLocaleString()}</p>
@@ -315,8 +317,7 @@ export default function VendorOrdersDetails() {
             <motion.div variants={itemVariants} className={`${cardBg} border ${cardBorder} rounded-2xl p-6`}>
               <h3 className={`text-xs font-bold uppercase ${textMuted} mb-3`}>Shipping Address</h3>
               <p className={`text-sm ${textPrimary} leading-relaxed`}>
-                {order.delivery?.address}<br />
-                {order.delivery?.city}, {order.delivery?.state}
+                {order.delivery?.address}, {order.delivery?.state}
               </p>
             </motion.div>
 

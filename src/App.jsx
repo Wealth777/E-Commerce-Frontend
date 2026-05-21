@@ -1,13 +1,9 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Provider } from 'react-redux';
-import store from './store/index';
 import { ThemeProvider } from './context/ThemeContext';
 import './App.css';
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchUser } from './store/authSlice';
-// import { fetchCart } from './store/cartActions';
-import { mergeCart } from './store/cartActions';
+import { fetchUser, logout } from './store/authSlice';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -64,24 +60,20 @@ function App() {
 
   useEffect(() => {
     dispatch(fetchUser());
-  }, []);
 
-  // useEffect(() => {
-  //   if (isAuthenticated) {
-  //     dispatch(fetchCart());
-  //   }
-  // }, [isAuthenticated]);
+    const handleAuthLogout = () => {
+      dispatch(logout());
+    };
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      dispatch(mergeCart());
-    }
-  }, [isAuthenticated]);
+    window.addEventListener('auth:logout', handleAuthLogout);
 
+    return () => {
+      window.removeEventListener('auth:logout', handleAuthLogout);
+    };
+  }, [dispatch]);
 
   return (
-    <Provider store={store}>
-      <ThemeProvider>
+    <ThemeProvider>
         <Router>
           <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
             <Navbar />
@@ -276,8 +268,7 @@ function App() {
           </div>
         </Router>
         <CartSync />
-      </ThemeProvider>
-    </Provider>
+    </ThemeProvider>
   );
 }
 

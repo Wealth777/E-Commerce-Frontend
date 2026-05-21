@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { FaEdit, FaSave, FaTimes, FaCamera, FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaStore, FaLock, FaGlobe, FaBell, FaFacebook, FaInstagram, FaTwitter, FaImage, FaChevronDown } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import apiClient from '../../api/apiClient';
+import { getList, getMessage, getPayload } from '../../utils/apiResponse';
 import { useTheme } from '../../context/ThemeContext';
 import { useToast } from '../../context/ToastContext';
 import Loading from '../../components/layout/Loding';
 import { Link } from 'react-router-dom';
-import { PhoneCall } from 'lucide-react';
+import { ArrowLeft, PhoneCall } from 'lucide-react';
 
 // West African countries
 const WEST_AFRICAN_COUNTRIES = [
@@ -86,13 +87,9 @@ const Profile = () => {
 
     const fetchProfile = async () => {
         try {
-            const res = await apiClient.get('/vendor/profile/me', {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem('token')}`
-                }
-            });
+            const res = await apiClient.get('/vendor/profile/me');
 
-            const data = res.data?.data || {};
+            const data = getPayload(res, {});
 
             setProfile(data);
 
@@ -135,7 +132,7 @@ const Profile = () => {
             });
 
         } catch (err) {
-            showToast('Failed to load profile', 'error');
+            showToast(getMessage(err, 'Failed to load profile'), 'error');
         } finally {
             setLoading(false);
         }
@@ -187,11 +184,11 @@ const Profile = () => {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
-            setProfile(res.data?.data);
+            setProfile(getPayload(res, {}));
             setEditing(false);
             showToast('Profile updated successfully!', 'success');
         } catch (err) {
-            showToast('Update failed. Please try again.', 'error');
+            showToast(getMessage(err, 'Update failed. Please try again.'), 'error');
         } finally {
             setSaving(false);
         }
@@ -222,6 +219,7 @@ const Profile = () => {
     const border = isDark ? 'border-gray-700' : 'border-gray-200';
     const inputBg = isDark ? 'bg-gray-700' : 'bg-gray-50';
     const hoverBg = isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-50';
+    const secondaryText = isDark ? 'text-gray-400' : 'text-gray-500';
 
     if (loading) {
         return (
@@ -230,10 +228,13 @@ const Profile = () => {
             </div>
         );
     }
-
     return (
         <div className={`min-h-screen ${bg} p-4 md:p-8`}>
             <div className="max-w-5xl mx-auto">
+                <Link to="/vendor/dashboard" className={`flex items-center gap-2 text-sm mb-4 ${secondaryText} hover:${text}`}>
+                    <ArrowLeft className="w-4 h-4" />
+                    Back to Dashboard
+                </Link>
                 {/* Header */}
                 <div className={`flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8`}>
                     <div>

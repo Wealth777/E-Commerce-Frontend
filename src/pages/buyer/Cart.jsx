@@ -115,7 +115,6 @@ const Cart = () => {
   const updateQty = (id, q) => {
     if (q <= 0) {
       dispatch(removeFromCart(id));
-      // toast.error("Item removed from cart");
     } else {
       dispatch(updateQuantity({ id, quantity: q }));
     }
@@ -123,7 +122,6 @@ const Cart = () => {
 
   const remove = (id) => {
     dispatch(removeFromCart(id));
-    // toast.error("Item removed from cart");
   };
 
   return (
@@ -140,7 +138,7 @@ const Cart = () => {
         <div className="mb-8 flex items-center justify-between">
           <button
             className={`group inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition ${isDark ? "bg-zinc-900/70 hover:bg-zinc-800 text-zinc-300 ring-1 ring-white/10" : "bg-white/70 hover:bg-white text-zinc-600 ring-1 ring-zinc-900/5"}`}
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/products')}
           >
             <Icon.ArrowLeft className="h-4 w-4 transition group-hover:-translate-x-0.5" />
             Back

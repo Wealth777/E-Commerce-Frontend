@@ -3,9 +3,10 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useFormik } from 'formik'
 import * as Yup from 'yup';
 import { useDispatch, useSelector } from 'react-redux'
-import { loginSuccess } from '../../store/authSlice';
+import { loginFailure, loginStart, loginSuccess } from '../../store/authSlice';
 import { mergeCart } from '../../store/cartActions';
 import apiClient from '../../api/apiClient';
+import { getMessage, getTokenFromResponse, getUserFromResponse } from '../../utils/apiResponse';
 import { FiMail, FiLock, FiShoppingBag } from 'react-icons/fi'
 import { FaGoogle, FaFacebook } from 'react-icons/fa'
 import { useToast } from '../../context/ToastContext';
@@ -31,17 +32,24 @@ const Login = () => {
 
     onSubmit: async (values) => {
       setLoading(true)
+      dispatch(loginStart());
       try {
         const response = await apiClient.post(`/${values.role}/auth/login`, {
           email: values.email,
           password: values.password,
         });
 
-        // console.log(localStorage.getItem('token'));
+
+        const token = getTokenFromResponse(response);
+        const user = getUserFromResponse(response);
+
+        if (!token) {
+          throw new Error('Login succeeded but no token was returned by the server.');
+        }
 
         dispatch(loginSuccess({
-          user: response.data.data,
-          token: response.data.token,
+          user,
+          token,
           role: values.role,
         }));
 
@@ -50,7 +58,9 @@ const Login = () => {
         showToast('Login successful!', 'success');
         navigate(`/${values.role}/dashboard`);
       } catch (error) {
-        showToast(error.response?.data?.message || 'Login failed.', 'error');
+        const message = getMessage(error, 'Login failed.');
+        dispatch(loginFailure(message));
+        showToast(message, 'error');
       } finally {
         setLoading(false);
       }
@@ -61,7 +71,7 @@ const Login = () => {
     if (isAuthenticated) {
       dispatch(mergeCart());
     }
-  }, [isAuthenticated]);
+  }, [dispatch, isAuthenticated]);
 
   const handleSocialLogin = (provider) => {
     showToast(`${provider} login coming soon`, 'info')

@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { useTheme } from '../../context/ThemeContext';
 import { useToast } from '../../context/ToastContext';
 import apiClient from '../../api/apiClient';
+import { getList, getMessage, getPayload } from '../../utils/apiResponse';
 import {
   Package,
   ShoppingCart,
@@ -34,12 +35,11 @@ const VendorDashboard = () => {
           apiClient.get('/vendor/activity'),
         ]);
 
-        setProducts(productsRes.data?.data || []);
-        setOrders(ordersRes.data?.data || []);
-        setActivity((activityRes.data?.data || []).slice(0, 3));
+        setProducts(getList(productsRes, ['products']));
+        setOrders(getList(ordersRes, ['orders']));
+        setActivity(getList(activityRes, ['activity', 'activities']).slice(0, 3));
       } catch (error) {
-        // console.error('Failed to load vendor dashboard stats', error);
-        showToast('Failed to load dashboard stats', 'error');
+        showToast(getMessage(error, 'Failed to load dashboard stats'), 'error');
       } finally {
         setLoadingStats(false);
       }
@@ -128,6 +128,14 @@ const VendorDashboard = () => {
       href: '/vendor/refund-requests',
       color: 'text-yellow-600',
       bgColor: 'bg-yellow-50'
+    },
+    {
+      title: 'View Request Refund',
+      description: 'Check customer refund requests',
+      icon: RotateCcw,
+      href: '/vendor/refund-requests',
+      color: 'text-cyan-600',
+      bgColor: 'bg-cyan-50'
     },
     {
       title: 'Analytics',

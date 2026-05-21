@@ -1,67 +1,73 @@
-import apiClient from "../api/apiClient";
+import apiClient from '../api/apiClient';
 import {
   setCart,
   addLocal,
   removeLocal,
   updateLocal,
-} from "./cartSlice";
-import { toast } from "react-toastify";
+} from './cartSlice';
+import { toast } from 'react-toastify';
+import { getCartItems, getMessage } from '../utils/apiResponse';
 
 const saveLocalCart = (items) => {
-  localStorage.setItem("cart", JSON.stringify(items));
+  localStorage.setItem('cart', JSON.stringify(items));
+};
+
+const normalizeCartItem = (item) => ({
+  id: item.id || item._id || item.productId || item.product?._id,
+  _id: item._id || item.product?._id || item.id,
+  name: item.name || item.product?.name,
+  price: item.price || item.product?.price,
+  image: item.image || item.product?.image,
+  quantity: item.quantity || 1,
+  vendorId: item.vendorId || item.vendor?._id || item.product?.vendor?._id,
+  vendorName: item.vendorName || item.vendor?.businessName || item.vendor?.fullName || item.product?.vendor?.businessName,
+  vendorBankName: item.vendorBankName || item.vendor?.bankName || item.product?.vendor?.bankName,
+  vendorAccountName: item.vendorAccountName || item.vendor?.accountName || item.product?.vendor?.accountName,
+  vendorAccountNumber: item.vendorAccountNumber || item.vendor?.accountNumber || item.product?.vendor?.accountNumber,
+});
+
+const normalizeCartItems = (response) => getCartItems(response).map(normalizeCartItem).filter((item) => item.id);
+
+const refreshCart = async (dispatch) => {
+  const res = await apiClient.get('/buyer/cart');
+  const items = normalizeCartItems(res);
+  dispatch(setCart(items));
+  return items;
 };
 
 export const addToCart = (product) => async (dispatch, getState) => {
   const { auth, cart } = getState();
+  const productId = product._id || product.id;
 
   const payload = {
     ...product,
-    id: product._id,
+    id: productId,
     quantity: product.quantity || 1,
   };
 
-  if (!auth.user) {
+  if (!auth.isAuthenticated) {
     dispatch(addLocal(payload));
     saveLocalCart([...cart.items, payload]);
     return;
   }
 
   try {
-    await apiClient.post("/buyer/cart/add", {
-      productId: payload.id,
+    await apiClient.post('/buyer/cart/add', {
+      productId,
       quantity: payload.quantity,
     });
 
-    const res = await apiClient.get("/buyer/cart");
-
-    const backendItems = res.data.data.items.map((i) => ({
-      id: i.id,
-      name: i.name,
-      price: i.price,
-      image: i.image,
-      quantity: i.quantity,
-
-      vendorId: i.vendorId,
-      vendorName: i.vendorName,
-      vendorBankName: i.vendorBankName,
-      vendorAccountName: i.vendorAccountName,
-      vendorAccountNumber: i.vendorAccountNumber,
-    }));
-
-    dispatch(setCart(backendItems));
-
-    toast.success('Cart added successfully')
-  } catch (err) {
-    console.log(err.message)
-    toast.error("Failed to add to cart");
-    return
+    await refreshCart(dispatch);
+    toast.success('Cart added successfully');
+  } catch (error) {
+    toast.error(getMessage(error, 'Failed to add to cart'));
   }
 };
 
 export const removeFromCart = (id) => async (dispatch, getState) => {
   const { auth, cart } = getState();
 
-  if (!auth.user) {
+  if (!auth.isAuthenticated) {
     const updated = cart.items.filter((item) => item.id !== id);
     dispatch(removeLocal(id));
     saveLocalCart(updated);
@@ -70,35 +76,17 @@ export const removeFromCart = (id) => async (dispatch, getState) => {
 
   try {
     await apiClient.delete(`/buyer/cart/${id}`);
-
-    const res = await apiClient.get("/buyer/cart");
-
-    const backendItems = res.data.data.items.map((i) => ({
-      id: i.id,
-      name: i.name,
-      price: i.price,
-      image: i.image,
-      quantity: i.quantity,
-      
-      vendorId: i.vendorId,
-      vendorName: i.vendorName,
-      vendorBankName: i.vendorBankName,
-      vendorAccountName: i.vendorAccountName,
-      vendorAccountNumber: i.vendorAccountNumber,
-    }));
-
-    dispatch(setCart(backendItems));
-    toast.success("Cart remove successfully");
-  } catch (err) {
-    toast.error("Failed to remove cart");
-    return
+    await refreshCart(dispatch);
+    toast.success('Cart removed successfully');
+  } catch (error) {
+    toast.error(getMessage(error, 'Failed to remove cart'));
   }
 };
 
-export const updateQuantity = ({ id, quantity },) => async (dispatch, getState) => {
+export const updateQuantity = ({ id, quantity }) => async (dispatch, getState) => {
   const { auth, cart } = getState();
 
-  if (!auth.user) {
+  if (!auth.isAuthenticated) {
     const updated = cart.items.map((item) =>
       item.id === id ? { ...item, quantity } : item
     );
@@ -109,98 +97,46 @@ export const updateQuantity = ({ id, quantity },) => async (dispatch, getState) 
   }
 
   try {
-    await apiClient.put("/buyer/cart/update", {
+    await apiClient.put('/buyer/cart/update', {
       productId: id,
       quantity,
     });
 
-    const res = await apiClient.get("/buyer/cart");
-
-    const backendItems = res.data.data.items.map((i) => ({
-      id: i.id,
-      name: i.name,
-      price: i.price,
-      image: i.image,
-      quantity: i.quantity,
-      
-      vendorId: i.vendorId,
-      vendorName: i.vendorName,
-      vendorBankName: i.vendorBankName,
-      vendorAccountName: i.vendorAccountName,
-      vendorAccountNumber: i.vendorAccountNumber,
-    }));
-
-    dispatch(setCart(backendItems));
-    toast.success("Cart updated successfully");
-  } catch (err) {
-    toast.error("Failed to update cart");
-    return
+    await refreshCart(dispatch);
+    toast.success('Cart updated successfully');
+  } catch (error) {
+    toast.error(getMessage(error, 'Failed to update cart'));
   }
 };
 
 export const mergeCart = () => async (dispatch, getState) => {
   const { auth, cart } = getState();
 
-  if (!auth.user) return;
+  if (!auth.isAuthenticated) return;
 
   try {
     for (const item of cart.items) {
-      await apiClient.post("/buyer/cart/add", {
-        productId: item.id,
-        quantity: item.quantity,
+      await apiClient.post('/buyer/cart/add', {
+        productId: item.id || item._id,
+        quantity: item.quantity || 1,
       });
     }
 
-    localStorage.removeItem("cart");
-
-    const res = await apiClient.get("/buyer/cart");
-
-    const backendItems = res.data.data.items.map((i) => ({
-      id: i.id,
-      name: i.name,
-      price: i.price,
-      image: i.image,
-      quantity: i.quantity,
-      
-      vendorId: i.vendorId,
-      vendorName: i.vendorName,
-      vendorBankName: i.vendorBankName,
-      vendorAccountName: i.vendorAccountName,
-      vendorAccountNumber: i.vendorAccountNumber,
-    }));
-
-    dispatch(setCart(backendItems));
-  } catch (err) {
-    toast.error('Failed merging cart')
-    return
+    localStorage.removeItem('cart');
+    await refreshCart(dispatch);
+  } catch (error) {
+    toast.error(getMessage(error, 'Failed merging cart'));
   }
 };
 
 export const fetchCart = () => async (dispatch, getState) => {
   const { auth } = getState();
 
-  if (!auth.user) return;
+  if (!auth.isAuthenticated) return;
 
   try {
-    const res = await apiClient.get("/buyer/cart");
-
-    const backendItems = res.data.data.items.map((i) => ({
-      id: i.id,
-      name: i.name,
-      price: i.price,
-      image: i.image,
-      quantity: i.quantity,
-      
-      vendorId: i.vendorId,
-      vendorName: i.vendorName,
-      vendorBankName: i.vendorBankName,
-      vendorAccountName: i.vendorAccountName,
-      vendorAccountNumber: i.vendorAccountNumber,
-    }));
-
-    dispatch(setCart(backendItems));
-  } catch (err) {
-    toast.error('Failed fetching cart')
-    return
+    await refreshCart(dispatch);
+  } catch (error) {
+    toast.error(getMessage(error, 'Failed fetching cart'));
   }
 };

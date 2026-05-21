@@ -5,6 +5,7 @@ import {
   FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaSlidersH, FaSort, FaCheckCircle
 } from 'react-icons/fa';
 import apiClient from '../../api/apiClient';
+import { getList, getMessage, getPayload } from '../../utils/apiResponse';
 import { useToast } from '../../context/ToastContext';
 import { useTheme } from '../../context/ThemeContext';
 import Loading from '../../components/layout/Loding';
@@ -40,22 +41,20 @@ const VendorDetails = () => {
     try {
       setLoading(true);
       const response = await apiClient.get(`/vendor/vendor/details/${vendorId}`);
-      if (response.data.success) {
-        const vendor = response.data.vendorInfo;
-        // const vendorProducts = response.data.products || [];
+      const payload = getPayload(response, {});
+      const vendor = payload.vendorInfo || payload.vendor || payload;
+      const vendorProducts = (payload.products || []).map((product) => ({
+        ...product,
+        _id: product._id || product.id,
+        id: product.id || product._id,
+      }));
 
-        const vendorProducts = (response.data.products || []).map((product) => ({
-          ...product,
-          _id: product._id || product.id,
-          id: product.id || product._id,
-        }));
-        setVendorInfo(vendor);
-        setProducts(vendorProducts);
-        const uniqueCategories = [...new Set(vendorProducts.map(p => p.category).filter(Boolean))];
-        setCategories(uniqueCategories);
-      }
+      setVendorInfo(vendor);
+      setProducts(vendorProducts);
+      const uniqueCategories = [...new Set(vendorProducts.map(p => p.category).filter(Boolean))];
+      setCategories(uniqueCategories);
     } catch (error) {
-      showToast(error.response?.data?.message || 'Failed to load vendor details', 'error');
+      showToast(getMessage(error, 'Failed to load vendor details'), 'error');
     } finally {
       setLoading(false);
     }
@@ -69,17 +68,16 @@ const VendorDetails = () => {
         endpoint = `/vendor/vendor/products/${vendorId}/category/${encodeURIComponent(selectedCategory)}`;
       }
       const response = await apiClient.get(endpoint);
-      if (response.data.success) {
-        const vendorProducts = (response.data.products || []).map((product) => ({
-          ...product,
-          _id: product._id || product.id,
-          id: product.id || product._id,
-        }));
+      const payload = getPayload(response, {});
+      const vendorProducts = (payload.products || (Array.isArray(payload) ? payload : [])).map((product) => ({
+        ...product,
+        _id: product._id || product.id,
+        id: product.id || product._id,
+      }));
 
-        setProducts(vendorProducts);
-      }
+      setProducts(vendorProducts);
     } catch (error) {
-      showToast(error.response?.data?.message || 'Failed to load products', 'error');
+      showToast(getMessage(error, 'Failed to load products'), 'error');
     } finally {
       setProductsLoading(false);
     }

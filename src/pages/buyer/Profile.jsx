@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { FaEdit, FaSave, FaTimes, FaCamera, FaUser, FaEnvelope, FaPhone, FaGlobe, FaBell, FaImage, FaChevronDown } from 'react-icons/fa';
 import { useToast } from '../../context/ToastContext';
 import apiClient from '../../api/apiClient';
+import { getList, getMessage, getPayload } from '../../utils/apiResponse';
 import { useTheme } from '../../context/ThemeContext';
-import { PhoneCall, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, PhoneCall, ShoppingBag } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Loading from '../../components/layout/Loding';
 
@@ -63,7 +64,7 @@ const Profile = () => {
     email: '',
     phone: '',
     preferredLanguage: '',
-    notificationPreferences: 'email',
+    notificationPreference: 'email',
   });
 
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
@@ -75,13 +76,9 @@ const Profile = () => {
 
   const fetchProfile = async () => {
     try {
-      const res = await apiClient.get('/buyer/profile/me', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const res = await apiClient.get('/buyer/profile/me');
 
-      const data = res.data?.data || {};
+      const data = getPayload(res, {});
 
       setProfile(data);
 
@@ -104,11 +101,11 @@ const Profile = () => {
         // preferences
         preferredLanguage: data.preferences?.preferredLanguage || '',
         notificationPreference:
-          data.preferences?.notificationPreferences || 'email',
+          data.preferences?.notificationPreference || 'email',
       });
 
     } catch (err) {
-      showToast('Failed to load profile', 'error');
+      showToast(getMessage(err, 'Failed to load profile'), 'error');
     } finally {
       setLoading(false);
     }
@@ -138,7 +135,7 @@ const Profile = () => {
       formDataObj.append('email', formData.email);
       formDataObj.append('phoneNo', formData.phone);
       formDataObj.append('preferredLanguage', formData.preferredLanguage);
-      formDataObj.append('notificationPreferences', formData.notificationPreferences);
+      formDataObj.append('notificationPreference', formData.notificationPreference);
 
       // Append images
       if (formData.profilePhotoFile) formDataObj.append('profilePhoto', formData.profilePhotoFile);
@@ -147,11 +144,11 @@ const Profile = () => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      setProfile(res.data?.data);
+      setProfile(getPayload(res, {}));
       setEditing(false);
       showToast('Profile updated successfully!', 'success');
     } catch (err) {
-      showToast('Update failed. Please try again.', 'error');
+      showToast(getMessage(err, 'Update failed. Please try again.'), 'error');
     } finally {
       setSaving(false);
     }
@@ -181,7 +178,8 @@ const Profile = () => {
   const border = isDark ? 'border-gray-700' : 'border-gray-200';
   const inputBg = isDark ? 'bg-gray-700' : 'bg-gray-50';
   const hoverBg = isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-50';
-  const textColor = isDark ? 'text-white' : 'text-gray-900';
+  const secondaryTextt = isDark ? 'text-gray-400' : 'text-gray-500';
+  const textColorr = isDark ? 'text-white' : 'text-gray-900';
 
   if (loading) {
     return (
@@ -194,6 +192,10 @@ const Profile = () => {
   return (
     <div className={`min-h-screen ${bg} p-4 md:p-8`}>
       <div className="max-w-5xl mx-auto">
+        <Link to="/buyer/dashboard" className={`flex max-w-5xl mx-auto items-center gap-2 text-sm mb-4 pt-4 pb-4 ${secondaryTextt} hover:${textColorr}`}>
+        <ArrowLeft className="w-4 h-4" />
+        Back to Dashboard
+      </Link>
         {/* Header */}
         <div className={`flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8`}>
           <div>
@@ -470,7 +472,7 @@ const Profile = () => {
                       <button
                         key={option}
                         type="button"
-                        onClick={() => editing && setFormData(prev => ({ ...prev, notificationPreferences: option }))}
+                        onClick={() => editing && setFormData(prev => ({ ...prev, notificationPreference: option }))}
                         disabled={!editing}
                         className={`px-4 py-2 rounded-lg border ${border} transition ${formData.notificationPreference === option
                           ? 'bg-blue-600 text-white border-blue-600'

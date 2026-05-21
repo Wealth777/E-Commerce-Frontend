@@ -6,6 +6,7 @@ import ProductCard from '../../components/cards/ProductCard';
 import CategoryCard from '../../components/cards/CategoryCard';
 import { useTheme } from '../../context/ThemeContext';
 import apiClient from '../../api/apiClient';
+import { getList, getMessage, getPayload } from '../../utils/apiResponse';
 import { useToast } from '../../context/ToastContext';
 
 const Home = () => {
@@ -27,11 +28,11 @@ const Home = () => {
   const fetchFeaturedProducts = async () => {
     try {
       const response = await apiClient.get('/vendor/product/all');
-      const featured = response.data.products?.slice(0, 6) || [];
-      setFeaturedProducts(featured);
-      dispatch(setProducts(response.data.products || []));
+      const products = getList(response, ['products']);
+      setFeaturedProducts(products.slice(0, 6));
+      dispatch(setProducts(products));
     } catch (error) {
-      showToast('Failed to load featured products', 'error');
+      showToast(getMessage(error, 'Failed to load featured products'), 'error');
     }
   };
 

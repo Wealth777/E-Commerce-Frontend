@@ -4,6 +4,7 @@ import { FaTrash, FaBan } from 'react-icons/fa';
 import { useTheme } from '../../context/ThemeContext';
 import { toast } from 'react-toastify';
 import apiClient from '../../api/apiClient';
+import { getList, getMessage } from '../../utils/apiResponse';
 
 const Users = () => {
   const { isDark } = useTheme();
@@ -19,9 +20,9 @@ const Users = () => {
   const fetchUsers = async () => {
     try {
       const response = await apiClient.get(`/founder/users?role=${role}`);
-      setUsers(response.data.users || []);
+      setUsers(getList(response, ['users']));
     } catch (error) {
-      toast.error('Failed to load users');
+      toast.error(getMessage(error, 'Failed to load users'));
     } finally {
       setLoading(false);
     }

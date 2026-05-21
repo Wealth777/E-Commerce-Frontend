@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { FaTimes, FaStar, FaMapMarkerAlt, FaPhone, FaEnvelope } from 'react-icons/fa';
 import apiClient from '../../api/apiClient';
+import { getList, getMessage, getPayload } from '../../utils/apiResponse';
 import { useToast } from '../../context/ToastContext';
 import { useTheme } from '../../context/ThemeContext';
 import Loading from '../../components/layout/Loding';
@@ -21,13 +22,11 @@ const VendorDetailsModal = ({ vendorId, isOpen, onClose }) => {
       setLoading(true);
       const response = await apiClient.get(`/vendor/vendor/details/${vendorId}`);
       
-      if (response.data.success) {
-        setVendorInfo(response.data.data.vendorInfo);
-        setProducts((response.data.data.products || []).slice(0, 6)); // Show first 6 products
-      }
+      const payload = getPayload(response, {});
+      setVendorInfo(payload.vendorInfo || payload.vendor || payload);
+      setProducts((payload.products || []).slice(0, 6));
     } catch (error) {
-      console.error('Failed to fetch vendor details:', error);
-      showToast(error.response?.data?.message || 'Failed to load vendor details', 'error');
+      showToast(getMessage(error, 'Failed to load vendor details'), 'error');
     } finally {
       setLoading(false);
     }

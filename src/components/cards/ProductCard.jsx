@@ -6,6 +6,7 @@ import { addToCart } from '../../store/cartActions';
 import { toast } from 'react-toastify';
 import { FiHeart, FiShoppingCart } from 'react-icons/fi';
 import apiClient from '../../api/apiClient';
+import { getMessage } from '../../utils/apiResponse';
 import { useToast } from '../../context/ToastContext';
 
 const ProductCard = ({ product }) => {
@@ -47,8 +48,8 @@ const ProductCard = ({ product }) => {
         setIsFavorite(false);
         showToast('Removed from wishlist', 'success');
       }
-    } catch {
-      showToast('Wishlist action failed', 'error');
+    } catch (error) {
+      showToast(getMessage(error, 'Wishlist action failed'), 'error');
     }
 
 

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from "framer-motion";
 import { useTheme } from "../../context/ThemeContext";
 import apiClient from "../../api/apiClient";
+import { getMessage, getPayload } from "../../utils/apiResponse";
 import { useToast } from "../../context/ToastContext";
 import {
   ArrowLeft,
@@ -64,9 +65,9 @@ export default function OrdersDetails() {
     try {
       setLoading(true);
       const res = await apiClient.get(`/buyer/orders/${orderId}`);
-      setOrder(res.data.data);
+      setOrder(getPayload(res, null));
     } catch (err) {
-      showToast("Failed to load order details", 'error');
+      showToast(getMessage(err, "Failed to load order details"), 'error');
     } finally {
       setLoading(false);
     }
@@ -83,7 +84,7 @@ export default function OrdersDetails() {
       showToast("Order marked as delivered", 'success');
       fetchOrder();
     } catch (err) {
-      showToast("Action Failed", 'error');
+      showToast(getMessage(err, "Action failed"), 'error');
     } finally {
       setActionLoading("");
     }
@@ -100,32 +101,107 @@ export default function OrdersDetails() {
       showToast("Order cancelled", 'success');
       fetchOrder();
     } catch (err) {
-      showToast("Action failed", 'error');
+      showToast(getMessage(err, "Action failed"), 'error');
     } finally {
       setActionLoading("");
     }
   };
 
   // Helper functions for refund/return
+  const hasActiveRefund = () => {
+    const refund = order?.refundRequest;
+
+    return Boolean(
+      refund?.requested &&
+      [
+        'pending_review',
+        'approved',
+        'processing',
+        'refunded',
+        'completed',
+      ].includes(refund.status)
+    );
+  };
+
+  const hasActiveReturn = () => {
+    const returnReq = order?.returnRequest;
+
+    return Boolean(
+      returnReq?.requested &&
+      [
+        'pending_review',
+        'approved',
+        'buyer_shipping',
+        'returned',
+        'inspection',
+        'completed',
+      ].includes(returnReq.status)
+    );
+  };
+
+  const canRefundReturnedOrder = () => {
+    const returnReq = order?.returnRequest;
+
+    if (!returnReq) return false;
+
+    return ['approved', 'returned', 'completed'].includes(
+      returnReq.status
+    );
+  };
+
   const canRequestRefund = () => {
     if (!order) return false;
-    if (order.status !== 'cancelled') return false;
-    if (order.cancelledBy?.role !== 'buyer') return false;
-    
-    // Check if already has pending/approved/completed refund request
-    const refund = order.refundRequest;
-    if (refund && ['pending', 'approved', 'completed'].includes(refund.status)) return false;
-    return true;
+
+    if (hasActiveRefund()) return false;
+
+    // cancelled order refund
+    if (
+      order.status === 'cancelled' &&
+      order.cancelledBy?.role === 'buyer'
+    ) {
+      return true;
+    }
+
+    // refund after successful return
+    if (canRefundReturnedOrder()) {
+      return true;
+    }
+
+    return false;
   };
 
   const canRequestReturn = () => {
     if (!order) return false;
-    if (order.status !== 'delivered') return false;
-    
-    // Check if already has pending/approved/completed return request
-    const returnReq = order.returnRequest;
-    if (returnReq && ['pending', 'approved', 'completed'].includes(returnReq.status)) return false;
-    return true;
+    if (order.status !== "delivered") return false;
+    if (hasActiveReturn()) return false;
+
+    const deliveredAt = order.deliveredAt || order.updatedAt;
+
+    const deadline = new Date(deliveredAt).getTime() + 72 * 60 * 60 * 1000;
+
+    return Date.now() <= deadline;
+  };
+
+  const getRequestStatusStyle = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'completed':
+      case 'refunded':
+        return 'text-emerald-500';
+
+      case 'approved':
+      case 'returned':
+        return 'text-blue-500';
+
+      case 'processing':
+      case 'inspection':
+        return 'text-violet-500';
+
+      case 'rejected':
+        return 'text-red-500';
+
+      default:
+        return 'text-amber-500';
+    }
   };
 
   const openRefundModal = () => {
@@ -452,69 +528,136 @@ export default function OrdersDetails() {
             </motion.div>
 
             {/* Refund/Return Requests Status */}
-            {(order.refundRequest || order.returnRequest) && (
+            {(order.refundRequest?.requested || order.returnRequest?.requested) && (
               <div className="space-y-4">
-                {/* Refund Request Status */}
-                {order.refundRequest && (
-                  <motion.div variants={itemVariants} className={`${cardBg} border ${cardBorder} rounded-2xl p-6`}>
+
+                {/* RETURN REQUEST */}
+                {order.returnRequest?.requested && (
+                  <motion.div
+                    variants={itemVariants}
+                    className={`${cardBg} border ${cardBorder} rounded-2xl p-6`}
+                  >
                     <div className="flex items-start gap-3 mb-4">
-                      <RotateCcw className="w-5 h-5 text-orange-500 mt-0.5 flex-shrink-0" />
+                      <FileCheck className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
+
                       <div className="flex-1">
-                        <h4 className={`text-sm font-bold ${textPrimary}`}>Refund Request</h4>
-                        <p className={`text-xs ${textSecondary} mt-1`}>Status: <span className={`font-semibold capitalize ${
-                          order.refundRequest.status === 'completed' ? 'text-emerald-500' :
-                          order.refundRequest.status === 'approved' ? 'text-blue-500' :
-                          order.refundRequest.status === 'rejected' ? 'text-red-500' :
-                          'text-amber-500'
-                        }`}>{order.refundRequest.status}</span></p>
+                        <h4 className={`text-sm font-bold ${textPrimary}`}>
+                          Return Request
+                        </h4>
+
+                        <p className={`text-xs ${textSecondary} mt-1`}>
+                          Status:
+                          <span
+                            className={`ml-1 font-semibold capitalize ${getRequestStatusStyle(order.returnRequest?.status)}`}
+                          >
+                            {order.returnRequest?.status || 'pending'}
+                          </span>
+                        </p>
                       </div>
                     </div>
+
                     <div className={`space-y-2 text-xs ${textSecondary}`}>
-                      <p><strong>Reason:</strong> {order.refundRequest.reason}</p>
-                      {order.refundRequest.details && (
-                        <p><strong>Details:</strong> {order.refundRequest.details}</p>
-                      )}
-                      <p><strong>Requested:</strong> {new Date(order.refundRequest.requestedAt).toLocaleDateString()}</p>
-                      {order.refundRequest.reviewedAt && (
-                        <p><strong>Reviewed:</strong> {new Date(order.refundRequest.reviewedAt).toLocaleDateString()}</p>
-                      )}
-                      {order.refundRequest.vendorResponse && (
-                        <p className={`${isDark ? 'bg-gray-900' : 'bg-gray-50'} p-2 rounded mt-2`}>
-                          <strong>Vendor Response:</strong> {order.refundRequest.vendorResponse}
+                      <p>
+                        <strong>Reason:</strong>{' '}
+                        {order.returnRequest?.reason}
+                      </p>
+
+                      {order.returnRequest?.details && (
+                        <p>
+                          <strong>Details:</strong>{' '}
+                          {order.returnRequest?.details}
                         </p>
+                      )}
+
+                      <p>
+                        <strong>Requested:</strong>{' '}
+                        {new Date(
+                          order.returnRequest?.requestedAt
+                        ).toLocaleDateString()}
+                      </p>
+
+                      {order.returnRequest?.reviewedAt && (
+                        <p>
+                          <strong>Reviewed:</strong>{' '}
+                          {new Date(
+                            order.returnRequest?.reviewedAt
+                          ).toLocaleDateString()}
+                        </p>
+                      )}
+
+                      {order.returnRequest?.response && (
+                        <div
+                          className={`${isDark ? 'bg-gray-900' : 'bg-gray-50'} p-3 rounded-xl mt-3`}
+                        >
+                          <strong>Vendor Response:</strong>{' '}
+                          {order.returnRequest?.response}
+                        </div>
                       )}
                     </div>
                   </motion.div>
                 )}
 
-                {/* Return Request Status */}
-                {order.returnRequest && (
-                  <motion.div variants={itemVariants} className={`${cardBg} border ${cardBorder} rounded-2xl p-6`}>
+                {/* REFUND REQUEST */}
+                {order.refundRequest?.requested && (
+                  <motion.div
+                    variants={itemVariants}
+                    className={`${cardBg} border ${cardBorder} rounded-2xl p-6`}
+                  >
                     <div className="flex items-start gap-3 mb-4">
-                      <FileCheck className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                      <RotateCcw className="w-5 h-5 text-orange-500 mt-0.5 flex-shrink-0" />
+
                       <div className="flex-1">
-                        <h4 className={`text-sm font-bold ${textPrimary}`}>Return Request</h4>
-                        <p className={`text-xs ${textSecondary} mt-1`}>Status: <span className={`font-semibold capitalize ${
-                          order.returnRequest.status === 'completed' ? 'text-emerald-500' :
-                          order.returnRequest.status === 'approved' ? 'text-blue-500' :
-                          order.returnRequest.status === 'rejected' ? 'text-red-500' :
-                          'text-amber-500'
-                        }`}>{order.returnRequest.status}</span></p>
+                        <h4 className={`text-sm font-bold ${textPrimary}`}>
+                          Refund Request
+                        </h4>
+
+                        <p className={`text-xs ${textSecondary} mt-1`}>
+                          Status:
+                          <span
+                            className={`ml-1 font-semibold capitalize ${getRequestStatusStyle(order.refundRequest?.status)}`}
+                          >
+                            {order.refundRequest?.status || 'pending'}
+                          </span>
+                        </p>
                       </div>
                     </div>
+
                     <div className={`space-y-2 text-xs ${textSecondary}`}>
-                      <p><strong>Reason:</strong> {order.returnRequest.reason}</p>
-                      {order.returnRequest.details && (
-                        <p><strong>Details:</strong> {order.returnRequest.details}</p>
-                      )}
-                      <p><strong>Requested:</strong> {new Date(order.returnRequest.requestedAt).toLocaleDateString()}</p>
-                      {order.returnRequest.reviewedAt && (
-                        <p><strong>Reviewed:</strong> {new Date(order.returnRequest.reviewedAt).toLocaleDateString()}</p>
-                      )}
-                      {order.returnRequest.vendorResponse && (
-                        <p className={`${isDark ? 'bg-gray-900' : 'bg-gray-50'} p-2 rounded mt-2`}>
-                          <strong>Vendor Response:</strong> {order.returnRequest.vendorResponse}
+                      <p>
+                        <strong>Reason:</strong>{' '}
+                        {order.refundRequest?.reason}
+                      </p>
+
+                      {order.refundRequest?.details && (
+                        <p>
+                          <strong>Details:</strong>{' '}
+                          {order.refundRequest?.details}
                         </p>
+                      )}
+
+                      <p>
+                        <strong>Requested:</strong>{' '}
+                        {new Date(
+                          order.refundRequest?.requestedAt
+                        ).toLocaleDateString()}
+                      </p>
+
+                      {order.refundRequest?.reviewedAt && (
+                        <p>
+                          <strong>Reviewed:</strong>{' '}
+                          {new Date(
+                            order.refundRequest?.reviewedAt
+                          ).toLocaleDateString()}
+                        </p>
+                      )}
+
+                      {order.refundRequest?.response && (
+                        <div
+                          className={`${isDark ? 'bg-gray-900' : 'bg-gray-50'} p-3 rounded-xl mt-3`}
+                        >
+                          <strong>Vendor Response:</strong>{' '}
+                          {order.refundRequest?.response}
+                        </div>
                       )}
                     </div>
                   </motion.div>

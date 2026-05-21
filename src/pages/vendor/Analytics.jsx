@@ -10,8 +10,10 @@ import {
   Package,
   Activity,
   ChevronRight,
+  ArrowLeft,
 } from 'lucide-react';
 import apiClient from '../../api/apiClient';
+import { getMessage, getPayload } from '../../utils/apiResponse';
 import { useToast } from '../../context/ToastContext';
 import {
   XAxis,
@@ -118,14 +120,13 @@ const Analytics = () => {
     try {
       setLoadingStats(true);
       const res = await apiClient.get(`/vendor/analytics?range=${dateRange}`);
-      if (res.data.success) {
-        setOrders(res.data.recentOrders || []);
-        setProducts(res.data.topProducts || []);
-        setSalesOverview(res.data.salesOverview || []);
-        setSummary(res.data.summary || { totalSales: 0, totalOrders: 0, avgOrderValue: 0 });
-      }
+      const payload = getPayload(res, {});
+      setOrders(payload.recentOrders || []);
+      setProducts(payload.topProducts || []);
+      setSalesOverview(payload.salesOverview || []);
+      setSummary(payload.summary || { totalSales: 0, totalOrders: 0, avgOrderValue: 0 });
     } catch (error) {
-      showToast('Failed to load dashboard stats', 'error');
+      showToast(getMessage(error, 'Failed to load dashboard stats'), 'error');
     } finally {
       setLoadingStats(false);
     }
@@ -149,7 +150,7 @@ const Analytics = () => {
       link.click();
       link.remove();
     } catch (error) {
-      showToast('Failed to export PDF', 'error');
+      showToast(getMessage(error, 'Failed to export PDF'), 'error');
     }
   };
 
@@ -177,10 +178,16 @@ const Analytics = () => {
     }
   ];
 
+  const secondaryText = isDark ? 'text-gray-400' : 'text-gray-500';
+  const textColorr = isDark ? 'text-white' : 'text-gray-900';
+
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDark ? 'bg-gray-950' : 'bg-gray-50/50'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
+        <Link to="/vendor/dashboard" className={`flex items-center gap-2 text-sm mb-4 ${secondaryText} hover:${textColorr}`}>
+          <ArrowLeft className="w-4 h-4" />
+          Back to Dashboard
+        </Link>
         {/* Responsive Header Section */}
         <div className={`sticky top-4 z-30 overflow-hidden rounded-2xl ${isDark ? 'bg-gradient-to-r from-green-600 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-green-600 via-green-500 to-yellow-500'} p-1 mb-8 shadow-lg`}>
           <div className="relative bg-inherit rounded-[14px] px-6 py-8">

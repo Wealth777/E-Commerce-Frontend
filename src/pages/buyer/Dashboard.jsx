@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useTheme } from '../../context/ThemeContext';
 import apiClient from '../../api/apiClient';
+import { getCartItems, getList, getMessage } from '../../utils/apiResponse';
 import {
   ShoppingCart,
   Package,
@@ -40,11 +41,11 @@ const App = () => {
           apiClient.get('/buyer/activity'),
         ]);
 
-        setOrders(ordersRes.data?.data || ordersRes.data?.orders || []);
-        setWishlist(wishlistRes.data?.data?.items || []);
-        setActivities((activitiesRes.data?.data || []).slice(0, 3));
+        setOrders(getList(ordersRes, ['orders']));
+        setWishlist(getCartItems(wishlistRes));
+        setActivities(getList(activitiesRes, ['activity', 'activities']).slice(0, 3));
       } catch (error) {
-        showToast('Failed to load dashboard data', 'error');
+        showToast(getMessage(error, 'Failed to load dashboard data'), 'error');
       } finally {
         setLoading(false);
       }

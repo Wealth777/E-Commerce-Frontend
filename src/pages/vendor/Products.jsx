@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import { FaEdit, FaTrash, FaPlus, FaTimes, FaSave, FaBox, FaLayerGroup, FaDollarSign, FaTh, FaTable, FaImage, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
 import { useTheme } from '../../context/ThemeContext';
 import apiClient from '../../api/apiClient';
+import { getList, getMessage, getPayload } from '../../utils/apiResponse';
 import { useToast } from '../../context/ToastContext';
 import Loading from '../../components/layout/Loding';
+import { ArrowLeft } from 'lucide-react';
 
 const Products = () => {
   const { isDark } = useTheme();
@@ -32,14 +34,10 @@ const Products = () => {
   const fetchProducts = async () => {
     setError(null);
     try {
-      const response = await apiClient.get('/vendor/product/me', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      setProducts(response.data?.data || []);
+      const response = await apiClient.get('/vendor/product/me');
+      setProducts(getList(response, ['products']));
     } catch (error) {
-      showToast('Failed to load products', 'error');
+      showToast(getMessage(error, 'Failed to load products'), 'error');
       setError(true)
     } finally {
       setLoading(false);
@@ -50,15 +48,11 @@ const Products = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient.get('/vendor/product/me', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      setProducts(response.data?.data || []);
+      const response = await apiClient.get('/vendor/product/me');
+      setProducts(getList(response, ['products']));
     } catch (err) {
       setError('Failed to load products');
-      showToast('Failed to load products', 'error');
+      showToast(getMessage(error, 'Failed to load products'), 'error');
     } finally {
       setLoading(false);
     }
@@ -87,14 +81,14 @@ const Products = () => {
       );
 
       setProducts(products.map(p =>
-        p._id === editingProduct._id ? response.data.product : p
+        p._id === editingProduct._id ? (getPayload(response, {}).product || getPayload(response, {})) : p
       ));
 
       showToast('Product updated successfully', 'success');
       setModalOpen(false);
       setEditingProduct(null);
     } catch (error) {
-      showToast('Failed to update product', 'error');
+      showToast(getMessage(error, 'Failed to update product'), 'error');
     } finally {
       setSaving(false);
     }
@@ -112,7 +106,7 @@ const Products = () => {
       setProducts(products.filter(p => p._id !== id));
       showToast('Product deleted successfully', 'success');
     } catch (error) {
-      showToast('Failed to delete product', 'error');
+      showToast(getMessage(error, 'Failed to delete product'), 'error');
     }
   };
 
@@ -140,6 +134,10 @@ const Products = () => {
     <div className={`min-h-screen ${bgColor} pb-12 transition-colors duration-300`}>
       {/* Header Section - Improved Responsive Padding */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <Link to="/vendor/dashboard" className={`flex items-center gap-2 text-sm mb-4 ${secondaryText} hover:${textColor}`}>
+          <ArrowLeft className="w-4 h-4" />
+          Back to Dashboard
+        </Link>
         <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-r from-green-600 via-green-500 to-yellow-500 p-6 sm:p-8 mb-8 shadow-xl`}>
           <div className="absolute inset-0 opacity-10">
             <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -211,7 +209,7 @@ const Products = () => {
         {/* Main Content Area */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20">
-             <Loading text='Loading Products...' />
+            <Loading text='Loading Products...' />
           </div>
         ) : error ? (
           <div className={`${cardBg} p-10 text-center rounded-2xl shadow border ${borderColor}`}>
@@ -326,15 +324,15 @@ const Products = () => {
           <div className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity" onClick={handleCloseModal}></div>
           <div className={`${cardBg} relative w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden transform transition-all animate-in fade-in zoom-in duration-200`}>
             <div className="relative h-40 sm:h-48 bg-gray-200">
-               {editingProduct.image ? (
+              {editingProduct.image ? (
                 <img src={editingProduct.image} className="w-full h-full object-cover" alt="" />
-               ) : (
+              ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-900"><FaImage className="text-4xl text-white/20" /></div>
-               )}
-               <button onClick={handleCloseModal} className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full transition-colors"><FaTimes /></button>
-               <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
-                  <h2 className="text-xl font-bold text-white">Edit Details</h2>
-               </div>
+              )}
+              <button onClick={handleCloseModal} className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full transition-colors"><FaTimes /></button>
+              <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
+                <h2 className="text-xl font-bold text-white">Edit Details</h2>
+              </div>
             </div>
 
             <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto scrollbar-hide">

@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { useToast } from '../../context/ToastContext';
 import apiClient from '../../api/apiClient';
+import { getList, getMessage, getPayload } from '../../utils/apiResponse';
 import { FaBox, FaChevronRight, FaRegCalendarAlt, FaWallet, FaUser, FaShippingFast, FaCheckCircle, FaClock } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
-import { ShoppingBag } from 'lucide-react';
+import { ArrowLeft, ShoppingBag } from 'lucide-react';
 import Loading from '../../components/layout/Loding';
 
 const VendorOrders = () => {
@@ -21,9 +22,9 @@ const VendorOrders = () => {
     try {
       const response = await apiClient.get('/vendor/orders');
 
-      setOrders(response.data?.data || []);
+      setOrders(getList(response, ['orders']));
     } catch (error) {
-      showToast('Failed to load sales orders', 'error');
+      showToast(getMessage(error, 'Failed to load sales orders'), 'error');
     } finally {
       setLoading(false);
     }
@@ -34,6 +35,8 @@ const VendorOrders = () => {
   const cardBg = isDark ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200';
   const textColor = isDark ? 'text-gray-100' : 'text-gray-900';
   const secondaryText = isDark ? 'text-gray-400' : 'text-gray-500';
+  const textColorr = isDark ? 'text-white' : 'text-gray-900';
+
 
   const getPaymentStyle = (status) => {
     switch (status?.toLowerCase()) {
@@ -64,7 +67,10 @@ const VendorOrders = () => {
   return (
     <div className={`min-h-screen ${bgColor} py-10 transition-colors duration-300`}>
       <div className="max-w-5xl mx-auto px-4">
-
+        <Link to="/vendor/dashboard" className={`flex items-center gap-2 text-sm mb-4 ${secondaryText} hover:${textColorr}`}>
+          <ArrowLeft className="w-4 h-4" />
+          Back to Dashboard
+        </Link>
         {/* Header Section */}
         <div className="mb-10 relative overflow-hidden bg-gradient-to-r from-green-600 via-green-500 to-yellow-500 rounded-2xl p-8 mb-8 text-white shadow-xl">
           <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
@@ -133,13 +139,13 @@ const VendorOrders = () => {
                     <div className="flex items-center gap-2 flex-wrap">
                       {/* Payment Status */}
                       <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${getPaymentStyle(order.payment?.status)}`}>
-                         <FaWallet className="inline mr-1" /> {order.payment?.status} 
+                        <FaWallet className="inline mr-1" /> {order.payment?.status}
                       </div>
 
                       {/* Delivery Status */}
 
-                      <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${getDeliveryStyle(order.status)}`}> 
-                        <FaShippingFast className="inline mr-1" /> {order.status} 
+                      <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${getDeliveryStyle(order.status)}`}>
+                        <FaShippingFast className="inline mr-1" /> {order.status}
                       </div>
                     </div>
                   </div>

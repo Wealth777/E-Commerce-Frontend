@@ -71,11 +71,7 @@ const AddProduct = () => {
           formData.append('imageUrl', values.imageUrl);
         }
 
-        await apiClient.post('/vendor/product/add', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        });
+        await apiClient.post('/vendor/product/add', formData);
 
         showToast('Product added successfully', 'success');
         resetForm();

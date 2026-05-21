@@ -4,6 +4,7 @@ import * as Yup from 'yup';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import apiClient from '../../api/apiClient';
+import { getMessage } from '../../utils/apiResponse';
 import { FiMail, FiLock, FiUser, FiPhone, FiBriefcase, FiShoppingBag } from 'react-icons/fi'
 import { FaEye, FaEyeSlash } from 'react-icons/fa'
 import { useToast } from '../../context/ToastContext';
@@ -27,7 +28,12 @@ const Register = () => {
       fullName: Yup.string().required('Full name is required'),
       email: Yup.string().email('Invalid email address').required('Email is required'),
       phoneNo: Yup.string().required('Phone number is required'),
-      password: Yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
+      password: Yup.string().min(8, 'Password must be at least 8 characters')
+        .matches(/[A-Z]/, 'Password must contain at least one uppercase letter')
+        .matches(/[a-z]/, 'Password must contain at least one lowercase letter')
+        .matches(/[0-9]/, 'Password must contain at least one number')
+        .matches(/[!@#$%^&*]/, 'Password must contain at least one special character')
+        .required('Password is required'),
       confirmPassword: Yup.string()
         .oneOf([Yup.ref('password')], 'Passwords must match')
         .required('Please confirm password'),
@@ -49,8 +55,10 @@ const Register = () => {
         showToast('Registration successful!', 'success');
         navigate('/login');
       } catch (error) {
-        // console.log(error.response || error);
-        showToast(error?.response?.data || 'Registration failed', 'error');
+        showToast(
+          getMessage(error, 'Registration failed'),
+          'error'
+        );
       } finally {
         setLoading(false);
       }
@@ -97,8 +105,8 @@ const Register = () => {
                     type="button"
                     onClick={() => formik.setFieldValue('role', type.value)}
                     className={`py-3 px-4 rounded-lg text-sm font-medium flex items-center justify-center ${formik.values.role === type.value
-                        ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-2 border-green-500'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                      ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-2 border-green-500'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
                       }`}
                   >
                     <span className="mr-2">{type.icon}</span>
@@ -206,7 +214,7 @@ const Register = () => {
                   {showPassword ? <FaEyeSlash /> : <FaEye />}
                 </button>
               </div>
-              <p className="mt-1 text-xs text-gray-500">Must be at least 6 characters</p>
+              <p className="mt-1 text-xs text-gray-500">Must be at least 8 characters with uppercase, lowercase, number, and special character</p>
               {formik.touched.password && formik.errors.password && (
                 <p className="text-xs text-red-500">{formik.errors.password}</p>
               )}

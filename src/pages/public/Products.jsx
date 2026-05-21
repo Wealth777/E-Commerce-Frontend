@@ -5,6 +5,7 @@ import ProductCard from '../../components/cards/ProductCard';
 import { useTheme } from '../../context/ThemeContext';
 import { toast } from 'react-toastify';
 import apiClient from '../../api/apiClient';
+import { getList, getMessage, getPayload } from '../../utils/apiResponse';
 import { FaSearch, FaSlidersH, FaLayerGroup, FaTags, FaBoxOpen, FaFootballBall, FaHome } from 'react-icons/fa';
 import Loading from '../../components/layout/Loding';
 import { useToast } from '../../context/ToastContext';
@@ -28,9 +29,9 @@ const Products = () => {
     try {
       setLoading(true);
       const response = await apiClient.get('/vendor/product/all');
-      dispatch(setProducts(response.data.data || []));
+      dispatch(setProducts(getList(response, ['products'])));
     } catch (error) {
-      showToast('Failed to load products', 'error');
+      showToast(getMessage(error, 'Failed to load products'), 'error');
     } finally {
       setLoading(false);
     }

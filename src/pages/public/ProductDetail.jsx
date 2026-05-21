@@ -8,6 +8,7 @@ import {
 // New Imports
 import Loading from '../../components/layout/Loding';
 import apiClient from '../../api/apiClient';
+import { getList, getMessage, getPayload } from '../../utils/apiResponse';
 import { useToast } from '../../context/ToastContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useDispatch, useSelector } from 'react-redux';
@@ -37,16 +38,17 @@ const ProductDetail = () => {
       try {
         setLoading(true);
         const response = await apiClient.get(`/vendor/product/${id}`);
-        if (response.data.success) {
-          const productData = response.data.data.product;
-          setProduct({
-            ...productData,
-            _id: productData.id, // Add _id for Redux compatibility
-            vendor: response.data.data.vendor,
-          });
-        }
+        const payload = getPayload(response, {});
+        const productData = payload.product || payload;
+
+        setProduct({
+          ...productData,
+          _id: productData._id || productData.id,
+          id: productData.id || productData._id,
+          vendor: payload.vendor || productData.vendor,
+        });
       } catch (error) {
-        showToast('Failed to load product', 'error');
+        showToast(getMessage(error, 'Failed to load product'), 'error');
         navigate('/products');
       } finally {
         setLoading(false);
@@ -83,17 +85,17 @@ const ProductDetail = () => {
     try {
       if (!isWishlisted) {
         await apiClient.post('/buyer/wishlist', {
-          productId: product.id,
+          productId: product._id || product.id,
         });
         setIsWishlisted(true);
         showToast('Added to wishlist', 'success');
       } else {
-        await apiClient.delete(`/buyer/wishlist/${product.id}`);
+        await apiClient.delete(`/buyer/wishlist/${product._id || product.id}`);
         setIsWishlisted(false);
         showToast('Removed from wishlist', 'success');
       }
     } catch (error) {
-      showToast(error.response?.data?.message || 'Wishlist action failed', 'error');
+      showToast(getMessage(error, 'Wishlist action failed'), 'error');
     } finally {
       setWishlistLoading(false);
     }

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
-import { ShoppingBag, Trash2 } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, Trash2 } from 'lucide-react';
 import apiClient from '../../api/apiClient';
+import { getList, getMessage, getPayload } from '../../utils/apiResponse';
 import { useDispatch, useSelector } from 'react-redux';
 import { useToast } from '../../context/ToastContext';
 import { addToCart } from '../../store/cartActions';
@@ -22,6 +23,8 @@ const Wishlist = ({ product }) => {
   const textColor = isDark ? 'text-white' : 'text-gray-900';
   const textSecondary = isDark ? 'text-gray-400' : 'text-gray-500';
   const borderColor = isDark ? 'border-gray-800' : 'border-gray-100';
+  const secondaryTextt = isDark ? 'text-gray-400' : 'text-gray-500';
+  const textColorr = isDark ? 'text-white' : 'text-gray-900';
 
   useEffect(() => {
     fetchWishlist();
@@ -31,7 +34,8 @@ const Wishlist = ({ product }) => {
     try {
       setLoading(true);
       const res = await apiClient.get('/buyer/wishlist');
-      const items = res.data?.data?.items || [];
+      const payload = getPayload(res, {});
+      const items = payload.items || payload.wishlist || (Array.isArray(payload) ? payload : []);
 
       const formatted = items.map((item) => {
         const product = item.product || {};
@@ -51,7 +55,7 @@ const Wishlist = ({ product }) => {
       });
       setWishlist(formatted);
     } catch (err) {
-      showToast("Failed to fetch wishlist", 'error');
+      showToast(getMessage(err, 'Failed to fetch wishlist'), 'error');
     } finally {
       setLoading(false);
     }
@@ -59,15 +63,11 @@ const Wishlist = ({ product }) => {
 
   const removeItem = async (id) => {
     try {
-      const res = await apiClient.delete(`/buyer/wishlist/${id}`);
-      if (res.data?.success) {
-        setWishlist((prev) => prev.filter((item) => item.id !== id));
-        showToast('Removed from wishlist', 'success');
-      } else {
-        showToast('Failed to remove item', 'error');
-      }
+      await apiClient.delete(`/buyer/wishlist/${id}`);
+      setWishlist((prev) => prev.filter((item) => item.id !== id));
+      showToast('Removed from wishlist', 'success');
     } catch (err) {
-      showToast("Error removing item", 'error');
+      showToast(getMessage(err, 'Error removing item'), 'error');
     }
   };
 
@@ -102,8 +102,12 @@ const Wishlist = ({ product }) => {
 
   return (
     <div className={`min-h-screen ${bgColor} transition-colors duration-300 pb-10`}>
+      <Link to="/buyer/dashboard" className={`flex max-w-5xl mx-auto items-center gap-2 text-sm mb-4 pt-6 ${secondaryTextt} hover:${textColorr}`}>
+        <ArrowLeft className="w-4 h-4" />
+        Back to Dashboard
+      </Link>
       {/* Header Banner */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="relative overflow-hidden rounded-2xl">
           <div className={`absolute inset-0 ${isDark ? 'bg-gradient-to-r from-green-700 via-green-600 to-yellow-600' : 'bg-gradient-to-r from-green-600 via-green-500 to-yellow-500'}`} />
           <div className="absolute top-0 right-0 w-64 h-64 sm:w-96 sm:h-96 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>

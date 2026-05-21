@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { mergeCart, fetchCart } from "./store/cartActions";
+import { mergeCart } from "./store/cartActions";
 
 const CartSync = () => {
   const dispatch = useDispatch();
@@ -10,7 +10,7 @@ const CartSync = () => {
     if (user) {
       dispatch(mergeCart());
     }
-  }, [user]);
+  }, [dispatch, user]);
 
   return null;
 };

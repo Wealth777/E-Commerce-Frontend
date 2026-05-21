@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { useToast } from '../../context/ToastContext';
 import apiClient from '../../api/apiClient';
+import { getList, getMessage, getPayload } from '../../utils/apiResponse';
 import { FaBox, FaChevronRight, FaRegCalendarAlt, FaWallet, FaShippingFast, FaCheckCircle, FaClock } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
-import { ShoppingBag } from 'lucide-react';
+import { ArrowLeft, ShoppingBag } from 'lucide-react';
 import Loading from '../../components/layout/Loding';
 
 const Orders = () => {
@@ -17,13 +18,18 @@ const Orders = () => {
     fetchOrders();
   }, []);
 
+  const formatOrderRef = (id) => {
+    if (!id) return 'UNKNOWN';
+    return `#${id.toString().slice(-8).toUpperCase()}`;
+  };
+
   const fetchOrders = async () => {
     try {
       const response = await apiClient.get('/buyer/orders');
-      const rawOrders = response.data?.data || response.data?.orders || [];
+      const rawOrders = getList(response, ['orders']);
 
       const groups = rawOrders.reduce((acc, order) => {
-        const ref = order.checkoutRef || order._id;
+        const ref = order._id;
         if (!acc[ref]) {
           acc[ref] = {
             _id: ref,
@@ -32,6 +38,8 @@ const Orders = () => {
             deliveryStatus: order.status || "pending",
             delivery: order.delivery,
             payment: order.payment,
+            refundRequest: order.refundRequest,
+            returnRequest: order.returnRequest,
             items: [],
             note: order.note,
             totalAmount: 0,
@@ -59,7 +67,7 @@ const Orders = () => {
 
       setGroupedOrders(sortedGroups);
     } catch (error) {
-      showToast('Failed to load orders', 'error');
+      showToast(getMessage(error, 'Failed to load orders'), 'error');
     } finally {
       setLoading(false);
     }
@@ -69,6 +77,8 @@ const Orders = () => {
   const cardBg = isDark ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200';
   const textColor = isDark ? 'text-gray-100' : 'text-gray-900';
   const secondaryText = isDark ? 'text-gray-400' : 'text-gray-500';
+  const secondaryTextt = isDark ? 'text-gray-400' : 'text-gray-500';
+  const textColorr = isDark ? 'text-white' : 'text-gray-900';
 
   const getPaymentStyle = (status) => {
     switch (status?.toLowerCase()) {
@@ -96,8 +106,32 @@ const Orders = () => {
     }
   };
 
+  const getRequestStyle = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'completed':
+        return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
+      case 'approved':
+        return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
+      case 'rejected':
+        return 'bg-red-500/10 text-red-500 border-red-500/20';
+      default:
+        return 'bg-orange-500/10 text-orange-500 border-orange-500/20';
+    }
+  };
+
+  const shouldDisplayRequestStatus = (request) => {
+    return Boolean(
+      request?.requested &&
+      ['pending', 'approved', 'rejected', 'completed'].includes(request.status)
+    );
+  };
+
   return (
     <div className={`min-h-screen ${bgColor} py-10 transition-colors duration-300`}>
+      <Link to="/buyer/dashboard" className={`flex max-w-5xl mx-auto items-center gap-2 text-sm mb-4 ${secondaryTextt} hover:${textColorr}`}>
+        <ArrowLeft className="w-4 h-4" />
+        Back to Dashboard
+      </Link>
       <div className="max-w-5xl mx-auto px-4">
 
         <div className="mb-10 relative overflow-hidden bg-gradient-to-r from-green-600 via-green-500 to-yellow-500 rounded-2xl p-8 mb-8 text-white">
@@ -164,13 +198,34 @@ const Orders = () => {
                       </p>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      {/* Payment Status */}
-                      <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${getPaymentStyle(order.paymentStatus)}`}> <FaWallet className="inline mr-1" /> {order.paymentStatus} </div>
+                      {!shouldDisplayRequestStatus(order.refundRequest) &&
+                        !shouldDisplayRequestStatus(order.returnRequest) && (
+                          <>
+                            {/* Payment Status */}
+                            <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${getPaymentStyle(order.paymentStatus)}`}>
+                              <FaWallet className="inline mr-1" />
+                              {order.paymentStatus}
+                            </div>
 
-                      {/* Delivery Status */}
-                      <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${getDeliveryStyle(order.deliveryStatus)}`}> <FaShippingFast className="inline mr-1" />
-                        {order.deliveryStatus}
-                      </div>
+                            {/* Delivery Status */}
+                            <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${getDeliveryStyle(order.deliveryStatus)}`}>
+                              <FaShippingFast className="inline mr-1" />
+                              {order.deliveryStatus}
+                            </div>
+                          </>
+                        )}
+
+                      {shouldDisplayRequestStatus(order.refundRequest) && (
+                        <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${getRequestStyle(order.refundRequest.status)}`}>
+                          Refund: {order.refundRequest.status}
+                        </div>
+                      )}
+
+                      {shouldDisplayRequestStatus(order.returnRequest) && (
+                        <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${getRequestStyle(order.returnRequest.status)}`}>
+                          Return: {order.returnRequest.status}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -245,10 +300,10 @@ const Orders = () => {
 
                 {/* Bottom Progress Bar (Visual Only for "Cool" factor) */}
                 <div className="h-1.5 w-full bg-gray-200 dark:bg-gray-800">
-                  <div 
-                    className={`h-full transition-all duration-1000 ${ order.deliveryStatus === 'delivered' ? 'w-full bg-emerald-500' : order.deliveryStatus === 'shipped' ? 'w-2/3 bg-blue-500' : 'w-1/3 bg-amber-500' }`
-                    } 
-                />
+                  <div
+                    className={`h-full transition-all duration-1000 ${order.deliveryStatus === 'delivered' ? 'w-full bg-emerald-500' : order.deliveryStatus === 'shipped' ? 'w-2/3 bg-blue-500' : 'w-1/3 bg-amber-500'}`
+                    }
+                  />
                 </div>
               </div>
             ))}
