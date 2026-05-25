@@ -4,6 +4,7 @@ import './App.css';
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchUser, logout } from './store/authSlice';
+import useNotificationSocket from './hooks/useNotificationSocket';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -45,6 +46,7 @@ import VendorProfile from './pages/vendor/Profile';
 import VendorPayment from './pages/vendor/Payment';
 import VendorRefundRequests from './pages/vendor/RefundRequests';
 import VendorReturnRequests from './pages/vendor/ReturnRequests';
+import Notifications from './pages/notifications/Notifications';
 
 // Founder Pages
 import FounderDashboard from './pages/founder/Dashboard';
@@ -57,6 +59,7 @@ function App() {
 
   const dispatch = useDispatch();
   const { isAuthenticated } = useSelector((state) => state.auth);
+  useNotificationSocket();
 
   useEffect(() => {
     dispatch(fetchUser());
@@ -144,6 +147,14 @@ function App() {
                   }
                 />
                 <Route
+                  path="/buyer/notifications"
+                  element={
+                    <ProtectedRoute requiredRole="buyer">
+                      <Notifications />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
                   path="/buyer/wishlist"
                   element={
                     <ProtectedRoute requiredRole="buyer">
@@ -222,6 +233,14 @@ function App() {
                   element={
                     <ProtectedRoute requiredRole="vendor">
                       <VendorRefundRequests />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/vendor/notifications"
+                  element={
+                    <ProtectedRoute requiredRole="vendor">
+                      <Notifications />
                     </ProtectedRoute>
                   }
                 />

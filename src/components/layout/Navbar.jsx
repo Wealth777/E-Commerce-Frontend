@@ -7,13 +7,13 @@ import {
     FiSearch,
     FiMenu,
     FiX,
-    FiBell,
     FiShoppingBag,
     FiMoon,
     FiSun
 } from 'react-icons/fi';
 import { useTheme } from '../../context/ThemeContext';
 import { logout } from '../../store/authSlice';
+import NotificationBell from '../notifications/NotificationBell';
 
 const Navbar = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -58,6 +58,7 @@ const Navbar = () => {
                     { name: 'Vendor Dashboard', path: '/vendor/dashboard' },
                     { name: 'Products', path: '/vendor/products' },
                     { name: 'Orders', path: '/vendor/orders' },
+                    { name: 'Notifications', path: '/vendor/notifications' },
                     { name: 'Request Refund', path: '/vendor/refund-requests' },
                     { name: 'Request Return', path: '/vendor/return-requests' },
                     { name: 'Analytics', path: '/vendor/analytics' },
@@ -69,6 +70,7 @@ const Navbar = () => {
                     { name: 'Dashboard', path: '/buyer/dashboard' },
                     { name: 'Buy Product', path: '/products' },
                     { name: 'My Orders', path: '/buyer/orders' },
+                    { name: 'Notifications', path: '/buyer/notifications' },
                     { name: 'My Wishlist', path: '/buyer/wishlist' },
                     { name: 'My Profile', path: '/buyer/profile' }
                 ];
@@ -123,6 +125,8 @@ const Navbar = () => {
                         >
                             {isDarkMode ? <FiSun size={20} /> : <FiMoon size={20} />}
                         </button>
+
+                        <NotificationBell />
 
                         {/* Cart icon - Always visible */}
                         <Link

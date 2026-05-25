@@ -122,7 +122,7 @@ const VendorDashboard = () => {
       bgColor: 'bg-green-50'
     },
     {
-      title: 'View Request Refund',
+      title: 'View Refund Request',
       description: 'Check customer refund requests',
       icon: RotateCcw,
       href: '/vendor/refund-requests',
@@ -130,10 +130,10 @@ const VendorDashboard = () => {
       bgColor: 'bg-yellow-50'
     },
     {
-      title: 'View Request Refund',
-      description: 'Check customer refund requests',
+      title: 'View Return Request',
+      description: 'Check customer return requests',
       icon: RotateCcw,
-      href: '/vendor/refund-requests',
+      href: '/vendor/return-requests',
       color: 'text-cyan-600',
       bgColor: 'bg-cyan-50'
     },
