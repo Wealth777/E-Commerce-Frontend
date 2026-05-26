@@ -132,7 +132,7 @@ const Orders = () => {
         <ArrowLeft className="w-4 h-4" />
         Back to Dashboard
       </Link>
-      <div className="max-w-5xl mx-auto px-4">
+      <div className="w-full max-w-5xl mx-auto px-4 overflow-hidden">
 
         <div className="mb-10 relative overflow-hidden bg-gradient-to-r from-green-600 via-green-500 to-yellow-500 rounded-2xl p-8 mb-8 text-white">
           <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
@@ -178,7 +178,7 @@ const Orders = () => {
                 className={`${cardBg} border rounded-[2rem] overflow-hidden hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 group`}
               >
                 {/* Order Top Bar */}
-                <div className="px-6 py-4 border-b border-inherit flex flex-wrap items-center justify-between gap-4">
+                <div className="px-4 sm:px-6 py-4 border-b border-inherit flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? 'bg-gray-800' : 'bg-gray-100'}`}>
                       <FaBox className="text-green-500" />
@@ -189,7 +189,7 @@ const Orders = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-6">
+                  <div className="w-full md:w-auto flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
                     <div className="hidden sm:block text-right">
                       <p className="text-xs font-bold text-gray-500 uppercase tracking-tighter">Order Date</p>
                       <p className="text-sm font-semibold flex items-center gap-1">
@@ -197,7 +197,7 @@ const Orders = () => {
                         {new Date(order.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex flex-wrap items-center gap-2 max-w-full">
                       {!shouldDisplayRequestStatus(order.refundRequest) &&
                         !shouldDisplayRequestStatus(order.returnRequest) && (
                           <>
@@ -232,10 +232,10 @@ const Orders = () => {
 
                 {/* Order Body */}
                 <div className="p-6">
-                  <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
+                  <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 min-w-0">
 
                     <div className="flex-1">
-                      <div className="flex items-start gap-4 mb-3">
+                      <div className="flex flex-col sm:flex-row sm:items-start gap-4 mb-3 min-w-0">
                         <div className="flex -space-x-2 overflow-hidden">
                           {order.items?.slice(0, 3).map((item, i) => (
                             <div key={i} className={`w-12 h-12 rounded-xl border-2 ${isDark ? 'border-gray-900 bg-gray-800' : 'border-white bg-gray-100'} flex items-center justify-center overflow-hidden`}>
@@ -253,11 +253,11 @@ const Orders = () => {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className={`font-bold ${textColor} truncate`}>
+                          <p className={`font-bold ${textColor} line-clamp-2 break-words`}>
                             {order.items?.[0]?.name || 'Product'}
                             {order.items?.length > 1 && ` + ${order.items.length - 1} more item${order.items.length - 1 > 1 ? 's' : ''}`}
                           </p>
-                          <p className={`text-sm ${secondaryText}`}>
+                          <p className={`text-sm ${secondaryText} break-words`}>
                             {order.items?.length || 0} {order.items?.length === 1 ? 'item' : 'items'} • {order.items?.[0]?.vendorName || "Vendor"}
 
                           </p>
@@ -278,12 +278,12 @@ const Orders = () => {
                     </div>
 
                     {/* Price and Action */}
-                    <div className="flex items-center justify-between lg:justify-end gap-8 lg:flex-col lg:items-end lg:gap-4">
+                    <div className="w-full lg:w-auto flex items-center justify-between lg:justify-end gap-4 lg:flex-col lg:items-end lg:gap-4 shrink-0">
                       <div className="text-left lg:text-right">
                         <p className="text-xs font-bold text-gray-500 uppercase tracking-tighter">Amount Paid</p>
-                        <p className="text-2xl font-black text-green-600">₦{order.totalAmount?.toLocaleString()}</p>
+                        <p className="text-xl sm:text-2xl font-black text-green-600 whitespace-nowrap">₦{order.totalAmount?.toLocaleString()}</p>
                         {order.pricing?.subtotal !== order.pricing?.total && (
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-gray-500 max-w-[260px] break-words">
                             Subtotal: ₦{order.pricing?.subtotal?.toLocaleString()}
                             {order.pricing?.deliveryFee > 0 && ` + Delivery: ₦${order.pricing?.deliveryFee?.toLocaleString()}`}
                             {order.pricing?.tax > 0 && ` + Tax: ₦${order.pricing?.tax?.toLocaleString()}`}

@@ -182,7 +182,7 @@ const Cart = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px]">
+        <div className="grid w-full max-w-6xl grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px]">
           {/* left: items */}
           <div className="space-y-4">
             {items.length === 0 ? (
@@ -206,7 +206,7 @@ const Cart = () => {
                   key={item.id}
                   className={`${card} group relative overflow-hidden rounded-[24px] p-4 shadow-sm transition hover:shadow-md sm:p-5`}
                 >
-                  <div className="flex gap-4 sm:gap-5">
+                  <div className="flex flex-col sm:flex-row gap-4 sm:gap-5">
                     {/* image */}
                     <div className="relative h-[112px] w-[112px] shrink-0 overflow-hidden rounded-2xl sm:h-[128px] sm:w-[128px]">
                       <img
@@ -220,9 +220,11 @@ const Cart = () => {
 
                     {/* details */}
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-3">
+                      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
                         <div className="min-w-0">
-                          <h3 className="truncate text-[15px] font-semibold leading-6 sm:text-[16px]">{item.name}</h3>
+                          <h3 className="line-clamp-2 break-words text-[15px] font-semibold leading-6 sm:text-[16px]">
+                            {item.name}
+                          </h3>
                           <p className={`mt-0.5 text-xs ${subtle}`}>{item.variant}</p>
                           {!item.inStock && (
                             <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-600 ring-1 ring-amber-500/20">
@@ -236,7 +238,7 @@ const Cart = () => {
                         </div>
                       </div>
 
-                      <div className="mt-4 flex items-center justify-between">
+                      <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         {/* qty stepper */}
                         <div className={`inline-flex items-center gap-1 rounded-xl p-1 ring-1 ${isDark ? "bg-white/5 ring-white/10" : "bg-zinc-100 ring-zinc-200"}`}>
                           <button
@@ -265,7 +267,7 @@ const Cart = () => {
                           </button>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <button
                             onClick={() => showToast("Saved for later")}
                             className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition ${isDark ? "text-zinc-300 hover:bg-white/5" : "text-zinc-600 hover:bg-zinc-100"}`}

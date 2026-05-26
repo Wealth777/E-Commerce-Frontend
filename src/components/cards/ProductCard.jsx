@@ -19,15 +19,28 @@ const ProductCard = ({ product }) => {
   const productId = product._id || product.id;
 
   const handleAddToCart = () => {
-    if (role !== 'buyer') {
-      toast.error('You must be a buyer to add items to cart');
-      return;
-    }
-    dispatch(addToCart({
+  if (role !== 'buyer') {
+    showToast('You must be a buyer to add items to cart', 'warning');
+    return;
+  }
+
+  const stock = Number(product.stock ?? product.countInStock ?? 0);
+
+  if (stock <= 0) {
+    showToast('Product is out of stock', 'error');
+    return;
+  }
+
+  dispatch(
+    addToCart({
       ...product,
-      id: productId
-    }, toast));
-  };
+      _id: productId,
+      id: productId,
+      stock,
+      quantity: 1,
+    })
+  );
+};
 
   const handleToggleFavorite = async () => {
     if (!role) {
@@ -67,8 +80,9 @@ const ProductCard = ({ product }) => {
 
   const vendorName =
     product?.vendor?.storeName ||
+    product?.vendor?.businessName ||
+    product?.vendor?.fullName ||
     product?.vendorName ||
-    (typeof product?.vendor === 'string' ? product.vendor : '') ||
     'Unknown vendor';
 
   const vendorId =
@@ -122,7 +136,7 @@ const ProductCard = ({ product }) => {
           </div>
         </div>
 
-        <Link to={`/products/${productId}`}>
+        <Link to={`/product/${productId}`}>
           <h3 className="font-medium text-gray-900 dark:text-white mb-1 line-clamp-1 hover:text-green-600">
             {product.name}
           </h3>
@@ -135,7 +149,7 @@ const ProductCard = ({ product }) => {
           <div>
             <div className="flex items-baseline">
               <span className="text-lg font-bold text-gray-900 dark:text-white">
-                ₦{product.price.toLocaleString()}
+                ₦{Number(product.price || 0).toLocaleString()}
               </span>
               {product.originalPrice && (
                 <span className="ml-2 text-sm text-gray-500 dark:text-gray-400 line-through">

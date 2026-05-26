@@ -8,54 +8,99 @@ import {
 import { toast } from 'react-toastify';
 import { getCartItems, getMessage } from '../utils/apiResponse';
 
+const CART_KEY = 'cart';
+
 const saveLocalCart = (items) => {
-  localStorage.setItem('cart', JSON.stringify(items));
+  localStorage.setItem(CART_KEY, JSON.stringify(items));
 };
 
-const getSafeStock = (item) => {
-  return Number(
-    item.stock ??
-    item.product?.stock ??
-    0
-  );
+const getProductId = (item) =>
+  item?.id ||
+  item?._id ||
+  item?.productId ||
+  item?.product?._id ||
+  item?.product?.id ||
+  '';
+
+const getStock = (item) => {
+  const stock =
+    item?.stock ??
+    item?.countInStock ??
+    item?.product?.stock ??
+    item?.product?.countInStock ??
+    0;
+
+  return Math.max(0, Number(stock || 0));
 };
 
 const clampQuantity = (quantity, stock) => {
-  const safeQuantity = Number(quantity || 1);
-  const safeStock = Number(stock || 0);
+  const parsedQuantity = Number(quantity || 1);
+  const parsedStock = Number(stock || 0);
 
-  if (safeStock <= 0) return 0;
+  if (parsedStock <= 0) return 0;
 
   return Math.min(
-    Math.max(1, safeQuantity),
-    safeStock
+    Math.max(1, parsedQuantity),
+    parsedStock
   );
 };
 
+const getVendor = (item) =>
+  item?.vendor ||
+  item?.product?.vendor ||
+  null;
+
 const normalizeCartItem = (item) => {
-  const stock = getSafeStock(item);
+  const product = item?.product || item;
+  const id = getProductId(item);
+  const stock = getStock(item);
+  const vendor = getVendor(item);
 
   return {
-    id: item.id || item._id || item.productId || item.product?._id,
-    _id: item._id || item.product?._id || item.id,
-    name: item.name || item.product?.name,
-    price: item.price || item.product?.price,
-    image: item.image || item.product?.image,
+    id,
+    _id: product?._id || id,
+
+    name: product?.name || item?.name || 'Unnamed product',
+
+    price: Number(product?.price || item?.price || 0),
+
+    image:
+      product?.image ||
+      item?.image ||
+      product?.images?.[0] ||
+      'https://via.placeholder.com/300',
+
     stock,
-    quantity: clampQuantity(item.quantity || 1, stock),
-    vendorId: item.vendorId || item.vendor?._id || item.product?.vendor?._id,
+
+    quantity: clampQuantity(item?.quantity || 1, stock),
+
+    vendorId:
+      item?.vendorId ||
+      vendor?._id ||
+      vendor?.id ||
+      '',
+
     vendorName:
-      item.vendorName ||
-      item.vendor?.storeName ||
-      item.vendor?.businessName ||
-      item.vendor?.fullName ||
-      item.product?.vendor?.storeName ||
-      item.product?.vendor?.businessName ||
-      item.product?.vendor?.fullName ||
+      item?.vendorName ||
+      vendor?.storeName ||
+      vendor?.businessName ||
+      vendor?.fullName ||
       'Unknown Vendor',
-    vendorBankName: item.vendorBankName || item.vendor?.bankName || item.product?.vendor?.bankName,
-    vendorAccountName: item.vendorAccountName || item.vendor?.accountName || item.product?.vendor?.accountName,
-    vendorAccountNumber: item.vendorAccountNumber || item.vendor?.accountNumber || item.product?.vendor?.accountNumber,
+
+    vendorBankName:
+      item?.vendorBankName ||
+      vendor?.bankName ||
+      '',
+
+    vendorAccountName:
+      item?.vendorAccountName ||
+      vendor?.accountName ||
+      '',
+
+    vendorAccountNumber:
+      item?.vendorAccountNumber ||
+      vendor?.accountNumber ||
+      '',
   };
 };
 
@@ -67,15 +112,40 @@ const normalizeCartItems = (response) =>
 const refreshCart = async (dispatch) => {
   const res = await apiClient.get('/buyer/cart');
   const items = normalizeCartItems(res);
+
   dispatch(setCart(items));
   return items;
 };
 
+const mergeOrAddLocalItem = (items, payload) => {
+  const existingItem = items.find((item) => item.id === payload.id);
+
+  if (!existingItem) {
+    return [...items, payload];
+  }
+
+  const stock = getStock(existingItem);
+  const nextQuantity = clampQuantity(
+    existingItem.quantity + payload.quantity,
+    stock
+  );
+
+  return items.map((item) =>
+    item.id === payload.id
+      ? {
+          ...item,
+          quantity: nextQuantity,
+        }
+      : item
+  );
+};
+
 export const addToCart = (product) => async (dispatch, getState) => {
   const { auth, cart } = getState();
-  const productId = product._id || product.id;
-  const stock = getSafeStock(product);
-  const quantity = clampQuantity(product.quantity || 1, stock);
+
+  const productId = getProductId(product);
+  const stock = getStock(product);
+  const quantity = clampQuantity(product?.quantity || 1, stock);
 
   if (!productId) {
     toast.error('Invalid product');
@@ -87,40 +157,20 @@ export const addToCart = (product) => async (dispatch, getState) => {
     return;
   }
 
-  const existingItem = cart.items.find((item) => item.id === productId);
-  const existingQuantity = existingItem?.quantity || 0;
-
-  const safeTotalQuantity = clampQuantity(
-    existingQuantity + quantity,
-    stock
-  );
-
-  const payload = {
+  const payload = normalizeCartItem({
     ...product,
     id: productId,
+    quantity,
     stock,
-    quantity: safeTotalQuantity,
-  };
+  });
 
   if (!auth.isAuthenticated) {
-    const updatedItems = existingItem
-      ? cart.items.map((item) =>
-          item.id === productId
-            ? {
-                ...item,
-                quantity: safeTotalQuantity,
-              }
-            : item
-        )
-      : [...cart.items, payload];
+    const updatedItems = mergeOrAddLocalItem(cart.items, payload);
 
     dispatch(addLocal(payload));
     saveLocalCart(updatedItems);
 
-    if (safeTotalQuantity >= stock) {
-      toast.info(`Only ${stock} item${stock > 1 ? 's' : ''} available in stock`);
-    }
-
+    toast.success('Cart added successfully');
     return;
   }
 
@@ -140,15 +190,19 @@ export const addToCart = (product) => async (dispatch, getState) => {
 export const removeFromCart = (id) => async (dispatch, getState) => {
   const { auth, cart } = getState();
 
+  if (!id) return;
+
   if (!auth.isAuthenticated) {
-    const updated = cart.items.filter((item) => item.id !== id);
+    const updatedItems = cart.items.filter((item) => item.id !== id);
+
     dispatch(removeLocal(id));
-    saveLocalCart(updated);
+    saveLocalCart(updatedItems);
     return;
   }
 
   try {
     await apiClient.delete(`/buyer/cart/${id}`);
+
     await refreshCart(dispatch);
     toast.success('Cart removed successfully');
   } catch (error) {
@@ -158,17 +212,23 @@ export const removeFromCart = (id) => async (dispatch, getState) => {
 
 export const updateQuantity = ({ id, quantity }) => async (dispatch, getState) => {
   const { auth, cart } = getState();
-  const item = cart.items.find((cartItem) => cartItem.id === id);
 
-  if (!item) return;
+  if (!id) return;
 
-  const stock = getSafeStock(item);
-  const safeQuantity = clampQuantity(quantity, stock);
+  const cartItem = cart.items.find((item) => item.id === id);
 
-  if (quantity <= 0) {
+  if (!cartItem) {
+    toast.error('Cart item not found');
+    return;
+  }
+
+  if (Number(quantity) <= 0) {
     dispatch(removeFromCart(id));
     return;
   }
+
+  const stock = getStock(cartItem);
+  const safeQuantity = clampQuantity(quantity, stock);
 
   if (stock <= 0 || safeQuantity <= 0) {
     toast.error('Product is out of stock');
@@ -176,22 +236,22 @@ export const updateQuantity = ({ id, quantity }) => async (dispatch, getState) =
     return;
   }
 
-  if (quantity > stock) {
+  if (Number(quantity) > stock) {
     toast.info(`Only ${stock} item${stock > 1 ? 's' : ''} available in stock`);
   }
 
   if (!auth.isAuthenticated) {
-    const updated = cart.items.map((cartItem) =>
-      cartItem.id === id
+    const updatedItems = cart.items.map((item) =>
+      item.id === id
         ? {
-            ...cartItem,
+            ...item,
             quantity: safeQuantity,
           }
-        : cartItem
+        : item
     );
 
     dispatch(updateLocal({ id, quantity: safeQuantity }));
-    saveLocalCart(updated);
+    saveLocalCart(updatedItems);
     return;
   }
 
@@ -214,19 +274,18 @@ export const mergeCart = () => async (dispatch, getState) => {
   if (!auth.isAuthenticated) return;
 
   try {
-    for (const item of cart.items) {
-      const stock = getSafeStock(item);
-      const quantity = clampQuantity(item.quantity || 1, stock);
+    const validItems = cart.items
+      .map(normalizeCartItem)
+      .filter((item) => item.id && item.quantity > 0 && item.stock > 0);
 
-      if (quantity <= 0) continue;
-
+    for (const item of validItems) {
       await apiClient.post('/buyer/cart/add', {
-        productId: item.id || item._id,
-        quantity,
+        productId: item.id,
+        quantity: item.quantity,
       });
     }
 
-    localStorage.removeItem('cart');
+    localStorage.removeItem(CART_KEY);
     await refreshCart(dispatch);
   } catch (error) {
     toast.error(getMessage(error, 'Failed merging cart'));
