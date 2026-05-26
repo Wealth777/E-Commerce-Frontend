@@ -37,6 +37,34 @@ const VendorDetails = () => {
   const borderColor = isDark ? 'border-gray-700' : 'border-gray-100';
   const textSecondary = isDark ? 'text-gray-400' : 'text-gray-500';
 
+  const getCategoryId = (product) => {
+  if (!product?.category) return '';
+
+  if (typeof product.category === 'object') {
+    return product.category._id || product.category.id || '';
+  }
+
+  return product.category;
+};
+
+const getCategoryName = (product) => {
+  if (!product?.category) return 'General';
+
+  if (typeof product.category === 'object') {
+    return product.category.name || 'General';
+  }
+
+  return product.categoryName || 'General';
+};
+
+const normalizeProduct = (product) => ({
+  ...product,
+  _id: product._id || product.id,
+  id: product.id || product._id,
+  categoryId: getCategoryId(product),
+  categoryName: getCategoryName(product),
+});
+
   const fetchVendorDetails = useCallback(async () => {
     try {
       setLoading(true);
@@ -47,12 +75,36 @@ const VendorDetails = () => {
         ...product,
         _id: product._id || product.id,
         id: product.id || product._id,
+
+        categoryId: getCategoryId(product),
+        categoryName: getCategoryName(product),
       }));
 
       setVendorInfo(vendor);
       setProducts(vendorProducts);
-      const uniqueCategories = [...new Set(vendorProducts.map(p => p.category).filter(Boolean))];
-      setCategories(uniqueCategories);
+      const uniqueCategoriesMap = new Map();
+
+      vendorProducts.forEach((product) => {
+        const category = product.category;
+
+        if (!category) return;
+
+        if (typeof category === 'object') {
+          uniqueCategoriesMap.set(category._id, {
+            id: category._id,
+            name: category.name,
+            slug: category.slug,
+          });
+        } else {
+          uniqueCategoriesMap.set(category, {
+            id: category,
+            name: category,
+            slug: category,
+          });
+        }
+      });
+
+      setCategories([...uniqueCategoriesMap.values()]);
     } catch (error) {
       showToast(getMessage(error, 'Failed to load vendor details'), 'error');
     } finally {
@@ -227,7 +279,14 @@ const VendorDetails = () => {
                       <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}
                         className={`w-full p-3 rounded-xl border ${borderColor} focus:ring-2 focus:ring-green-500 outline-none transition-all ${isDark ? 'bg-gray-700' : 'bg-gray-50'}`}>
                         <option value="">All Categories</option>
-                        {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                        {categories.map((cat) => (
+                          <option
+                            key={cat.id}
+                            value={cat.id}
+                          >
+                            {cat.name}
+                          </option>
+                        ))}
                       </select>
                     </div>
 

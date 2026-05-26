@@ -52,7 +52,7 @@ const Products = () => {
       setProducts(getList(response, ['products']));
     } catch (err) {
       setError('Failed to load products');
-      showToast(getMessage(error, 'Failed to load products'), 'error');
+      showToast(getMessage(err, 'Failed to load products'), 'error');
     } finally {
       setLoading(false);
     }
@@ -69,10 +69,24 @@ const Products = () => {
     try {
       const formData = new FormData();
       formData.append('name', editingProduct.name);
+
       formData.append('description', editingProduct.description);
+
       formData.append('price', editingProduct.price);
-      formData.append('category', editingProduct.category);
+
+      formData.append('category', getCategoryId(editingProduct));
+
+      if (editingProduct.subCategory) {
+        formData.append(
+          'subCategory',
+          typeof editingProduct.subCategory === 'object'
+            ? editingProduct.subCategory._id
+            : editingProduct.subCategory
+        );
+      };
+
       formData.append('stock', editingProduct.stock);
+
       formData.append('image', editingProduct.image);
 
       const response = await apiClient.put(
@@ -110,11 +124,29 @@ const Products = () => {
     }
   };
 
+  const getCategoryName = (product) => {
+    if (!product?.category) return 'General';
+    if (typeof product.category === 'string') return product.category;
+    return product.category.name || 'General';
+  };
+
+  const getCategoryId = (product) => {
+    if (!product?.category) return '';
+    if (typeof product.category === 'string') return product.category;
+    return product.category._id || product.category.id || '';
+  };
+
+  const getSubCategoryName = (product) => {
+    if (!product?.subCategory) return '';
+    if (typeof product.subCategory === 'string') return product.subCategory;
+    return product.subCategory.name || '';
+  };
+
   // Stats Logic
   const totalProducts = products.length;
   const totalStock = products.reduce((sum, p) => sum + (p.stock || 0), 0);
   const totalValue = products.reduce((sum, p) => sum + ((p.price || 0) * (p.stock || 0)), 0);
-  const categories = [...new Set(products.map(p => p.category).filter(Boolean))].length;
+  const categories = [...new Set(products.map(p => getCategoryId(p)).filter(Boolean))].length;
 
   const getStockStatus = (stock) => {
     if (stock === 0) return { color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400', icon: <FaExclamationTriangle />, text: 'Out of Stock' };
@@ -267,7 +299,8 @@ const Products = () => {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`text-sm ${secondaryText}`}>{product.category || 'N/A'}</span>
+                          <span className={`text-sm ${secondaryText}`}>{getCategoryName(product)}
+                            {getSubCategoryName(product) ? ` / ${getSubCategoryName(product)}` : ''}</span>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex justify-end gap-2">
@@ -303,7 +336,8 @@ const Products = () => {
                       <p className="text-red-500 font-bold text-xl">₦{product.price?.toLocaleString()}</p>
                     </div>
                     <div className="flex items-center justify-between text-sm mb-5">
-                      <span className={`${isDark ? 'bg-gray-800' : 'bg-gray-100'} px-2 py-1 rounded-md ${secondaryText}`}>{product.category || 'General'}</span>
+                      <span className={`${isDark ? 'bg-gray-800' : 'bg-gray-100'} px-2 py-1 rounded-md ${secondaryText}`}>{getCategoryName(product)}
+                        {getSubCategoryName(product) ? ` / ${getSubCategoryName(product)}` : ''}</span>
                       <span className={secondaryText}>Stock: <span className="font-bold text-red-500">{product.stock}</span></span>
                     </div>
                     <div className="flex gap-2">
@@ -370,7 +404,8 @@ const Products = () => {
                   <label className={`block text-xs font-bold uppercase tracking-wider mb-1 ${secondaryText}`}>Category</label>
                   <input
                     type="text"
-                    value={editingProduct.category || ''}
+                    value={getCategoryName(editingProduct)}
+                    readOnly
                     onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value })}
                     className={`w-full px-4 py-3 rounded-xl border-2 ${isDark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'} focus:border-red-500 outline-none transition-all`}
                   />

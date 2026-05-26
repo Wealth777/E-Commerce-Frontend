@@ -39,17 +39,44 @@ const Wishlist = ({ product }) => {
 
       const formatted = items.map((item) => {
         const product = item.product || {};
-        const stock = product.countInStock ?? product.stock ?? 0;
+
+        const stock =
+          Number(
+            product.countInStock ??
+            product.stock ??
+            0
+          );
+
         return {
           id: product._id,
           name: product.name,
-          price: product.price,
-          originalPrice: product.originalPrice,
-          image: product.image,
-          stock: stock,
+          price: Number(product.price || 0),
+          originalPrice: Number(product.originalPrice || 0),
+          image:
+            product.image ||
+            product.images?.[0] ||
+            'https://via.placeholder.com/400',
+          stock,
           inStock: stock > 0,
-          rating: product.rating || 4,
-          reviews: product.numReviews || 0,
+
+          category:
+            typeof product?.category === 'object'
+              ? product?.category?.name || 'General'
+              : product?.categoryName || product?.category || 'General',
+
+          subCategory:
+            typeof product?.subCategory === 'object'
+              ? product?.subCategory?.name || ''
+              : product?.subCategoryName || product?.subCategory || '',
+
+          vendorName:
+            product.vendor?.storeName ||
+            product.vendor?.businessName ||
+            product.vendor?.fullName ||
+            'Store',
+
+          rating: Number(product.rating || 4),
+          reviews: Number(product.numReviews || 0),
           addedDate: item.addedAt,
         };
       });
@@ -76,16 +103,31 @@ const Wishlist = ({ product }) => {
 
   const handleAddToCart = (item) => {
     if (role !== 'buyer') {
-      showToast('You must be a buyer to add items to cart', 'warning');
+      showToast(
+        'You must be a buyer to add items to cart',
+        'warning'
+      );
       return;
     }
-    dispatch(addToCart({
-      _id: item.id,
-      name: item.name,
-      price: item.price,
-      image: item.image,
-      quantity: 1
-    }));
+
+    if (!item.inStock || item.stock <= 0) {
+      showToast(
+        'Product is out of stock',
+        'error'
+      );
+      return;
+    }
+
+    dispatch(
+      addToCart({
+        _id: item.id,
+        name: item.name,
+        price: item.price,
+        image: item.image,
+        stock: item.stock,
+        quantity: 1,
+      })
+    );
   };
 
   const sortedWishlist = [...wishlist].sort((a, b) => {
@@ -130,10 +172,10 @@ const Wishlist = ({ product }) => {
                   <span className="text-rose-500">{totalItems}</span> {totalItems === 1 ? 'item' : 'items'}
                 </span>
                 <span className={`text-sm ${textSecondary}`}>
-                  Total: <span className={`font-semibold ${textColor}`}>₦{totalValue.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                  Total: <span className={`font-semibold ${textColor}`}>₦{totalValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                 </span>
               </div>
-              
+
               <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
                 <select
                   value={sortBy}
@@ -210,7 +252,20 @@ const Wishlist = ({ product }) => {
                   </button>
                 </div>
                 <div className="p-4 flex flex-col flex-1">
-                  <h3 className={`font-semibold ${textColor} line-clamp-1 mb-1`}>{item.name}</h3>
+                  <h3 className={`font-semibold ${textColor} line-clamp-1`}>
+                    {item.name}
+                  </h3>
+
+                  <p className={`text-xs ${textSecondary}`}>
+                    {item.category}
+                    {item.subCategory
+                      ? ` / ${item.subCategory}`
+                      : ''}
+                  </p>
+
+                  <p className="text-xs text-green-600 font-medium">
+                    {item.vendorName}
+                  </p>
                   <div className="flex items-baseline gap-2 mb-4">
                     <span className={`text-lg font-bold ${textColor}`}>₦{item.price.toLocaleString()}</span>
                     {item.originalPrice && <span className={`text-xs line-through ${textSecondary}`}>₦{item.originalPrice.toLocaleString()}</span>}

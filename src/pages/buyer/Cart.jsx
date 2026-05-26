@@ -113,11 +113,32 @@ const Cart = () => {
   const freeShipProgress = Math.min(100, Math.round((subtotal / 100000) * 100));
 
   const updateQty = (id, q) => {
+    const item = items.find((i) => i.id === id);
+
+    if (!item) return;
+
+    const maxStock = item.stock || 0;
+
     if (q <= 0) {
       dispatch(removeFromCart(id));
-    } else {
-      dispatch(updateQuantity({ id, quantity: q }));
+      return;
     }
+
+    const safeQuantity = Math.min(q, maxStock);
+
+    if (q > maxStock) {
+      showToast(
+        `Only ${maxStock} item${maxStock > 1 ? 's' : ''} available in stock`,
+        'warning'
+      );
+    }
+
+    dispatch(
+      updateQuantity({
+        id,
+        quantity: safeQuantity,
+      })
+    );
   };
 
   const remove = (id) => {
@@ -225,8 +246,17 @@ const Cart = () => {
                           >
                             <Icon.Minus className="h-4 w-4" />
                           </button>
-                          <div className="min-w-[2.5rem] text-center text-sm font-medium tabular-nums">{item.quantity}</div>
+                          <div className="text-center">
+                            <div className="min-w-[2.5rem] text-sm font-medium tabular-nums">
+                              {item.quantity}
+                            </div>
+
+                            <div className={`text-[10px] ${subtle}`}>
+                              {item.stock} left
+                            </div>
+                          </div>
                           <button
+                            disabled={item.quantity >= item.stock}
                             onClick={() => updateQty(item.id, item.quantity + 1)}
                             className={`grid h-8 w-8 place-items-center rounded-lg transition hover:scale-105 active:scale-95 ${isDark ? "hover:bg-white/10" : "hover:bg-white"}`}
                             aria-label="Increase"
@@ -237,7 +267,7 @@ const Cart = () => {
 
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => toast.success("Saved for later")}
+                            onClick={() => showToast("Saved for later")}
                             className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition ${isDark ? "text-zinc-300 hover:bg-white/5" : "text-zinc-600 hover:bg-zinc-100"}`}
                           >
                             Save for later

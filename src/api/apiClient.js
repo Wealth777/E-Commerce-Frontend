@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:6778/api';
+// export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:6778/api';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://e-commerce-backend-lmdt.onrender.com';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,

@@ -4,8 +4,6 @@ import {
   FaShoppingCart, FaHeart, FaStar, FaArrowLeft, FaShieldAlt,
   FaTruck, FaUndo, FaShare, FaCheck, FaStore, FaMinus, FaPlus, FaChevronRight,
 } from 'react-icons/fa';
-
-// New Imports
 import Loading from '../../components/layout/Loding';
 import apiClient from '../../api/apiClient';
 import { getList, getMessage, getPayload } from '../../utils/apiResponse';
@@ -27,9 +25,9 @@ const ProductDetail = () => {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
-  const [selectedImage, setSelectedImage] = useState(0);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
+  const [similarProducts, setSimilarProducts] = useState([]);
 
   const bgColor = isDark ? 'bg-gray-900 text-white' : 'bg-gradient-to-br from-gray-50 via-white to-gray-100';
 
@@ -47,6 +45,47 @@ const ProductDetail = () => {
           id: productData.id || productData._id,
           vendor: payload.vendor || productData.vendor,
         });
+
+        const allProductsResponse = await apiClient.get('/vendor/product/all');
+        const allProducts = getList(allProductsResponse, ['products']);
+
+        const currentSubCategoryId =
+          typeof productData.subCategory === 'object'
+            ? productData.subCategory?._id
+            : productData.subCategory;
+
+        const currentCategoryId =
+          typeof productData.category === 'object'
+            ? productData.category?._id
+            : productData.category;
+
+        const relatedProducts = allProducts
+          .filter((item) => {
+            const itemId = item._id || item.id;
+
+            const itemSubCategoryId =
+              typeof item.subCategory === 'object'
+                ? item.subCategory?._id
+                : item.subCategory;
+
+            const itemCategoryId =
+              typeof item.category === 'object'
+                ? item.category?._id
+                : item.category;
+
+            if (itemId === productData._id || itemId === productData.id) {
+              return false;
+            }
+
+            if (currentSubCategoryId) {
+              return itemSubCategoryId === currentSubCategoryId;
+            }
+
+            return itemCategoryId === currentCategoryId;
+          })
+          .slice(0, 4);
+
+        setSimilarProducts(relatedProducts);
       } catch (error) {
         showToast(getMessage(error, 'Failed to load product'), 'error');
         navigate('/products');
@@ -63,10 +102,18 @@ const ProductDetail = () => {
       navigate('/login');
       return;
     }
-    dispatch(addToCart({
-      ...product,
-      quantity,
-    }));
+    dispatch(
+      addToCart(
+        {
+          ...product,
+          quantity: Math.min(
+            quantity,
+            product.stock
+          ),
+        },
+        toast
+      )
+    );
   };
 
   const handleToggleWishlist = async () => {
@@ -101,6 +148,22 @@ const ProductDetail = () => {
     }
   };
 
+  const categoryName =
+    typeof product?.category === 'object'
+      ? product?.category?.name
+      : product?.category || 'General';
+
+  const subCategoryName =
+    typeof product?.subCategory === 'object'
+      ? product?.subCategory?.name
+      : product?.subCategory || '';
+
+  const rating =
+    Number(product?.rating || 4);
+
+  const reviewCount =
+    Number(product?.reviews || 0);
+
   if (loading) return (
     <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-white'} flex items-center justify-center`}>
       <Loading text='Loading Product...' />
@@ -109,7 +172,17 @@ const ProductDetail = () => {
 
   if (!product) return null;
 
-  const productImages = Array.isArray(product.images) ? product.images : [product.image];
+  const productImages = (
+    Array.isArray(product.images)
+      ? product.images
+      : [product.image]
+  ).filter(Boolean);
+
+  if (productImages.length === 0) {
+    productImages.push(
+      'https://via.placeholder.com/500x500'
+    );
+  }
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${bgColor}`}>
@@ -118,12 +191,12 @@ const ProductDetail = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <button
-            className={`group inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition ${isDark ? "bg-zinc-900/70 hover:bg-zinc-800 text-zinc-300 ring-1 ring-white/10" : "bg-white/70 hover:bg-white text-zinc-600 ring-1 ring-zinc-900/5"}`}
-            onClick={() => navigate(-1)}
-          >
-            <FaArrowLeft className="h-4 w-4 transition group-hover:-translate-x-0.5" />
-            Back
-          </button>
+              className={`group inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition ${isDark ? "bg-zinc-900/70 hover:bg-zinc-800 text-zinc-300 ring-1 ring-white/10" : "bg-white/70 hover:bg-white text-zinc-600 ring-1 ring-zinc-900/5"}`}
+              onClick={() => navigate(-1)}
+            >
+              <FaArrowLeft className="h-4 w-4 transition group-hover:-translate-x-0.5" />
+              Back
+            </button>
           </div>
         </div>
       </div>
@@ -135,7 +208,12 @@ const ProductDetail = () => {
           <FaChevronRight className="text-[10px]" />
           <span className="hover:text-red-600 cursor-pointer">Products</span>
           <FaChevronRight className="text-[10px]" />
-          <span className="hover:text-red-600 cursor-pointer">{product.category}</span>
+          <span className="hover:text-red-600 cursor-pointer">
+            {categoryName}
+            {subCategoryName
+              ? ` / ${subCategoryName}`
+              : ''}
+          </span>
           <FaChevronRight className="text-[10px]" />
           <span className={`font-medium truncate max-w-[150px] sm:max-w-xs ${isDark ? 'text-white' : 'text-gray-900'}`}>
             {product.name}
@@ -173,7 +251,7 @@ const ProductDetail = () => {
 
               <div className="aspect-square p-4 sm:p-8 flex items-center justify-center">
                 <img
-                  src={productImages[selectedImage]}
+                  src={productImages[0]}
                   alt={product.name}
                   className="max-h-full w-auto object-contain transition-all duration-500 hover:scale-105"
                 />
@@ -181,7 +259,7 @@ const ProductDetail = () => {
             </div>
 
             {/* Thumbnails */}
-            <div className="grid grid-cols-4 gap-3">
+            {/* <div className="grid grid-cols-4 gap-3">
               {productImages.map((img, index) => (
                 <button
                   key={index}
@@ -192,6 +270,52 @@ const ProductDetail = () => {
                   <img src={img} alt="" className="w-full h-full object-cover" />
                 </button>
               ))}
+            </div> */}
+
+            <div className={`rounded-3xl border p-4 shadow-sm ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  Similar Products
+                </h3>
+
+                <span className="text-xs text-gray-500">
+                  Same {subCategoryName ? 'subcategory' : 'category'}
+                </span>
+              </div>
+
+              {similarProducts.length === 0 ? (
+                <p className="text-sm text-gray-500">
+                  No similar products available yet.
+                </p>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  {similarProducts.map((item) => (
+                    <button
+                      key={item._id || item.id}
+                      type="button"
+                      onClick={() => navigate(`/product/${item._id || item.id}`)}
+                      className={`text-left rounded-2xl overflow-hidden border transition hover:shadow-md ${isDark ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'
+                        }`}
+                    >
+                      <img
+                        src={item.image || 'https://via.placeholder.com/300x200'}
+                        alt={item.name}
+                        className="w-full h-28 object-cover"
+                      />
+
+                      <div className="p-3">
+                        <p className={`text-sm font-semibold line-clamp-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                          {item.name}
+                        </p>
+
+                        <p className="text-sm font-bold text-green-600 mt-1">
+                          ₦{Number(item.price || 0).toLocaleString()}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -213,8 +337,19 @@ const ProductDetail = () => {
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1">
                 {[...Array(5)].map((_, i) => (
-                  <FaStar key={i} className={i < 4 ? 'text-yellow-400' : 'text-gray-200'} />
+                  <FaStar
+                    key={i}
+                    className={
+                      i < Math.round(rating)
+                        ? 'text-yellow-400'
+                        : 'text-gray-200'
+                    }
+                  />
                 ))}
+
+                <span className="text-gray-500 text-sm">
+                  {rating} Rating ({reviewCount})
+                </span>
               </div>
               <span className="text-gray-500 text-sm">| 4.0 Rating</span>
             </div>
@@ -222,11 +357,11 @@ const ProductDetail = () => {
             <div className={`rounded-2xl p-6 border ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-green-50/50 border-green-300'}`}>
               <div className="flex items-baseline gap-4 flex-wrap">
                 <span className="text-4xl font-black text-green-600">
-                  ₦{product.price.toLocaleString()}
+                  ₦{Number(product.price || 0).toLocaleString()}
                 </span>
                 {product.originalPrice > product.price && (
                   <span className="text-lg text-gray-400 line-through">
-                    ₦{product.originalPrice.toLocaleString()}
+                    ₦{Number(product.price || 0).toLocaleString()}
                   </span>
                 )}
               </div>
@@ -244,7 +379,7 @@ const ProductDetail = () => {
                 <div className={`flex items-center ${isDark ? 'bg-gray-500 border-gray-100' : 'bg-white border-gray-100'} rounded-xl`}>
                   <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="p-4 hover:text-green-600"><FaMinus /></button>
                   <span className="w-12 text-center font-bold text-gray-900">{quantity}</span>
-                  <button onClick={() => setQuantity(quantity + 1)} className="p-4 hover:text-green-600"><FaPlus /></button>
+                  <button onClick={() => setQuantity(Math.min(product.stock, quantity + 1))} className="p-4 hover:text-green-600"><FaPlus /></button>
                 </div>
               </div>
 
@@ -281,7 +416,8 @@ const ProductDetail = () => {
         <div className="flex items-center gap-4">
           <div>
             <p className="text-[10px] text-gray-500 uppercase">Total</p>
-            <p className="text-lg font-black text-red-600">₦{(product.price * quantity).toLocaleString()}</p>
+            <p className="text-lg font-black text-red-600">₦{Number(product.price * quantity || 0).toLocaleString()}</p>
+
           </div>
           <button onClick={handleAddToCart} className="flex-1 bg-red-600 text-white py-3 rounded-xl font-bold">
             Add to Cart

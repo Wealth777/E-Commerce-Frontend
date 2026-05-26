@@ -6,7 +6,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { toast } from 'react-toastify';
 import apiClient from '../../api/apiClient';
 import { getList, getMessage, getPayload } from '../../utils/apiResponse';
-import { FaSearch, FaSlidersH, FaLayerGroup, FaTags, FaBoxOpen, FaFootballBall, FaHome } from 'react-icons/fa';
+import { FaSearch, FaSlidersH, FaLayerGroup } from 'react-icons/fa';
 import Loading from '../../components/layout/Loding';
 import { useToast } from '../../context/ToastContext';
 
@@ -15,10 +15,13 @@ const Products = () => {
   const { isDark } = useTheme();
   const { showToast } = useToast();
   const { products, filteredProducts, filter } = useSelector((state) => state.products);
-  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchProducts();
+    fetchCategories();
   }, []);
 
   useEffect(() => {
@@ -37,20 +40,23 @@ const Products = () => {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      setCategoriesLoading(true);
+
+      const response = await apiClient.get('/vendor/categories');
+
+      setCategories(response.data?.data || response.data?.categories || []);
+    } catch (error) {
+      showToast(getMessage(error, 'Failed to load categories'), 'error');
+    } finally {
+      setCategoriesLoading(false);
+    }
+  };
   const bgColor = isDark ? 'bg-gray-950' : 'bg-gray-50';
   const textColor = isDark ? 'text-white' : 'text-gray-900';
   const cardBg = isDark ? 'bg-gray-900/50' : 'bg-white';
   const inputBg = isDark ? 'bg-gray-800' : 'bg-gray-100';
-
-  const categories = [
-    { id: '', name: 'All Products', icon: <FaLayerGroup /> },
-    { id: 'home', name: 'Home & Garden', icon: <FaHome /> },
-    { id: 'food', name: 'Food & Beverages', icon: <FaBoxOpen /> },
-    { id: 'electronics', name: 'Electronics', icon: <FaBoxOpen /> },
-    { id: 'books', name: 'Books', icon: <FaLayerGroup /> },
-    { id: 'fashion', name: 'Fashion', icon: <FaTags /> },
-    { id: 'sports', name: 'Sports & Outdoors', icon: <FaFootballBall /> },
-  ];
 
   return (
     <div className={`min-h-screen ${bgColor} transition-colors duration-300`}>
@@ -63,7 +69,7 @@ const Products = () => {
         </div>
         <div className="max-w-7xl mx-auto px-4 relative z-10 text-center md:text-left">
           <h1 className="text-5xl md:text-6xl font-black text-white tracking-tighter mb-4">
-            {filter.category ? filter.category.charAt(0).toUpperCase() + filter.category.slice(1) : 'Our Catalog'}
+            {filter.categoryName || 'Our Catalog'}
           </h1>
           <p className="text-red-100 text-lg max-w-2xl font-medium">
             Discover premium products curated just for you. Quality meets convenience.
@@ -73,20 +79,55 @@ const Products = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* 2. Category Quick-Bar (Horizontal Scroll on Mobile) */}
-        <div className="flex gap-3 overflow-x-auto pb-6 no-scrollbar mb-8">
+        {/* <div className="flex gap-3 overflow-x-auto pb-6 no-scrollbar mb-8">
           {categories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => dispatch(setFilter({ category: cat.id }))}
-              className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold whitespace-nowrap transition-all transform active:scale-95 ${
-                filter.category === cat.id
+              className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold whitespace-nowrap transition-all transform active:scale-95 ${filter.category === cat.id
                   ? 'bg-red-600 text-white shadow-lg shadow-red-600/30'
                   : `${isDark ? 'bg-gray-900 text-gray-400' : 'bg-white text-gray-600'} hover:bg-red-50 hover:text-red-600 shadow-sm border border-transparent`
-              }`}
+                }`}
             >
               {cat.icon} {cat.name}
             </button>
           ))}
+        </div> */}
+
+        <div className="flex gap-3 overflow-x-auto pb-6 no-scrollbar mb-8">
+          <button
+            onClick={() => dispatch(setFilter({ category: '', categoryName: '' }))}
+            className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold whitespace-nowrap transition-all transform active:scale-95 ${!filter.category
+                ? 'bg-red-600 text-white shadow-lg shadow-red-600/30'
+                : `${isDark ? 'bg-gray-900 text-gray-400' : 'bg-white text-gray-600'} hover:bg-red-50 hover:text-red-600 shadow-sm border border-transparent`
+              }`}
+          >
+            <FaLayerGroup /> All Products
+          </button>
+
+          {categoriesLoading ? (
+            <button className={`px-6 py-3 rounded-2xl font-bold whitespace-nowrap ${isDark ? 'bg-gray-900 text-gray-400' : 'bg-white text-gray-600'}`}>
+              Loading categories...
+            </button>
+          ) : (
+            categories.map((cat) => (
+              <button
+                key={cat._id}
+                onClick={() =>
+                  dispatch(setFilter({
+                    category: cat._id,
+                    categoryName: cat.name,
+                  }))
+                }
+                className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold whitespace-nowrap transition-all transform active:scale-95 ${filter.category === cat._id
+                    ? 'bg-red-600 text-white shadow-lg shadow-red-600/30'
+                    : `${isDark ? 'bg-gray-900 text-gray-400' : 'bg-white text-gray-600'} hover:bg-red-50 hover:text-red-600 shadow-sm border border-transparent`
+                  }`}
+              >
+                <FaLayerGroup /> {cat.name}
+              </button>
+            ))
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
@@ -97,9 +138,9 @@ const Products = () => {
                 <h3 className={`text-xl font-black ${textColor} flex items-center gap-2`}>
                   <FaSlidersH className="text-green-600" /> Filters
                 </h3>
-                { (filter.search || filter.category) && (
-                  <button 
-                    onClick={() => dispatch(setFilter({ search: '', category: '', priceRange: [0, 100000000] }))}
+                {(filter.search || filter.category) && (
+                  <button
+                    onClick={() => dispatch(setFilter({ search: '', category: '', categoryName: '', priceRange: [0, 100000000] }))}
                     className="text-xs font-bold text-red-500 hover:underline"
                   >
                     Clear All
@@ -144,11 +185,11 @@ const Products = () => {
               </div>
 
               <div className="pt-6 border-t border-inherit">
-                 <div className="p-4 rounded-2xl bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-800/20">
-                    <p className="text-xs text-red-600 dark:text-red-400 font-bold leading-relaxed">
-                        Tip: Narrow down your search by using both category and price filters.
-                    </p>
-                 </div>
+                <div className="p-4 rounded-2xl bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-800/20">
+                  <p className="text-xs text-red-600 dark:text-red-400 font-bold leading-relaxed">
+                    Tip: Narrow down your search by using both category and price filters.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -166,8 +207,8 @@ const Products = () => {
                 </div>
                 <h2 className="text-2xl font-black mb-2">No Match Found</h2>
                 <p className="text-gray-500 max-w-xs mx-auto mb-8">We couldn't find anything matching your current filters. Try adjusting them!</p>
-                <button 
-                  onClick={() => dispatch(setFilter({ search: '', category: '', priceRange: [0, 100000000] }))}
+                <button
+                  onClick={() => dispatch(setFilter({ search: '', category: '', categoryName: '', priceRange: [0, 100000000] }))}
                   className="px-8 py-3 bg-red-600 text-white rounded-xl font-bold"
                 >
                   Reset All Filters
@@ -176,9 +217,9 @@ const Products = () => {
             ) : (
               <div>
                 <div className="flex items-center justify-between mb-8 px-2">
-                    <p className="font-bold text-gray-500">
-                        Showing <span className="text-red-600">{filteredProducts.length}</span> Results
-                    </p>
+                  <p className="font-bold text-gray-500">
+                    Showing <span className="text-red-600">{filteredProducts.length}</span> Results
+                  </p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
                   {filteredProducts.map((product) => (

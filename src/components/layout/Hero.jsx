@@ -5,7 +5,7 @@ import { FaUniversity } from 'react-icons/fa';
 
 const Hero = () => {
   return (
-    <div className="relative bg-gradient-to-r from-green-600 to-green-800 dark:from-green-800 dark:to-green-900 text-white overflow-hidden">
+    <div className="relative bg-gradient-to-r from-green-600 to-green-800 dark:from-green-800 dark:to-green-900 text-white overflow-hidden rounded">
       <div className="absolute inset-0 bg-black opacity-10"></div>
       
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">

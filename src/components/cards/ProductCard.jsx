@@ -55,6 +55,28 @@ const ProductCard = ({ product }) => {
 
   };
 
+  const categoryName =
+    typeof product.category === 'object'
+      ? product.category?.name
+      : product.category || product.categoryName || 'Uncategorized';
+
+  const subCategoryName =
+    typeof product.subCategory === 'object'
+      ? product.subCategory?.name
+      : product.subCategory || '';
+
+  const vendorName =
+    product?.vendor?.storeName ||
+    product?.vendorName ||
+    (typeof product?.vendor === 'string' ? product.vendor : '') ||
+    'Unknown vendor';
+
+  const vendorId =
+    product?.vendor?._id ||
+    product?.vendor?.id ||
+    product?.vendorId ||
+    '';
+
   const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
@@ -88,7 +110,8 @@ const ProductCard = ({ product }) => {
       <div className="p-4">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-medium px-2 py-1 rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
-            {product.category}
+            {categoryName}
+            {subCategoryName ? ` / ${subCategoryName}` : ''}
           </span>
           <div className="flex items-center text-sm text-yellow-500">
             <FaStar className="h-4 w-4 fill-current" />
@@ -99,7 +122,7 @@ const ProductCard = ({ product }) => {
           </div>
         </div>
 
-        <Link to={`/products/${product.id}`}>
+        <Link to={`/products/${productId}`}>
           <h3 className="font-medium text-gray-900 dark:text-white mb-1 line-clamp-1 hover:text-green-600">
             {product.name}
           </h3>
@@ -121,13 +144,17 @@ const ProductCard = ({ product }) => {
               )}
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Seller:{" "}
-              <Link
-                to={`/vendor/${product?.vendor?._id || product?.vendor?.id}`}
-                className="hover:underline hover:text-blue-400 text-blue-500"
-              >
-                {product?.vendor?.storeName}
-              </Link>
+              Seller:{' '}
+              {vendorId ? (
+                <Link
+                  to={`/vendor/${vendorId}`}
+                  className="hover:underline hover:text-blue-400 text-blue-500"
+                >
+                  {vendorName}
+                </Link>
+              ) : (
+                <span>{vendorName}</span>
+              )}
             </p>
           </div>
 

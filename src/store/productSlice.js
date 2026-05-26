@@ -9,8 +9,15 @@ const initialState = {
   filter: {
     search: '',
     category: '',
+    categoryName: '',
     priceRange: [0, 100000000],
   },
+};
+
+const getCategoryId = (category) => {
+  if (!category) return '';
+  if (typeof category === 'string') return category;
+  return category._id || category.id || '';
 };
 
 const productSlice = createSlice({
@@ -18,39 +25,63 @@ const productSlice = createSlice({
   initialState,
   reducers: {
     setProducts: (state, action) => {
-      state.products = action.payload;
-      state.filteredProducts = action.payload;
+      const products = Array.isArray(action.payload) ? action.payload : [];
+      state.products = products;
+      state.filteredProducts = products;
     },
+
     setSelectedProduct: (state, action) => {
       state.selectedProduct = action.payload;
     },
+
     setLoading: (state, action) => {
       state.loading = action.payload;
     },
+
     setError: (state, action) => {
       state.error = action.payload;
     },
+
     setFilter: (state, action) => {
-      state.filter = { ...state.filter, ...action.payload };
+      state.filter = {
+        ...state.filter,
+        ...action.payload,
+      };
     },
+
     filterProducts: (state) => {
+      const search = state.filter.search.toLowerCase().trim();
+      const selectedCategory = state.filter.category;
+
       state.filteredProducts = state.products.filter((product) => {
-        const matchesSearch = product.name
-          .toLowerCase()
-          .includes(state.filter.search.toLowerCase());
+        const productName = product?.name || '';
+        const productCategoryId = getCategoryId(product?.category);
+        const productSubCategoryId = getCategoryId(product?.subCategory);
+
+        const matchesSearch =
+          !search || productName.toLowerCase().includes(search);
+
         const matchesCategory =
-          state.filter.category === '' || product.category === state.filter.category;
+          !selectedCategory ||
+          productCategoryId === selectedCategory ||
+          productSubCategoryId === selectedCategory;
+
+        const price = Number(product?.price || 0);
+
         const matchesPrice =
-          product.price >= state.filter.priceRange[0] &&
-          product.price <= state.filter.priceRange[1];
+          price >= state.filter.priceRange[0] &&
+          price <= state.filter.priceRange[1];
+
         return matchesSearch && matchesCategory && matchesPrice;
       });
     },
+
     resetFilter: (state) => {
       state.filter = {
         search: '',
         category: '',
-        priceRange: [0, 100000],
+        categoryName: '',
+        priceRange: [0, 100000000],
       };
       state.filteredProducts = state.products;
     },
@@ -66,4 +97,5 @@ export const {
   filterProducts,
   resetFilter,
 } = productSlice.actions;
+
 export default productSlice.reducer;

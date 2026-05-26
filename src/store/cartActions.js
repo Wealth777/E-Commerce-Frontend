@@ -12,21 +12,57 @@ const saveLocalCart = (items) => {
   localStorage.setItem('cart', JSON.stringify(items));
 };
 
-const normalizeCartItem = (item) => ({
-  id: item.id || item._id || item.productId || item.product?._id,
-  _id: item._id || item.product?._id || item.id,
-  name: item.name || item.product?.name,
-  price: item.price || item.product?.price,
-  image: item.image || item.product?.image,
-  quantity: item.quantity || 1,
-  vendorId: item.vendorId || item.vendor?._id || item.product?.vendor?._id,
-  vendorName: item.vendorName || item.vendor?.businessName || item.vendor?.fullName || item.product?.vendor?.businessName,
-  vendorBankName: item.vendorBankName || item.vendor?.bankName || item.product?.vendor?.bankName,
-  vendorAccountName: item.vendorAccountName || item.vendor?.accountName || item.product?.vendor?.accountName,
-  vendorAccountNumber: item.vendorAccountNumber || item.vendor?.accountNumber || item.product?.vendor?.accountNumber,
-});
+const getSafeStock = (item) => {
+  return Number(
+    item.stock ??
+    item.product?.stock ??
+    0
+  );
+};
 
-const normalizeCartItems = (response) => getCartItems(response).map(normalizeCartItem).filter((item) => item.id);
+const clampQuantity = (quantity, stock) => {
+  const safeQuantity = Number(quantity || 1);
+  const safeStock = Number(stock || 0);
+
+  if (safeStock <= 0) return 0;
+
+  return Math.min(
+    Math.max(1, safeQuantity),
+    safeStock
+  );
+};
+
+const normalizeCartItem = (item) => {
+  const stock = getSafeStock(item);
+
+  return {
+    id: item.id || item._id || item.productId || item.product?._id,
+    _id: item._id || item.product?._id || item.id,
+    name: item.name || item.product?.name,
+    price: item.price || item.product?.price,
+    image: item.image || item.product?.image,
+    stock,
+    quantity: clampQuantity(item.quantity || 1, stock),
+    vendorId: item.vendorId || item.vendor?._id || item.product?.vendor?._id,
+    vendorName:
+      item.vendorName ||
+      item.vendor?.storeName ||
+      item.vendor?.businessName ||
+      item.vendor?.fullName ||
+      item.product?.vendor?.storeName ||
+      item.product?.vendor?.businessName ||
+      item.product?.vendor?.fullName ||
+      'Unknown Vendor',
+    vendorBankName: item.vendorBankName || item.vendor?.bankName || item.product?.vendor?.bankName,
+    vendorAccountName: item.vendorAccountName || item.vendor?.accountName || item.product?.vendor?.accountName,
+    vendorAccountNumber: item.vendorAccountNumber || item.vendor?.accountNumber || item.product?.vendor?.accountNumber,
+  };
+};
+
+const normalizeCartItems = (response) =>
+  getCartItems(response)
+    .map(normalizeCartItem)
+    .filter((item) => item.id && item.quantity > 0);
 
 const refreshCart = async (dispatch) => {
   const res = await apiClient.get('/buyer/cart');
@@ -38,23 +74,60 @@ const refreshCart = async (dispatch) => {
 export const addToCart = (product) => async (dispatch, getState) => {
   const { auth, cart } = getState();
   const productId = product._id || product.id;
+  const stock = getSafeStock(product);
+  const quantity = clampQuantity(product.quantity || 1, stock);
+
+  if (!productId) {
+    toast.error('Invalid product');
+    return;
+  }
+
+  if (stock <= 0 || quantity <= 0) {
+    toast.error('Product is out of stock');
+    return;
+  }
+
+  const existingItem = cart.items.find((item) => item.id === productId);
+  const existingQuantity = existingItem?.quantity || 0;
+
+  const safeTotalQuantity = clampQuantity(
+    existingQuantity + quantity,
+    stock
+  );
 
   const payload = {
     ...product,
     id: productId,
-    quantity: product.quantity || 1,
+    stock,
+    quantity: safeTotalQuantity,
   };
 
   if (!auth.isAuthenticated) {
+    const updatedItems = existingItem
+      ? cart.items.map((item) =>
+          item.id === productId
+            ? {
+                ...item,
+                quantity: safeTotalQuantity,
+              }
+            : item
+        )
+      : [...cart.items, payload];
+
     dispatch(addLocal(payload));
-    saveLocalCart([...cart.items, payload]);
+    saveLocalCart(updatedItems);
+
+    if (safeTotalQuantity >= stock) {
+      toast.info(`Only ${stock} item${stock > 1 ? 's' : ''} available in stock`);
+    }
+
     return;
   }
 
   try {
     await apiClient.post('/buyer/cart/add', {
       productId,
-      quantity: payload.quantity,
+      quantity,
     });
 
     await refreshCart(dispatch);
@@ -85,13 +158,39 @@ export const removeFromCart = (id) => async (dispatch, getState) => {
 
 export const updateQuantity = ({ id, quantity }) => async (dispatch, getState) => {
   const { auth, cart } = getState();
+  const item = cart.items.find((cartItem) => cartItem.id === id);
+
+  if (!item) return;
+
+  const stock = getSafeStock(item);
+  const safeQuantity = clampQuantity(quantity, stock);
+
+  if (quantity <= 0) {
+    dispatch(removeFromCart(id));
+    return;
+  }
+
+  if (stock <= 0 || safeQuantity <= 0) {
+    toast.error('Product is out of stock');
+    dispatch(removeFromCart(id));
+    return;
+  }
+
+  if (quantity > stock) {
+    toast.info(`Only ${stock} item${stock > 1 ? 's' : ''} available in stock`);
+  }
 
   if (!auth.isAuthenticated) {
-    const updated = cart.items.map((item) =>
-      item.id === id ? { ...item, quantity } : item
+    const updated = cart.items.map((cartItem) =>
+      cartItem.id === id
+        ? {
+            ...cartItem,
+            quantity: safeQuantity,
+          }
+        : cartItem
     );
 
-    dispatch(updateLocal({ id, quantity }));
+    dispatch(updateLocal({ id, quantity: safeQuantity }));
     saveLocalCart(updated);
     return;
   }
@@ -99,7 +198,7 @@ export const updateQuantity = ({ id, quantity }) => async (dispatch, getState) =
   try {
     await apiClient.put('/buyer/cart/update', {
       productId: id,
-      quantity,
+      quantity: safeQuantity,
     });
 
     await refreshCart(dispatch);
@@ -116,9 +215,14 @@ export const mergeCart = () => async (dispatch, getState) => {
 
   try {
     for (const item of cart.items) {
+      const stock = getSafeStock(item);
+      const quantity = clampQuantity(item.quantity || 1, stock);
+
+      if (quantity <= 0) continue;
+
       await apiClient.post('/buyer/cart/add', {
         productId: item.id || item._id,
-        quantity: item.quantity || 1,
+        quantity,
       });
     }
 
