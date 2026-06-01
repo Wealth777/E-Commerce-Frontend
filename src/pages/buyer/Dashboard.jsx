@@ -14,6 +14,7 @@ import {
   CheckCircle,
   ArrowRight,
   PhoneCall,
+  MessageCircle,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Loading from '../../components/layout/Loding';
@@ -130,6 +131,7 @@ const App = () => {
     { title: 'My Orders', description: 'Track packages', icon: Package, href: '/buyer/orders', color: 'text-emerald-600', bg: 'bg-emerald-50' },
     { title: 'Shopping Cart', description: `${cart.length} items`, icon: ShoppingCart, href: '/cart', color: 'text-orange-600', bg: 'bg-orange-50' },
     { title: 'Wishlist', description: 'Saved for later', icon: Heart, href: '/buyer/wishlist', color: 'text-rose-600', bg: 'bg-rose-50' },
+    { title: 'Messages', description: 'Chat with vendors', icon: MessageCircle, href: '/buyer/messages', color: 'text-green-600', bg: 'bg-green-50' },
   ];
 
   const getPaymentStyle = (status) => {

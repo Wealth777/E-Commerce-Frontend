@@ -59,6 +59,7 @@ const Navbar = () => {
                     { name: 'Products', path: '/vendor/products' },
                     { name: 'Orders', path: '/vendor/orders' },
                     { name: 'Notifications', path: '/vendor/notifications' },
+                    { name: 'Messages', path: '/vendor/messages' },
                     { name: 'Request Refund', path: '/vendor/refund-requests' },
                     { name: 'Request Return', path: '/vendor/return-requests' },
                     { name: 'Analytics', path: '/vendor/analytics' },
@@ -71,6 +72,7 @@ const Navbar = () => {
                     { name: 'Buy Product', path: '/products' },
                     { name: 'My Orders', path: '/buyer/orders' },
                     { name: 'Notifications', path: '/buyer/notifications' },
+                    { name: 'Messages', path: '/buyer/messages' },
                     { name: 'My Wishlist', path: '/buyer/wishlist' },
                     { name: 'My Profile', path: '/buyer/profile' }
                 ];
