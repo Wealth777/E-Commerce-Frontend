@@ -369,6 +369,8 @@ import Messages from './pages/chat/Messages';
 import FounderDashboard from './pages/founder/Dashboard';
 import FounderUsers from './pages/founder/Users';
 import FounderAnalytics from './pages/founder/Analytics';
+import FounderVendors from './pages/founder/Vendors';
+import FounderBuyers from './pages/founder/Buyers';
 
 import CartSync from './CartSync';
 
@@ -632,6 +634,48 @@ function App() {
                   element={
                     <ProtectedRoute requiredRole="founder">
                       <FounderUsers />
+                    </ProtectedRoute>
+                  }
+                />
+                {/* Founder Routes */}
+                <Route
+                  path="/founder/dashboard"
+                  element={
+                    <ProtectedRoute requiredRole="founder">
+                      <FounderDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/founder/users"
+                  element={
+                    <ProtectedRoute requiredRole="founder">
+                      <FounderUsers />
+                    </ProtectedRoute>
+                  }
+                />
+                {/* --- ADD THIS NEW ROUTE BLOCK HERE --- */}
+                <Route
+                  path="/founder/vendors"
+                  element={
+                    <ProtectedRoute requiredRole="founder">
+                      <FounderVendors />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/founder/buyers"
+                  element={
+                    <ProtectedRoute requiredRole="founder">
+                      <FounderBuyers />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/founder/analytics"
+                  element={
+                    <ProtectedRoute requiredRole="founder">
+                      <FounderAnalytics />
                     </ProtectedRoute>
                   }
                 />
