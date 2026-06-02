@@ -5,6 +5,7 @@ import cartReducer from './cartSlice';
 import orderReducer from './orderSlice';
 import notificationReducer from './notificationSlice';
 import vendorReducer from './vendorSlice';
+import chatReducer from './chatSlice';
 
 export const store = configureStore({
   reducer: {
@@ -14,7 +15,8 @@ export const store = configureStore({
     orders: orderReducer,
     notifications: notificationReducer,
     vendor: vendorReducer,
+    chat: chatReducer,
   },
 });
 
-export default store;
+export default store; 

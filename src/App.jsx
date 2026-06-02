@@ -47,6 +47,7 @@ import VendorPayment from './pages/vendor/Payment';
 import VendorRefundRequests from './pages/vendor/RefundRequests';
 import VendorReturnRequests from './pages/vendor/ReturnRequests';
 import Notifications from './pages/notifications/Notifications';
+import Messages from './pages/chat/Messages';
 
 // Founder Pages
 import FounderDashboard from './pages/founder/Dashboard';
@@ -164,6 +165,14 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
+                <Route
+                  path="/buyer/messages"
+                  element={
+                    <ProtectedRoute requiredRole="buyer">
+                      <Messages />
+                    </ProtectedRoute>
+                  }
+                />
 
                 {/* Vendor Routes */}
                 <Route
@@ -251,6 +260,14 @@ function App() {
                   element={
                     <ProtectedRoute requiredRole="vendor">
                       <VendorReturnRequests />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/vendor/messages"
+                  element={
+                    <ProtectedRoute requiredRole="vendor">
+                      <Messages />
                     </ProtectedRoute>
                   }
                 />
