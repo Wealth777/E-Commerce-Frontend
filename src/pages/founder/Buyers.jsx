@@ -101,6 +101,7 @@ const FounderBuyers = () => {
                     <th className={`p-4 text-sm font-semibold ${textColor}`}>Buyer Info</th>
                     <th className={`p-4 text-sm font-semibold ${textColor}`}>Platform Spend</th>
                     <th className={`p-4 text-sm font-semibold text-right ${textColor}`}>Actions</th>
+                    <th className={`p-4 text-sm font-semibold text-right ${textColor}`}>Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
