@@ -654,7 +654,6 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
-                {/* --- ADD THIS NEW ROUTE BLOCK HERE --- */}
                 <Route
                   path="/founder/vendors"
                   element={
