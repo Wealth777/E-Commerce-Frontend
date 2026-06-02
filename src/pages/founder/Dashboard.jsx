@@ -1,10 +1,16 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useTheme } from '../../context/ThemeContext';
+import API from '../../api/axios'; // Our centralized backend instance
 
 const FounderDashboard = () => {
   const { user } = useSelector((state) => state.auth);
   const { isDark } = useTheme();
+
+  // --- LIVE BACKEND STATE ---
+  const [metrics, setMetrics] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Theme styling helpers
   const bgColor = isDark ? 'bg-gray-900' : 'bg-gray-50';
@@ -13,17 +19,47 @@ const FounderDashboard = () => {
   const subTextColor = isDark ? 'text-gray-400' : 'text-gray-600';
   const borderColor = isDark ? 'border-gray-700' : 'border-gray-200';
 
-  // --- PHASE 1 MOCK DATA ---
-  const stats = [
-    { title: 'Total Users', value: '1,245', color: 'text-indigo-600' },
-    { title: 'Total Buyers', value: '850', color: 'text-red-600' },
-    { title: 'Total Vendors', value: '395', color: 'text-blue-600' },
-    { title: 'Total Products', value: '432', color: 'text-purple-600' },
-    { title: 'Total Orders', value: '1,120', color: 'text-green-600' },
-    { title: 'Total Revenue', value: '₦2,450,000', color: 'text-yellow-600' },
-    { title: 'Pending Approvals', value: '14', color: 'text-orange-500 font-black animate-pulse' },
+  // --- FETCH OVERVIEW PARAMETERS ---
+  useEffect(() => {
+    const fetchDashboardOverview = async () => {
+      try {
+        setLoading(true);
+        const response = await API.get('/api/founder/dashboard/overview');
+        
+        // Supports nested wrapping (e.g., response.data.overview) or raw objects
+        setMetrics(response.data.overview || response.data);
+        setError(null);
+      } catch (err) {
+        console.error("Failed to sync dashboard updates:", err);
+        setError("Unable to synchronize dashboard telemetry with the database.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardOverview();
+  }, []);
+
+  // Safe Fallback Layout Mapper 
+  const statsArray = [
+    { title: 'Total Users', value: metrics?.totalUsers ?? '0', color: 'text-indigo-600' },
+    { title: 'Total Buyers', value: metrics?.totalBuyers ?? '0', color: 'text-red-600' },
+    { title: 'Total Vendors', value: metrics?.totalVendors ?? '0', color: 'text-blue-600' },
+    { title: 'Total Products', value: metrics?.totalProducts ?? '0', color: 'text-purple-600' },
+    { title: 'Total Orders', value: metrics?.totalOrders ?? '0', color: 'text-green-600' },
+    { 
+      title: 'Total Revenue', 
+      value: metrics?.totalRevenue !== undefined ? `₦${Number(metrics.totalRevenue).toLocaleString()}` : '₦0', 
+      color: 'text-yellow-600' 
+    },
+    { 
+      title: 'Pending Approvals', 
+      value: metrics?.pendingApprovals ?? '0', 
+      color: metrics?.pendingApprovals > 0 ? 'text-orange-500 font-black animate-pulse' : 'text-gray-500' 
+    },
   ];
 
+  // --- PRE-SERVED ACTIVITY/NOTIF PLUGINS (Until backend tracks these) ---
   const recentActivities = [
     { id: 1, user: 'Emeka O.', action: 'registered as a vendor', time: '5 mins ago' },
     { id: 2, user: 'Aisha Y.', action: 'purchased "Calculus 101 Textbook"', time: '12 mins ago' },
@@ -32,7 +68,7 @@ const FounderDashboard = () => {
   ];
 
   const notifications = [
-    { id: 1, text: 'New vendor registration request awaiting approval.', urgent: true },
+    { id: 1, text: 'New vendor registration request awaiting approval.', urgent: metrics?.pendingApprovals > 0 },
     { id: 2, text: 'System backup completed successfully.', urgent: false },
     { id: 3, text: '5 products flagged by users for review.', urgent: true },
   ];
@@ -50,14 +86,28 @@ const FounderDashboard = () => {
           <p className={subTextColor}>Here is the current state of CampusTrade today.</p>
         </div>
 
+        {/* Sync Status Messages */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300 rounded-xl text-center font-medium">
+            {error}
+          </div>
+        )}
+
         {/* 1. Statistics Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, idx) => (
-            <div key={idx} className={`${cardBg} shadow-md rounded-xl p-6 border ${borderColor} flex flex-col justify-between`}>
-              <p className={`text-sm font-medium ${subTextColor}`}>{stat.title}</p>
-              <p className={`text-2xl font-bold ${stat.color} mt-2`}>{stat.value}</p>
+          {loading ? (
+            <div className="col-span-full py-12 text-center text-sm ${subTextColor}">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mb-2"></div>
+              <p>Fetching platform system metrics...</p>
             </div>
-          ))}
+          ) : (
+            statsArray.map((stat, idx) => (
+              <div key={idx} className={`${cardBg} shadow-md rounded-xl p-6 border ${borderColor} flex flex-col justify-between`}>
+                <p className={`text-sm font-medium ${subTextColor}`}>{stat.title}</p>
+                <p className={`text-2xl font-bold ${stat.color} mt-2`}>{stat.value}</p>
+              </div>
+            ))
+          )}
         </div>
 
         {/* Main Content Layout Split */}

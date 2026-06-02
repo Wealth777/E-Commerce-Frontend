@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
+import API from '../../api/axios'; // Import the central Axios instance we made
 
 const FounderUsers = () => {
   const { isDark } = useTheme();
@@ -11,45 +12,79 @@ const FounderUsers = () => {
   const subTextColor = isDark ? 'text-gray-400' : 'text-gray-600';
   const borderColor = isDark ? 'border-gray-700' : 'border-gray-200';
 
-  // --- PHASE 1 MOCK USERS DATA ---
-  const [users, setUsers] = useState([
-    { id: 'U-101', name: 'Emeka Okafor', email: 'emeka@campus.edu', role: 'Vendor', status: 'Active', joined: '2026-05-10' },
-    { id: 'U-102', name: 'Aisha Yusuf', email: 'aisha.y@campus.edu', role: 'Buyer', status: 'Active', joined: '2026-04-18' },
-    { id: 'U-103', name: 'Chioma Nnaji', email: 'chioma1@campus.edu', role: 'Buyer', status: 'Suspended', joined: '2026-02-14' },
-    { id: 'U-104', name: 'Tunde Bakare', email: 'tunde@gadgets.ng', role: 'Vendor', status: 'Active', joined: '2026-05-01' },
-    { id: 'U-105', name: 'Musa Ibrahim', email: 'musa.ib@campus.edu', role: 'Buyer', status: 'Active', joined: '2026-05-22' },
-  ]);
+  // --- LIVE BACKEND STATE ---
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // State for Searching, Filtering, and Selected Details View
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
   const [selectedUser, setSelectedUser] = useState(null);
 
-  // --- USER ACTIONS ---
-  const handleToggleStatus = (id) => {
-    setUsers(users.map(user => {
-      if (user.id === id) {
-        const newStatus = user.status === 'Active' ? 'Suspended' : 'Active';
-        // If updating the currently viewed user modal, update it live too
-        if (selectedUser?.id === id) setSelectedUser({ ...selectedUser, status: newStatus });
-        return { ...user, status: newStatus };
-      }
-      return user;
-    }));
+  // --- FETCH USERS FROM API ---
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const response = await API.get('/api/founder/users');
+      // If your partner's API wraps data in response.data.users, map accordingly
+      setUsers(response.data.users || response.data);
+      setError(null);
+    } catch (err) {
+      console.error("Error loading users:", err);
+      setError("Failed to load user registry. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDeleteUser = (id) => {
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  // --- LIVE USER API ACTIONS ---
+  const handleToggleStatus = async (user) => {
+    const isCurrentlyActive = user.status === 'Active';
+    // Match endpoint paths given: /api/founder/users/:id/suspend or activate
+    const endpoint = `/api/founder/users/${user.id}/${isCurrentlyActive ? 'suspend' : 'activate'}`;
+    
+    try {
+      await API.patch(endpoint);
+      
+      const updatedStatus = isCurrentlyActive ? 'Suspended' : 'Active';
+      
+      // Update local state smoothly
+      setUsers(users.map(u => u.id === user.id ? { ...u, status: updatedStatus } : u));
+      if (selectedUser?.id === user.id) {
+        setSelectedUser({ ...selectedUser, status: updatedStatus });
+      }
+    } catch (err) {
+      console.error("Status update failed:", err);
+      alert("Could not update user account status.");
+    }
+  };
+
+  const handleDeleteUser = async (id) => {
     if (window.confirm("Are you sure you want to permanently delete this user?")) {
-      setUsers(users.filter(user => user.id !== id));
-      if (selectedUser?.id === id) setSelectedUser(null);
+      try {
+        await API.delete(`/api/founder/users/${id}`);
+        setUsers(users.filter(user => user.id !== id));
+        if (selectedUser?.id === id) setSelectedUser(null);
+      } catch (err) {
+        console.error("Delete operation failed:", err);
+        alert("Could not delete user account from database.");
+      }
     }
   };
 
   // Filter & Search Logic
   const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          user.id.toLowerCase().includes(searchTerm.toLowerCase());
+    // Adding optional chaining (?.) safeguards if API data values arrive null
+    const matchesSearch = 
+      user.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      String(user.id || '').toLowerCase().includes(searchTerm.toLowerCase());
+      
     const matchesRole = roleFilter === 'All' || user.role === roleFilter;
     return matchesSearch && matchesRole;
   });
@@ -85,6 +120,13 @@ const FounderUsers = () => {
           </div>
         </div>
 
+        {/* Status Messages */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300 rounded-xl text-center font-medium">
+            {error}
+          </div>
+        )}
+
         {/* Main Section: Table Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           
@@ -101,7 +143,14 @@ const FounderUsers = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {filteredUsers.length > 0 ? (
+                  {loading ? (
+                    <tr>
+                      <td colSpan="4" className={`p-12 text-center text-sm ${subTextColor}`}>
+                        <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-500 mb-2"></div>
+                        <p>Syncing data parameters with remote database...</p>
+                      </td>
+                    </tr>
+                  ) : filteredUsers.length > 0 ? (
                     filteredUsers.map((user) => (
                       <tr key={user.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition-colors">
                         <td className="p-4">
@@ -134,8 +183,8 @@ const FounderUsers = () => {
                             Details
                           </button>
                           <button
-                            onClick={() => handleToggleStatus(user.id)}
-                            className={`text-xs font-semibold px-2 py-1 rounded text-white ${
+                            onClick={() => handleToggleStatus(user)}
+                            className={`text-xs font-semibold px-2 py-1 rounded text-white transition-colors ${
                               user.status === 'Active' ? 'bg-orange-500 hover:bg-orange-600' : 'bg-green-600 hover:bg-green-700'
                             }`}
                           >
@@ -162,7 +211,7 @@ const FounderUsers = () => {
             </div>
           </div>
 
-          {/* Right Column Side Panel: User Details Display Mode */}
+          {/* Right Column Side Panel */}
           <div>
             {selectedUser ? (
               <div className={`${cardBg} p-6 rounded-xl shadow-md border ${borderColor} sticky top-6`}>
@@ -201,7 +250,9 @@ const FounderUsers = () => {
                   </div>
                   <div>
                     <label className="text-xs text-gray-400 block font-medium uppercase">Registration Date</label>
-                    <span className={`text-sm ${subTextColor}`}>{selectedUser.joined}</span>
+                    <span className={`text-sm ${subTextColor}`}>
+                      {selectedUser.joined ? new Date(selectedUser.joined).toLocaleDateString() : 'N/A'}
+                    </span>
                   </div>
                 </div>
               </div>
