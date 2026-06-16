@@ -123,7 +123,7 @@ const Profile = () => {
                 // preferences
                 preferredLanguage: data.preferences?.preferredLanguage || '',
                 notificationPreference:
-                    data.preferences?.notificationPreferences || 'email',
+                    data.preferences?.notificationPreference || '',
 
                 // security
                 showPasswordModal: false,

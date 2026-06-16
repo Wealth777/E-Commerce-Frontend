@@ -132,6 +132,7 @@ const BuyerRatingsReviews = () => {
                       <RatingStars value={rating.rating || rating.ratingValue} readOnly />
                       <h3 className="mt-2 font-bold">{product.name || 'Product rating'}</h3>
                       <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{rating.comment || 'No comment'}</p>
+                      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{product.storeName || 'CampusTrade Vendor'}</p>
                       {rating.createdAt && <p className="mt-2 text-xs text-gray-400">{new Date(rating.createdAt).toLocaleDateString()}</p>}
                     </div>
                     <div className="flex gap-2">
