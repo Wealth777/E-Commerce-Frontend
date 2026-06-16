@@ -10,6 +10,8 @@ import { getMessage, getTokenFromResponse, getUserFromResponse } from '../../uti
 import { FiMail, FiLock, FiShoppingBag } from 'react-icons/fi'
 import { FaGoogle, FaFacebook } from 'react-icons/fa'
 import { useToast } from '../../context/ToastContext';
+import { GoogleLogin } from "@react-oauth/google";
+import axios from "axios";
 
 const Login = () => {
   const [loading, setLoading] = React.useState(false)
@@ -197,13 +199,41 @@ const Login = () => {
           </form>
 
           <div className="mt-6 grid grid-cols-2 gap-3">
-            <button
-              onClick={() => handleSocialLogin('Google')}
+            {/* <button
+              onClick={() => handleGoogleSignin()}
               className="flex items-center justify-center py-2 px-4 border rounded-md"
             >
               <FaGoogle className="h-5 w-5 text-red-500" />
               <span className="ml-2">Google</span>
-            </button>
+            </button> */}
+            <GoogleLogin
+              onSuccess={async (credentialResponse) => {
+                try {
+                  const response = await apiClient.post(
+                    `/${formik.values.role}/auth/google`,
+                    {
+                      idToken: credentialResponse.credential,
+                    }
+                  );
+
+                  const token = getTokenFromResponse(response);
+                  const user = getUserFromResponse(response);
+
+                  dispatch(loginSuccess({
+                    user,
+                    token,
+                    role: formik.values.role,
+                  }));
+
+                  showToast("Google login successful", "success");
+
+                  navigate(`/${formik.values.role}/dashboard`);
+                } catch (err) {
+                  showToast(err);
+                }
+              }}
+              onError={() => showToast("Login failed")}
+            />
 
             <button
               onClick={() => handleSocialLogin('Facebook')}
