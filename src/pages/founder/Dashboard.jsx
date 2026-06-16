@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useTheme } from '../../context/ThemeContext';
-import { founderAPI } from '../../api/apiClient'; // Pointing directly to your real apiClient
+import API from '../../api/axios'; // Our centralized backend instance
 
 const FounderDashboard = () => {
   const { user } = useSelector((state) => state.auth);
@@ -24,9 +24,9 @@ const FounderDashboard = () => {
     const fetchDashboardOverview = async () => {
       try {
         setLoading(true);
-        const response = await founderAPI.getDashboard();
+        const response = await API.get('/api/founder/dashboard/overview');
         
-        // Handle both common response shapes (.overview or top-level)
+        // Supports nested wrapping (e.g., response.data.overview) or raw objects
         setMetrics(response.data.overview || response.data);
         setError(null);
       } catch (err) {
@@ -40,7 +40,7 @@ const FounderDashboard = () => {
     fetchDashboardOverview();
   }, []);
 
-  // Safe Fallback Layout Mapper using live database numbers
+  // Safe Fallback Layout Mapper 
   const statsArray = [
     { title: 'Total Users', value: metrics?.totalUsers ?? '0', color: 'text-indigo-600' },
     { title: 'Total Buyers', value: metrics?.totalBuyers ?? '0', color: 'text-red-600' },
@@ -55,8 +55,22 @@ const FounderDashboard = () => {
     { 
       title: 'Pending Approvals', 
       value: metrics?.pendingApprovals ?? '0', 
-      color: metrics?.pendingApprovals > 0 ? 'text-orange-500 font-black' : 'text-gray-500' 
+      color: metrics?.pendingApprovals > 0 ? 'text-orange-500 font-black animate-pulse' : 'text-gray-500' 
     },
+  ];
+
+  // --- PRE-SERVED ACTIVITY/NOTIF PLUGINS (Until backend tracks these) ---
+  const recentActivities = [
+    { id: 1, user: 'Emeka O.', action: 'registered as a vendor', time: '5 mins ago' },
+    { id: 2, user: 'Aisha Y.', action: 'purchased "Calculus 101 Textbook"', time: '12 mins ago' },
+    { id: 3, user: 'John Doe', action: 'listed a new product: "Electric Kettle"', time: '45 mins ago' },
+    { id: 4, user: 'Blessing W.', action: 'account was suspended due to policy violation', time: '2 hours ago' },
+  ];
+
+  const notifications = [
+    { id: 1, text: 'New vendor registration request awaiting approval.', urgent: metrics?.pendingApprovals > 0 },
+    { id: 2, text: 'System backup completed successfully.', urgent: false },
+    { id: 3, text: '5 products flagged by users for review.', urgent: true },
   ];
 
   // Map live data arrays directly from backend response if they exist
@@ -75,13 +89,14 @@ const FounderDashboard = () => {
           <p className={subTextColor}>Here is the current state of your platform database today.</p>
         </div>
 
+        {/* Sync Status Messages */}
         {error && (
           <div className="mb-6 p-4 bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300 rounded-xl text-center font-medium">
             {error}
           </div>
         )}
 
-        {/* Statistics Cards Grid */}
+        {/* 1. Statistics Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
           {loading ? (
             <div className="col-span-full py-12 text-center text-sm ${subTextColor}">

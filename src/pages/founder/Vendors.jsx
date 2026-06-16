@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
-import apiClient from '../../api/apiClient'; // Switched to central Axios client
+import API from '../../api/axios';
 
 const FounderVendors = () => {
   const { isDark } = useTheme();
@@ -9,7 +9,7 @@ const FounderVendors = () => {
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [filterTab, setFilterTab] = useState('Pending');
+  const [filterTab, setFilterTab] = useState('Pending'); // Options: 'Pending', 'Approved', 'All'
 
   // Theme Helpers
   const bgColor = isDark ? 'bg-gray-900' : 'bg-gray-50';
@@ -18,11 +18,12 @@ const FounderVendors = () => {
   const subTextColor = isDark ? 'text-gray-400' : 'text-gray-600';
   const borderColor = isDark ? 'border-gray-700' : 'border-gray-200';
 
-  // --- AXIOS FETCH VENDORS ---
+  // --- FETCH VENDORS FROM API ---
   const fetchVendors = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/founder/vendors');
+      // Connects to your partner's vendor query path
+      const response = await API.get('/api/founder/vendors');
       setVendors(response.data.vendors || response.data);
       setError(null);
     } catch (err) {
@@ -37,11 +38,13 @@ const FounderVendors = () => {
     fetchVendors();
   }, []);
 
-  // --- AXIOS PATCH ACTIONS ---
+  // --- APPROVAL / REJECTION ACTIONS ---
   const handleApproveVendor = async (id) => {
-    if (window.confirm("Approve this vendor application?")) {
+    if (window.confirm("Approve this vendor application? They will gain full market permissions immediately.")) {
       try {
-        await apiClient.patch(`/founder/vendors/${id}/approve`);
+        await API.patch(`/api/founder/vendors/${id}/approve`);
+        
+        // Smoothly update state locally
         setVendors(vendors.map(v => v.id === id ? { ...v, verificationStatus: 'Approved' } : v));
       } catch (err) {
         console.error("Approval request failed:", err);
@@ -51,11 +54,13 @@ const FounderVendors = () => {
   };
 
   const handleRejectVendor = async (id) => {
-    const reason = window.prompt("Enter reason for rejection:");
-    if (reason === null) return;
+    const reason = window.prompt("Enter reason for rejection (this will be sent to the student):");
+    if (reason === null) return; // Cancelled prompt
 
     try {
-      await apiClient.patch(`/founder/vendors/${id}/reject`, { reason });
+      await API.patch(`/api/founder/vendors/${id}/reject`, { reason });
+      
+      // Update state locally
       setVendors(vendors.map(v => v.id === id ? { ...v, verificationStatus: 'Rejected' } : v));
     } catch (err) {
       console.error("Rejection request failed:", err);
@@ -63,6 +68,7 @@ const FounderVendors = () => {
     }
   };
 
+  // Filter Logic based on active Tab
   const filteredVendors = vendors.filter(vendor => {
     if (filterTab === 'All') return true;
     return vendor.verificationStatus === filterTab;
@@ -75,8 +81,8 @@ const FounderVendors = () => {
         <h1 className={`text-3xl font-bold ${textColor} mb-2`}>Vendor Verification Hub</h1>
         <p className={`${subTextColor} mb-8`}>Review student business applications and manage storefront selling privileges.</p>
 
-        {/* Tab Switcher */}
-        <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6 gap-6">
+        {/* Tab Switcher Controller */}
+        <div className="flex border-b ${borderColor} mb-6 gap-6">
           {['Pending', 'Approved', 'All'].map((tab) => (
             <button
               key={tab}
@@ -99,12 +105,12 @@ const FounderVendors = () => {
           </div>
         )}
 
-        {/* Vendors Grid Layout */}
+        {/* Vendors Grid / List Workspace */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {loading ? (
-            <div className="col-span-full py-12 text-center text-sm text-gray-500">
+            <div className="col-span-full py-12 text-center text-sm ${subTextColor}">
               <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-500 mb-2"></div>
-              <p>Syncing verification channels natively...</p>
+              <p>Syncing verification channels...</p>
             </div>
           ) : filteredVendors.length > 0 ? (
             filteredVendors.map((vendor) => (
@@ -117,7 +123,7 @@ const FounderVendors = () => {
                         ? 'bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300'
                         : vendor.verificationStatus === 'Rejected'
                         ? 'bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300'
-                        : 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300'
+                        : 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 animate-pulse'
                     }`}>
                       {vendor.verificationStatus}
                     </span>
@@ -130,6 +136,7 @@ const FounderVendors = () => {
                   </div>
                 </div>
 
+                {/* Conditional Action Controls Panel */}
                 {vendor.verificationStatus === 'Pending' && (
                   <div className="flex gap-3 mt-2">
                     <button
