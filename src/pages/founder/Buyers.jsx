@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
+import Loading from '../../components/Layout/Loading';
 import apiClient, { founderAPI } from '../../api/apiClient'; // Fixed central import setup
 
 const FounderBuyers = () => {
@@ -73,6 +74,10 @@ const FounderBuyers = () => {
     b?.id?.toString().includes(searchTerm)
   );
 
+  if (loading) {
+    return <Loading text="Loading Buyers..." />;
+  }
+  // JSX Return
   return (
     <div className={`min-h-screen ${bgColor} py-12 transition-colors duration-200`}>
       <div className="max-w-7xl mx-auto px-4">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useTheme } from '../../context/ThemeContext';
-import API from '../../api/axios'; // Our centralized backend instance
+import { founderAPI } from '../../api/apiClient'; // Pointing directly to your real apiClient
 
 const FounderDashboard = () => {
   const { user } = useSelector((state) => state.auth);
@@ -76,6 +76,10 @@ const FounderDashboard = () => {
   // Map live data arrays directly from backend response if they exist
   const recentActivities = metrics?.recentActivities || [];
   const notifications = metrics?.notifications || [];
+
+   if (loading) {
+      return <Loading text="Loading Dashboard Overview..." />;
+    }
 
   return (
     <div className={`min-h-screen ${bgColor} py-12 transition-colors duration-200`}>

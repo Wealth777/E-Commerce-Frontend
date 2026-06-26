@@ -95,6 +95,10 @@ const FounderUsers = () => {
     return matchesSearch && matchesRole;
   });
 
+   if (loading) {
+      return <Loading text="Loading Platform Users..." />;
+    }
+
   return (
     <div className={`min-h-screen ${bgColor} py-12 transition-colors duration-200`}>
       <div className="max-w-7xl mx-auto px-4">

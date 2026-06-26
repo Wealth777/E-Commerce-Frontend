@@ -5,7 +5,7 @@ import { useTheme } from '../../context/ThemeContext';
 import apiClient from '../../api/apiClient';
 import { getList, getMessage, getPayload } from '../../utils/apiResponse';
 import { useToast } from '../../context/ToastContext';
-import Loading from '../../components/layout/Loding';
+import Loading from '../../components/layout/Loading';
 import { ArrowLeft } from 'lucide-react';
 
 const Products = () => {
