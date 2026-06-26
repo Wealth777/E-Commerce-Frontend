@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
-import Loading from '../../components/Layout/Loading';
-import apiClient, { founderAPI } from '../../api/apiClient'; // Switched to central Axios client
+import API from '../../api/axios'; // Import the central Axios instance we made
 
 const FounderUsers = () => {
   const { isDark } = useTheme();
@@ -20,16 +19,25 @@ const FounderUsers = () => {
   const subTextColor = isDark ? 'text-gray-400' : 'text-gray-600';
   const borderColor = isDark ? 'border-gray-700' : 'border-gray-200';
 
-  // --- AXIOS FETCH USERS ---
+  // --- LIVE BACKEND STATE ---
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  // --- FETCH USERS FROM API ---
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await founderAPI.getUsers();
-      // Safely check common backend structural response keys
+      const response = await API.get('/api/founder/users');
+      // If your partner's API wraps data in response.data.users, map accordingly
       setUsers(response.data.users || response.data);
       setError(null);
     } catch (err) {
-      console.error("Fetch user registry error:", err);
+      console.error("Error loading users:", err);
       setError("Failed to load user registry. Please try again.");
     } finally {
       setLoading(false);
@@ -40,48 +48,52 @@ const FounderUsers = () => {
     fetchUsers();
   }, []);
 
-  // --- AXIOS PATCH STATUS CHANGES ---
-  const toggleUserStatus = async (userId, currentStatus) => {
-    const action = currentStatus === 'Suspended' ? 'activate' : 'suspend';
-    if (!window.confirm(`Are you sure you want to ${action} this user account?`)) return;
-
+  // --- LIVE USER API ACTIONS ---
+  const handleToggleStatus = async (user) => {
+    const isCurrentlyActive = user.status === 'Active';
+    // Match endpoint paths given: /api/founder/users/:id/suspend or activate
+    const endpoint = `/api/founder/users/${user.id}/${isCurrentlyActive ? 'suspend' : 'activate'}`;
+    
     try {
-      await apiClient.patch(`/founder/users/${userId}/${action}`);
+      await API.patch(endpoint);
       
-      const updatedStatus = action === 'activate' ? 'Active' : 'Suspended';
-      // Update locally
-      setUsers(users.map(u => u.id === userId ? { ...u, status: updatedStatus } : u));
-      if (selectedUser?.id === userId) {
+      const updatedStatus = isCurrentlyActive ? 'Suspended' : 'Active';
+      
+      // Update local state smoothly
+      setUsers(users.map(u => u.id === user.id ? { ...u, status: updatedStatus } : u));
+      if (selectedUser?.id === user.id) {
         setSelectedUser({ ...selectedUser, status: updatedStatus });
       }
     } catch (err) {
-      console.error(`Failed to update user status:`, err);
-      alert(`Could not change user status to ${action}.`);
+      console.error("Status update failed:", err);
+      alert("Could not update user account status.");
     }
   };
 
-  // --- AXIOS DELETE HANDLING ---
-  const handleDeleteUser = async (userId) => {
-    if (!window.confirm("CRITICAL WARNING: Permanently delete this account? This removes all storefront/buyer access entirely and cannot be undone.")) return;
+  const handleDeleteUser = async (id) => {
+    if (window.confirm("Are you sure you want to permanently delete this user?")) {
+      try {
+        await API.delete(`/api/founder/users/${id}`);
+        setUsers(users.filter(user => user.id !== id));
+        if (selectedUser?.id === id) setSelectedUser(null);
+      } catch (err) {
+        console.error("Delete operation failed:", err);
+        alert("Could not delete user account from database.");
+      }
+    }
+  };
 
-    try {
-      await apiClient.delete(`/founder/users/${userId}`);
+  // Filter & Search Logic
+  const filteredUsers = users.filter(user => {
+    // Adding optional chaining (?.) safeguards if API data values arrive null
+    const matchesSearch = 
+      user.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      String(user.id || '').toLowerCase().includes(searchTerm.toLowerCase());
       
-      // Clear from local array
-      setUsers(users.filter(u => u.id !== userId));
-      if (selectedUser?.id === userId) setSelectedUser(null);
-    } catch (err) {
-      console.error("Deletion sequence rejected:", err);
-      alert("Backend rejected account deletion request.");
-    }
-  };
-
-  // Search Filter logic
-  const filteredUsers = users.filter(u => 
-    u.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.id?.toString().includes(searchTerm)
-  );
+    const matchesRole = roleFilter === 'All' || user.role === roleFilter;
+    return matchesSearch && matchesRole;
+  });
 
    if (loading) {
       return <Loading text="Loading Platform Users..." />;
@@ -103,38 +115,43 @@ const FounderUsers = () => {
           />
         </div>
 
+        {/* Status Messages */}
         {error && (
           <div className="mb-6 p-4 bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300 rounded-xl text-center font-medium">
             {error}
           </div>
         )}
 
-        {/* Dynamic Data Content Area */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            <div className={`${cardBg} shadow-md rounded-xl border ${borderColor} overflow-hidden`}>
-              {loading ? (
-                <div className="py-12 text-center text-sm text-gray-500">
-                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mb-2"></div>
-                  <p>Streaming secure server directory...</p>
-                </div>
-              ) : filteredUsers.length > 0 ? (
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className={`border-b ${borderColor} ${isDark ? 'bg-gray-900/40' : 'bg-gray-50'} text-xs font-bold uppercase ${subTextColor}`}>
-                      <th className="p-4">User Info</th>
-                      <th className="p-4">Role</th>
-                      <th className="p-4">Status</th>
-                      <th className="p-4">Actions</th>
+        {/* Main Section: Table Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+          
+          {/* User Data Table Panel */}
+          <div className={`lg:col-span-2 ${cardBg} shadow-md rounded-xl border ${borderColor} overflow-hidden`}>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className={`border-b ${borderColor} ${isDark ? 'bg-gray-900/50' : 'bg-gray-100'}`}>
+                    <th className={`p-4 text-sm font-semibold ${textColor}`}>User Info</th>
+                    <th className={`p-4 text-sm font-semibold ${textColor}`}>Role</th>
+                    <th className={`p-4 text-sm font-semibold ${textColor}`}>Status</th>
+                    <th className={`p-4 text-sm font-semibold text-right ${textColor}`}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {loading ? (
+                    <tr>
+                      <td colSpan="4" className={`p-12 text-center text-sm ${subTextColor}`}>
+                        <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-500 mb-2"></div>
+                        <p>Syncing data parameters with remote database...</p>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className={`divide-y ${borderColor} text-sm ${textColor}`}>
-                    {filteredUsers.map((u) => (
-                      <tr 
-                        key={u.id} 
-                        onClick={() => setSelectedUser(u)}
-                        className={`cursor-pointer transition-colors ${selectedUser?.id === u.id ? (isDark ? 'bg-gray-700/40' : 'bg-emerald-50/50') : (isDark ? 'hover:bg-gray-800/60' : 'hover:bg-gray-50')}`}
-                      >
+                  ) : filteredUsers.length > 0 ? (
+                    filteredUsers.map((user) => (
+                      <tr key={user.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition-colors">
+                        <td className="p-4">
+                          <div className={`font-medium ${textColor}`}>{user.name}</div>
+                          <div className={`text-xs ${subTextColor}`}>{user.email}</div>
+                        </td>
                         <td className="p-4">
                           <div className="font-semibold">{u.fullName}</div>
                           <div className={`text-xs ${subTextColor}`}>{u.email}</div>
@@ -145,21 +162,27 @@ const FounderUsers = () => {
                             {u.status || 'Active'}
                           </span>
                         </td>
-                        <td className="p-4" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex gap-2">
-                            <button 
-                              onClick={() => toggleUserStatus(u.id, u.status)}
-                              className={`px-3 py-1 text-xs font-semibold rounded-lg border transition-colors ${u.status === 'Suspended' ? 'border-green-500 text-green-500 hover:bg-green-500 hover:text-white' : 'border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white'}`}
-                            >
-                              {u.status === 'Suspended' ? 'Activate' : 'Suspend'}
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteUser(u.id)}
-                              className="px-3 py-1 text-xs font-semibold rounded-lg border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
-                            >
-                              Delete
-                            </button>
-                          </div>
+                        <td className="p-4 text-right space-x-2">
+                          <button
+                            onClick={() => setSelectedUser(user)}
+                            className="text-xs font-semibold px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-200 hover:opacity-80"
+                          >
+                            Details
+                          </button>
+                          <button
+                            onClick={() => handleToggleStatus(user)}
+                            className={`text-xs font-semibold px-2 py-1 rounded text-white transition-colors ${
+                              user.status === 'Active' ? 'bg-orange-500 hover:bg-orange-600' : 'bg-green-600 hover:bg-green-700'
+                            }`}
+                          >
+                            {user.status === 'Active' ? 'Suspend' : 'Activate'}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(user.id)}
+                            className="text-xs font-semibold px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+                          >
+                            Delete
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -171,7 +194,7 @@ const FounderUsers = () => {
             </div>
           </div>
 
-          {/* Right Sidebar Inspector View */}
+          {/* Right Column Side Panel */}
           <div>
             <div className={`${cardBg} shadow-md rounded-xl p-6 border ${borderColor} sticky top-6`}>
               <h3 className={`text-xl font-bold ${textColor} mb-4`}>User Details Panel</h3>
@@ -194,8 +217,10 @@ const FounderUsers = () => {
                     <div className="capitalize font-semibold text-emerald-500">{selectedUser.role || 'Buyer'}</div>
                   </div>
                   <div>
-                    <label className={`text-xs font-bold ${subTextColor} uppercase block mb-1`}>Current Condition</label>
-                    <div className={`font-bold ${selectedUser.status === 'Suspended' ? 'text-red-500' : 'text-green-500'}`}>{selectedUser.status || 'Active'}</div>
+                    <label className="text-xs text-gray-400 block font-medium uppercase">Registration Date</label>
+                    <span className={`text-sm ${subTextColor}`}>
+                      {selectedUser.joined ? new Date(selectedUser.joined).toLocaleDateString() : 'N/A'}
+                    </span>
                   </div>
                 </div>
               ) : (

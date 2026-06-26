@@ -13,7 +13,8 @@ import {
   Eye,
   BarChart3,
   ChevronRight,
-  RotateCcw
+  RotateCcw,
+  MessageCircle
 } from 'lucide-react';
 
 const VendorDashboard = () => {
@@ -136,6 +137,14 @@ const VendorDashboard = () => {
       href: '/vendor/return-requests',
       color: 'text-cyan-600',
       bgColor: 'bg-cyan-50'
+    },
+    {
+      title: 'Messages',
+      description: 'Chat with buyers',
+      icon: MessageCircle,
+      href: '/vendor/messages',
+      color: 'text-green-600',
+      bgColor: 'bg-green-50'
     },
     {
       title: 'Analytics',
