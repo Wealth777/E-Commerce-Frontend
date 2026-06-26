@@ -38,7 +38,7 @@ const Hero = () => {
                 Start Shopping
               </Link>
               <Link
-                to="/register"
+                to="/vendor/register"
                 className="inline-flex items-center justify-center px-8 py-3 text-lg font-medium rounded-lg bg-transparent border-2 border-white text-white hover:bg-white/10 transition-colors"
               >
                 <FiBookOpen className="mr-2 h-5 w-5" />

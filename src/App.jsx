@@ -1,6 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
-import './App.css';
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchUser, logout } from './store/authSlice';
@@ -27,6 +26,7 @@ import VendorGuidelines from './pages/public/VendorGuidelines';
 import Sitemap from './pages/public/Sitemap';
 
 // Buyer Pages
+import CompleteProfile from './pages/buyer/CompleteProfile';
 import BuyerDashboard from './pages/buyer/Dashboard';
 import Cart from './pages/buyer/Cart';
 import Checkout from './pages/buyer/Checkout';
@@ -38,6 +38,8 @@ import BuyerRatingsReviews from './pages/buyer/RatingsReviews';
 import BuyerReports from './pages/buyer/Reports';
 
 // Vendor Pages
+import VendorRegister from './pages/vendor/vendorRegsiter';
+import VendorLogin from './pages/vendor/VendorLogin';
 import VendorDashboard from './pages/vendor/Dashboard';
 import VendorProducts from './pages/vendor/Products';
 import AddProduct from './pages/vendor/AddProduct';
@@ -54,6 +56,7 @@ import Notifications from './pages/notifications/Notifications';
 import Messages from './pages/chat/Messages';
 
 // Founder Pages
+import FounderLogin from './pages/founder/Login';
 import FounderDashboard from './pages/founder/Dashboard';
 import FounderUsers from './pages/founder/Users';
 import FounderAnalytics from './pages/founder/Analytics';
@@ -84,297 +87,323 @@ function App() {
 
   return (
     <ThemeProvider>
-        <Router>
-          <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-            <Navbar />
-            <main className="flex-1">
-              <Routes>
-                {/* Public Routes */}
-                <Route path="/" element={<Home />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/products" element={<Products />} />
-                <Route path="/product/:id" element={<ProductDetail />} />
-                <Route path="/vendor/:vendorId" element={<VendorDetails />} />
-                <Route path="/aboutus" element={<AboutUs />} />
-                <Route path="/contactus" element={<Contact />} />
-                <Route path="/privacypolicy" element={<PrivacyPolicy />} />
-                <Route path="/termsofservice" element={<TermsOfService />} />
-                <Route path="/cookiepolicy" element={<CookiePolicy />} />
-                <Route path="/vendor-guidelines" element={<VendorGuidelines />} />
-                <Route path="/sitemap" element={<Sitemap />} />
+      <Router>
+        <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+          <Navbar />
+          <main className="flex-1">
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/products" element={<Products />} />
+              <Route path="/product/:id" element={<ProductDetail />} />
+              <Route path="/vendor/:vendorId" element={<VendorDetails />} />
+              <Route path="/aboutus" element={<AboutUs />} />
+              <Route path="/contactus" element={<Contact />} />
+              <Route path="/privacypolicy" element={<PrivacyPolicy />} />
+              <Route path="/termsofservice" element={<TermsOfService />} />
+              <Route path="/cookiepolicy" element={<CookiePolicy />} />
+              <Route path="/vendor-guidelines" element={<VendorGuidelines />} />
+              <Route path="/sitemap" element={<Sitemap />} />
 
-                {/* Buyer Routes */}
-                <Route
-                  path="/buyer/dashboard"
-                  element={
-                    <ProtectedRoute requiredRole="buyer">
-                      <BuyerDashboard />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/buyer/profile"
-                  element={
-                    <ProtectedRoute requiredRole="buyer">
-                      <BuyerProfile />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/cart"
-                  element={
-                    <ProtectedRoute requiredRole="buyer">
-                      <Cart />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/checkout"
-                  element={
-                    <ProtectedRoute requiredRole="buyer">
-                      <Checkout />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/buyer/orders"
-                  element={
-                    <ProtectedRoute requiredRole="buyer">
-                      <BuyerOrders />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/buyer/orders/:orderId"
-                  element={
-                    <ProtectedRoute requiredRole="buyer">
-                      <BuyerOrderDetails />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/buyer/notifications"
-                  element={
-                    <ProtectedRoute requiredRole="buyer">
-                      <Notifications />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/buyer/wishlist"
-                  element={
-                    <ProtectedRoute requiredRole="buyer">
-                      <BuyerWishlist />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/buyer/messages"
-                  element={
-                    <ProtectedRoute requiredRole="buyer">
-                      <Messages />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/buyer/ratings-reviews"
-                  element={
-                    <ProtectedRoute requiredRole="buyer">
-                      <BuyerRatingsReviews />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/buyer/reports"
-                  element={
-                    <ProtectedRoute requiredRole="buyer">
-                      <BuyerReports />
-                    </ProtectedRoute>
-                  }
-                />
+              {/* Buyer Routes */}
+              <Route
+                path="/buyer/profile/complete"
+                element={
+                  <ProtectedRoute requiredRole="buyer">
+                    <CompleteProfile />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/buyer/dashboard"
+                element={
+                  <ProtectedRoute requiredRole="buyer">
+                    <BuyerDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/buyer/profile"
+                element={
+                  <ProtectedRoute requiredRole="buyer">
+                    <BuyerProfile />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/cart"
+                element={
+                  <ProtectedRoute requiredRole="buyer">
+                    <Cart />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/checkout"
+                element={
+                  <ProtectedRoute requiredRole="buyer">
+                    <Checkout />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/buyer/orders"
+                element={
+                  <ProtectedRoute requiredRole="buyer">
+                    <BuyerOrders />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/buyer/orders/:orderId"
+                element={
+                  <ProtectedRoute requiredRole="buyer">
+                    <BuyerOrderDetails />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/buyer/notifications"
+                element={
+                  <ProtectedRoute requiredRole="buyer">
+                    <Notifications />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/buyer/wishlist"
+                element={
+                  <ProtectedRoute requiredRole="buyer">
+                    <BuyerWishlist />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/buyer/messages"
+                element={
+                  <ProtectedRoute requiredRole="buyer">
+                    <Messages />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/buyer/ratings-reviews"
+                element={
+                  <ProtectedRoute requiredRole="buyer">
+                    <BuyerRatingsReviews />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/buyer/reports"
+                element={
+                  <ProtectedRoute requiredRole="buyer">
+                    <BuyerReports />
+                  </ProtectedRoute>
+                }
+              />
 
-                {/* Vendor Routes */}
-                <Route
-                  path="/vendor/dashboard"
-                  element={
-                    <ProtectedRoute requiredRole="vendor">
-                      <VendorDashboard />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/vendor/products"
-                  element={
-                    <ProtectedRoute requiredRole="vendor">
-                      <VendorProducts />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/vendor/products/add"
-                  element={
-                    <ProtectedRoute requiredRole="vendor">
-                      <AddProduct />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/vendor/orders"
-                  element={
-                    <ProtectedRoute requiredRole="vendor">
-                      <VendorOrders />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/vendor/orders/:orderId"
-                  element={
-                    <ProtectedRoute requiredRole="vendor">
-                      <VendorOrderDetails />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/vendor/analytics"
-                  element={
-                    <ProtectedRoute requiredRole="vendor">
-                      <VendorAnalytics />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/vendor/profile"
-                  element={
-                    <ProtectedRoute requiredRole="vendor">
-                      <VendorProfile />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/vendor/payment"
-                  element={
-                    <ProtectedRoute requiredRole="vendor">
-                      <VendorPayment />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/vendor/refund-requests"
-                  element={
-                    <ProtectedRoute requiredRole="vendor">
-                      <VendorRefundRequests />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/vendor/notifications"
-                  element={
-                    <ProtectedRoute requiredRole="vendor">
-                      <Notifications />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/vendor/return-requests"
-                  element={
-                    <ProtectedRoute requiredRole="vendor">
-                      <VendorReturnRequests />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/vendor/messages"
-                  element={
-                    <ProtectedRoute requiredRole="vendor">
-                      <Messages />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/vendor/ratings-reviews"
-                  element={
-                    <ProtectedRoute requiredRole="vendor">
-                      <VendorRatingsReviews />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/vendor/reports"
-                  element={
-                    <ProtectedRoute requiredRole="vendor">
-                      <VendorReports />
-                    </ProtectedRoute>
-                  }
-                />
+              {/* Vendor Routes */}
+              <Route
+                path="/vendor/register"
+                element={
+                  <VendorRegister />
+                }
+              />
+              <Route
+                path="/vendor/login"
+                element={
+                  <VendorLogin />
+                }
+              />
+              <Route
+                path="/vendor/dashboard"
+                element={
+                  <ProtectedRoute requiredRole="vendor">
+                    <VendorDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/vendor/products"
+                element={
+                  <ProtectedRoute requiredRole="vendor">
+                    <VendorProducts />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/vendor/products/add"
+                element={
+                  <ProtectedRoute requiredRole="vendor">
+                    <AddProduct />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/vendor/orders"
+                element={
+                  <ProtectedRoute requiredRole="vendor">
+                    <VendorOrders />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/vendor/orders/:orderId"
+                element={
+                  <ProtectedRoute requiredRole="vendor">
+                    <VendorOrderDetails />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/vendor/analytics"
+                element={
+                  <ProtectedRoute requiredRole="vendor">
+                    <VendorAnalytics />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/vendor/profile"
+                element={
+                  <ProtectedRoute requiredRole="vendor">
+                    <VendorProfile />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/vendor/payment"
+                element={
+                  <ProtectedRoute requiredRole="vendor">
+                    <VendorPayment />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/vendor/refund-requests"
+                element={
+                  <ProtectedRoute requiredRole="vendor">
+                    <VendorRefundRequests />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/vendor/notifications"
+                element={
+                  <ProtectedRoute requiredRole="vendor">
+                    <Notifications />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/vendor/return-requests"
+                element={
+                  <ProtectedRoute requiredRole="vendor">
+                    <VendorReturnRequests />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/vendor/messages"
+                element={
+                  <ProtectedRoute requiredRole="vendor">
+                    <Messages />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/vendor/ratings-reviews"
+                element={
+                  <ProtectedRoute requiredRole="vendor">
+                    <VendorRatingsReviews />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/vendor/reports"
+                element={
+                  <ProtectedRoute requiredRole="vendor">
+                    <VendorReports />
+                  </ProtectedRoute>
+                }
+              />
 
-                {/* Founder Routes */}
-                <Route
-                  path="/founder/dashboard"
-                  element={
-                    <ProtectedRoute requiredRole="founder">
-                      <FounderDashboard />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/founder/users"
-                  element={
-                    <ProtectedRoute requiredRole="founder">
-                      <FounderUsers />
-                    </ProtectedRoute>
-                  }
-                />
-                {/* Founder Routes */}
-                <Route
-                  path="/founder/dashboard"
-                  element={
-                    <ProtectedRoute requiredRole="founder">
-                      <FounderDashboard />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/founder/users"
-                  element={
-                    <ProtectedRoute requiredRole="founder">
-                      <FounderUsers />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/founder/vendors"
-                  element={
-                    <ProtectedRoute requiredRole="founder">
-                      <FounderVendors />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/founder/buyers"
-                  element={
-                    <ProtectedRoute requiredRole="founder">
-                      <FounderBuyers />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/founder/analytics"
-                  element={
-                    <ProtectedRoute requiredRole="founder">
-                      <FounderAnalytics />
-                    </ProtectedRoute>
-                  }
-                />
+              {/* Founder Routes */}
+              <Route
+                path="/founder/dashboard"
+                element={
+                  <ProtectedRoute requiredRole="founder">
+                    <FounderDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/founder/users"
+                element={
+                  <ProtectedRoute requiredRole="founder">
+                    <FounderUsers />
+                  </ProtectedRoute>
+                }
+              />
+              {/* Founder Routes */}
+              <Route
+                path="/founder/login"
+                element={
+                    <FounderLogin />
+                }
+              />
+              <Route
+                path="/founder/dashboard"
+                element={
+                  <ProtectedRoute requiredRole="founder">
+                    <FounderDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/founder/users"
+                element={
+                  <ProtectedRoute requiredRole="founder">
+                    <FounderUsers />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/founder/vendors"
+                element={
+                  <ProtectedRoute requiredRole="founder">
+                    <FounderVendors />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/founder/buyers"
+                element={
+                  <ProtectedRoute requiredRole="founder">
+                    <FounderBuyers />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/founder/analytics"
+                element={
+                  <ProtectedRoute requiredRole="founder">
+                    <FounderAnalytics />
+                  </ProtectedRoute>
+                }
+              />
 
-                {/* Redirect */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </main>
-            <Footer />
-          </div>
-        </Router>
-        <CartSync />
+              {/* Redirect */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </main>
+          <Footer />
+        </div>
+      </Router>
+      <CartSync />
     </ThemeProvider>
   );
 }

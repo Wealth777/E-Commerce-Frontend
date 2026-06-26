@@ -51,8 +51,12 @@ function normalizeProduct(product) {
       'Campus vendor',
     categoryId: getCategoryId(product),
     categoryName: getCategoryName(product),
-    rating: Number(product?.rating || product?.averageRating || 0),
-    reviews: Number(product?.reviews || product?.reviewCount || 0),
+    ratingSummary: product?.ratingSummary || {
+      averageRating: 0,
+      totalRatings: 0,
+      breakdown: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+    },
+    reviewSummary: product?.reviewSummary || { totalReviews: 0 },
     sold: Number(product?.sold || product?.soldCount || product?.totalSold || 0),
     createdAt: product?.createdAt || product?.updatedAt || new Date().toISOString(),
     badge: product?.badge || product?.tag || '',
@@ -563,16 +567,16 @@ export default function Home() {
               </div>
 
               <h2 className="font-[Outfit] text-[28px] font-[700] leading-[1.1] tracking-[-0.025em] text-white sm:text-[34px]">
-                Start selling in 5 minutes
+                Start Your Verification Process
               </h2>
 
               <p className="mt-3 max-w-md text-[15px] font-[450] leading-[1.6] text-white/75">
-                Zero listing fees • Campus pickup only • Get paid instantly. Join student entrepreneurs.
+                Zero listing fees • Get paid instantly. Join student entrepreneurs.
               </p>
 
               <div className="mt-7 flex flex-wrap gap-3">
                 <a
-                  href="#"
+                  href="/vendor/register"
                   className="group inline-flex items-center gap-2 rounded-full bg-white px-[22px] py-[13px] text-[14px] font-[650] tracking-[-0.01em] text-slate-900 transition hover:bg-slate-100 active:scale-[0.98]"
                 >
                   Become a vendor
@@ -582,7 +586,7 @@ export default function Home() {
                 </a>
 
                 <a
-                  href="#"
+                  href="/vendor-guidelines"
                   className="inline-flex items-center gap-2 rounded-full border border-white/20 px-[22px] py-[13px] text-[14px] font-[550] text-white/90 transition hover:border-white/35 hover:bg-white/5"
                 >
                   View guidelines

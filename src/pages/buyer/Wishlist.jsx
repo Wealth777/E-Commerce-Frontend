@@ -8,6 +8,7 @@ import { useToast } from '../../context/ToastContext';
 import { addToCart } from '../../store/cartActions';
 import Loading from '../../components/layout/Loding';
 import { Link } from 'react-router-dom';
+import { ProductRatingDisplay } from '../../components/feedback';
 
 const Wishlist = ({ product }) => {
   const { isDark } = useTheme();
@@ -58,6 +59,8 @@ const Wishlist = ({ product }) => {
             'https://via.placeholder.com/400',
           stock,
           inStock: stock > 0,
+          ratingSummary: product.ratingSummary,
+          reviewSummary: product.reviewSummary,
 
           category:
             typeof product?.category === 'object'
@@ -75,8 +78,6 @@ const Wishlist = ({ product }) => {
             product.vendor?.fullName ||
             'Store',
 
-          rating: Number(product.rating || 4),
-          reviews: Number(product.numReviews || 0),
           addedDate: item.addedAt,
         };
       });
@@ -266,6 +267,12 @@ const Wishlist = ({ product }) => {
                   <p className="text-xs text-green-600 font-medium">
                     {item.vendorName}
                   </p>
+                  <ProductRatingDisplay
+                    product={item}
+                    size="text-xs"
+                    starSize="text-xs"
+                    className="mb-2"
+                  />
                   <div className="flex items-baseline gap-2 mb-4">
                     <span className={`text-lg font-bold ${textColor}`}>₦{item.price.toLocaleString()}</span>
                     {item.originalPrice && <span className={`text-xs line-through ${textSecondary}`}>₦{item.originalPrice.toLocaleString()}</span>}
@@ -296,6 +303,11 @@ const Wishlist = ({ product }) => {
                         <span className={`text-lg font-bold ${textColor}`}>₦{item.price.toLocaleString()}</span>
                         {item.originalPrice && <span className={`text-sm line-through ${textSecondary}`}>₦{item.originalPrice.toLocaleString()}</span>}
                       </div>
+                      <ProductRatingDisplay
+                        product={item}
+                        size="text-xs"
+                        starSize="text-xs"
+                      />
                       <p className={`text-xs ${textSecondary}`}>Added: {new Date(item.addedDate).toLocaleDateString()}</p>
                     </div>
                     <div className="flex items-center gap-2">

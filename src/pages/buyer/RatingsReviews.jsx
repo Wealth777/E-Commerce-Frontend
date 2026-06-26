@@ -4,7 +4,7 @@ import { buyerFeedbackAPI } from '../../services/feedback.service';
 import { getList, getMessage, getPayload } from '../../utils/apiResponse';
 import { useToast } from '../../context/ToastContext';
 import { useTheme } from '../../context/ThemeContext';
-import { EmptyState, ErrorState, LoadingState, RatingForm, RatingStars, ReviewCard, ReviewForm } from '../../components/feedback';
+import { EmptyState, ErrorState, LoadingState, RatingForm, RatingStars, ReviewCard, ReviewForm, ProductRatingDisplay } from '../../components/feedback';
 
 const BuyerRatingsReviews = () => {
   const { isDark } = useTheme();
@@ -76,7 +76,7 @@ const BuyerRatingsReviews = () => {
     try {
       await buyerFeedbackAPI.deleteRating(rating._id || rating.id);
       showToast('Rating deleted', 'success');
-      loadData();
+      await loadData();
     } catch (err) {
       showToast(getMessage(err, 'Failed to delete rating'), 'error');
     }
@@ -87,7 +87,7 @@ const BuyerRatingsReviews = () => {
     try {
       await buyerFeedbackAPI.deleteReview(review._id || review.id);
       showToast('Review deleted', 'success');
-      loadData();
+      await loadData();
     } catch (err) {
       showToast(getMessage(err, 'Failed to delete review'), 'error');
     }
@@ -131,6 +131,14 @@ const BuyerRatingsReviews = () => {
                     <div>
                       <RatingStars value={rating.rating || rating.ratingValue} readOnly />
                       <h3 className="mt-2 font-bold">{product.name || 'Product rating'}</h3>
+                      {product.ratingSummary && (
+                        <ProductRatingDisplay
+                          product={product}
+                          size="text-xs"
+                          starSize="text-xs"
+                          className="mt-1"
+                        />
+                      )}
                       <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{rating.comment || 'No comment'}</p>
                       <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{product.storeName || 'CampusTrade Vendor'}</p>
                       {rating.createdAt && <p className="mt-2 text-xs text-gray-400">{new Date(rating.createdAt).toLocaleDateString()}</p>}

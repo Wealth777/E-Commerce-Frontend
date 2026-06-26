@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { FaStar } from 'react-icons/fa';
 import { addToCart } from '../../store/cartActions';
 import { FiHeart, FiShoppingCart } from 'react-icons/fi';
 import apiClient from '../../api/apiClient';
 import { getMessage, getPayload } from '../../utils/apiResponse';
 import { useToast } from '../../context/ToastContext';
+import { ProductRatingDisplay } from '../feedback';
 
 const getObjectId = (value) => {
   if (!value) return '';
@@ -262,13 +262,7 @@ const ProductCard = ({ product }) => {
             {subCategoryName ? ` / ${subCategoryName}` : ''}
           </span>
 
-          <div className="flex items-center text-sm text-yellow-500">
-            <FaStar className="h-4 w-4 fill-current" />
-            <span className="ml-1">{product.rating || 0}</span>
-            <span className="text-gray-400 dark:text-gray-500 ml-1">
-              ({product.reviews || 0})
-            </span>
-          </div>
+          <ProductRatingDisplay product={product} size="text-sm" starSize="text-sm" />
         </div>
 
         <Link to={`/product/${productId}`}>

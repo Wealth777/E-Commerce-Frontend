@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  FaShoppingCart, FaHeart, FaStar, FaArrowLeft, FaShieldAlt,
+  FaShoppingCart, FaHeart, FaArrowLeft, FaShieldAlt,
   FaTruck, FaUndo, FaShare, FaCheck, FaStore, FaMinus, FaPlus, FaChevronRight,
 } from 'react-icons/fa';
 import Loading from '../../components/layout/Loding';
@@ -13,7 +13,20 @@ import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { addToCart } from '../../store/cartActions';
 import { buyerFeedbackAPI } from '../../services/feedback.service';
-import { RatingForm, RatingSummary, ReviewCard, ReviewForm, ReportForm, EmptyState } from '../../components/feedback';
+import {
+  RatingForm,
+  RatingSummary,
+  ReviewCard,
+  ReviewForm,
+  ReportForm,
+  EmptyState,
+  RatingStars,
+  ProductRatingDisplay,
+} from '../../components/feedback';
+import {
+  formatStarRatingDisplay,
+  getProductFeedbackSummaries,
+} from '../../utils/rating';
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -30,7 +43,6 @@ const ProductDetail = () => {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
   const [similarProducts, setSimilarProducts] = useState([]);
-  const [ratingSummary, setRatingSummary] = useState(null);
   const [productReviews, setProductReviews] = useState([]);
   const [showRatingForm, setShowRatingForm] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
@@ -104,26 +116,46 @@ const ProductDetail = () => {
     fetchProduct();
   }, [id, navigate, showToast]);
 
-  const loadProductFeedback = async () => {
+  const refreshProduct = async () => {
+    const response = await apiClient.get(`/vendor/product/${id}`);
+    const payload = getPayload(response, {});
+    const productData = payload.product || payload;
+
+    setProduct({
+      ...productData,
+      _id: productData._id || productData.id,
+      id: productData.id || productData._id,
+      vendor: payload.vendor || productData.vendor,
+    });
+
+    return productData;
+  };
+
+  const loadProductReviews = async () => {
     if (role !== 'buyer') {
-      setRatingSummary(null);
       setProductReviews([]);
       return;
     }
+
     try {
-      const [summaryRes, reviewsRes] = await Promise.all([
-        buyerFeedbackAPI.getProductRatingSummary(id),
-        buyerFeedbackAPI.getProductReviews(id, { limit: 6, sortBy: 'createdAt', sortOrder: 'desc' }),
-      ]);
-      setRatingSummary(getPayload(summaryRes, {}));
+      const reviewsRes = await buyerFeedbackAPI.getProductReviews(id, {
+        limit: 6,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+      });
       setProductReviews(getList(reviewsRes, ['reviews', 'data', 'items']));
-    } catch (error) {
-      // Public product details should still load if feedback endpoints fail.
+    } catch {
+      // Product details should still load if review list fails.
     }
   };
 
+  const refreshProductAndFeedback = async () => {
+    await refreshProduct();
+    await loadProductReviews();
+  };
+
   useEffect(() => {
-    loadProductFeedback();
+    loadProductReviews();
   }, [id, role]);
 
   const handleAddToCart = () => {
@@ -157,7 +189,7 @@ const ProductDetail = () => {
       await buyerFeedbackAPI.createRating(id, data);
       showToast('Rating submitted', 'success');
       setShowRatingForm(false);
-      loadProductFeedback();
+      await refreshProductAndFeedback();
     } catch (error) {
       showToast(getMessage(error, 'Failed to submit rating'), 'error');
     } finally {
@@ -176,7 +208,7 @@ const ProductDetail = () => {
       await buyerFeedbackAPI.createReview(id, data);
       showToast('Review submitted', 'success');
       setShowReviewForm(false);
-      loadProductFeedback();
+      await refreshProductAndFeedback();
     } catch (error) {
       showToast(getMessage(error, 'Failed to submit review'), 'error');
     } finally {
@@ -244,11 +276,15 @@ const ProductDetail = () => {
       ? product?.subCategory?.name
       : product?.subCategory || '';
 
-  const rating =
-    Number(ratingSummary?.averageRating || ratingSummary?.average || product?.averageRating || product?.rating || 0);
-
-  const reviewCount =
-    Number(ratingSummary?.totalRatings || ratingSummary?.total || product?.totalRatings || product?.reviews || 0);
+  const feedback = getProductFeedbackSummaries(product || {});
+  const {
+    averageRating,
+    totalRatings,
+    totalReviews,
+    hasRatings,
+    hasReviews,
+  } = feedback;
+  const displayRating = formatStarRatingDisplay(averageRating);
 
   if (loading) return (
     <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-white'} flex items-center justify-center`}>
@@ -394,6 +430,13 @@ const ProductDetail = () => {
                           {item.name}
                         </p>
 
+                        <ProductRatingDisplay
+                          product={item}
+                          size="text-xs"
+                          starSize="text-xs"
+                          className="mt-1"
+                        />
+
                         <p className="text-sm font-bold text-green-600 mt-1">
                           ₦{Number(item.price || 0).toLocaleString()}
                         </p>
@@ -420,24 +463,23 @@ const ProductDetail = () => {
               {product.name}
             </h1>
 
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <FaStar
-                    key={i}
-                    className={
-                      i < Math.round(rating)
-                        ? 'text-yellow-400'
-                        : 'text-gray-200'
-                    }
-                  />
-                ))}
-
-                <span className="text-gray-500 text-sm">
-                  {rating} Rating ({reviewCount})
-                </span>
-              </div>
-              <span className="text-gray-500 text-sm">| 4.0 Rating</span>
+            <div className="flex flex-wrap items-center gap-3">
+              {hasRatings ? (
+                <>
+                  <RatingStars value={averageRating} normalized readOnly />
+                  <span className="text-gray-500 text-sm">
+                    {displayRating} · {totalRatings} rating{totalRatings === 1 ? '' : 's'}
+                  </span>
+                </>
+              ) : (
+                <span className="text-gray-500 text-sm">No ratings yet</span>
+              )}
+              <span className="text-gray-300">|</span>
+              <span className="text-gray-500 text-sm">
+                {hasReviews
+                  ? `${totalReviews} review${totalReviews === 1 ? '' : 's'}`
+                  : 'No reviews yet'}
+              </span>
             </div>
 
             <div className={`rounded-2xl p-6 border ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-green-50/50 border-green-300'}`}>
@@ -522,7 +564,7 @@ const ProductDetail = () => {
         </div>
 
         <div className="mt-10 space-y-6">
-          <RatingSummary summary={ratingSummary || { averageRating: rating, totalRatings: reviewCount }} />
+          <RatingSummary product={product} />
           <div className={`rounded-2xl p-6 border shadow-sm ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
             <div className="mb-4 flex items-center justify-between">
               <div>
