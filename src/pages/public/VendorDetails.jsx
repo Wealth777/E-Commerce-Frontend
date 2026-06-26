@@ -27,7 +27,7 @@ import {
 } from '../../utils/apiResponse';
 import { useToast } from '../../context/ToastContext';
 import { useTheme } from '../../context/ThemeContext';
-import Loading from '../../components/layout/Loding';
+import Loading from '../../components/layout/Loading';
 import ProductCard from '../../components/cards/ProductCard';
 
 const getCategoryId = (product) => {

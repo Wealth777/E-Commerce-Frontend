@@ -16,7 +16,7 @@ import {
   PhoneCall,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import Loading from '../../components/layout/Loding';
+import Loading from '../../components/layout/Loading';
 import { useToast } from '../../context/ToastContext';
 import { FaShippingFast, FaWallet } from 'react-icons/fa';
 

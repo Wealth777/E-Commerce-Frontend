@@ -6,7 +6,7 @@ import { getList, getMessage, getPayload } from '../../utils/apiResponse';
 import { useDispatch, useSelector } from 'react-redux';
 import { useToast } from '../../context/ToastContext';
 import { addToCart } from '../../store/cartActions';
-import Loading from '../../components/layout/Loding';
+import Loading from '../../components/layout/Loading';
 import { Link } from 'react-router-dom';
 
 const Wishlist = ({ product }) => {

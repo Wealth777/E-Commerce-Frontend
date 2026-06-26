@@ -6,7 +6,7 @@ import { getList, getMessage, getPayload } from '../../utils/apiResponse';
 import { FaBox, FaChevronRight, FaRegCalendarAlt, FaWallet, FaShippingFast, FaCheckCircle, FaClock } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ShoppingBag } from 'lucide-react';
-import Loading from '../../components/layout/Loding';
+import Loading from '../../components/layout/Loading';
 
 const Orders = () => {
   const { isDark } = useTheme();

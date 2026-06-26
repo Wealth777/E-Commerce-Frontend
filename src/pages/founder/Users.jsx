@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
+import Loading from '../../components/Layout/Loading';
 import apiClient, { founderAPI } from '../../api/apiClient'; // Switched to central Axios client
 
 const FounderUsers = () => {
@@ -81,6 +82,10 @@ const FounderUsers = () => {
     u.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     u.id?.toString().includes(searchTerm)
   );
+
+   if (loading) {
+      return <Loading text="Loading Platform Users..." />;
+    }
 
   return (
     <div className={`min-h-screen ${bgColor} py-12 transition-colors duration-200`}>

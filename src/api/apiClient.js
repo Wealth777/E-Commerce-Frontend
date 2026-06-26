@@ -1,8 +1,9 @@
 import axios from 'axios'; 
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:6778/api';
-// export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://new-e-commerce-backend-gwr5.onrender.com/api';
-// export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://new-e-commerce-backend-gwr5.onrender.com/api';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://new-e-commerce-backend-gwr5.onrender.com/api/';
+
+console.log("Vite Env:", import.meta.env.VITE_API_BASE_URL);
+console.log("Final Base URL:", API_BASE_URL);
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
