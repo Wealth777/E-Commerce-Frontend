@@ -1,5 +1,6 @@
 export { default as RatingStars } from './RatingStars';
 export { default as RatingSummary } from './RatingSummary';
+export { default as ProductRatingDisplay } from './ProductRatingDisplay';
 export { default as RatingForm } from './RatingForm';
 export { default as ReviewForm } from './ReviewForm';
 export { default as ReviewCard } from './ReviewCard';

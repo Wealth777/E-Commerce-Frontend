@@ -3,7 +3,7 @@ import { vendorFeedbackAPI } from '../../services/feedback.service';
 import { getList, getMessage } from '../../utils/apiResponse';
 import { useToast } from '../../context/ToastContext';
 import { useTheme } from '../../context/ThemeContext';
-import { EmptyState, ErrorState, LoadingState, RatingStars, ReviewCard } from '../../components/feedback';
+import { EmptyState, ErrorState, LoadingState, RatingStars, ReviewCard, ProductRatingDisplay } from '../../components/feedback';
 
 const VendorRatingsReviews = () => {
   const { isDark } = useTheme();
@@ -69,6 +69,14 @@ const VendorRatingsReviews = () => {
                 <div key={rating._id || rating.id} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
                   <RatingStars value={rating.rating || rating.ratingValue} readOnly />
                   <h3 className="mt-2 font-bold">{product.name || 'Product rating'}</h3>
+                  {product.ratingSummary && (
+                    <ProductRatingDisplay
+                      product={product}
+                      size="text-xs"
+                      starSize="text-xs"
+                      className="mt-1"
+                    />
+                  )}
                   <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{rating.comment || 'No comment'}</p>
                   <p className="mt-2 text-xs text-gray-400">{buyer.fullName || buyer.username || 'Buyer'}{rating.createdAt ? ` · ${new Date(rating.createdAt).toLocaleDateString()}` : ''}</p>
                 </div>

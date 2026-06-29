@@ -49,6 +49,8 @@ const Sitemap = () => {
       links: [
         { label: 'Login', path: '/login', icon: LogIn },
         { label: 'Register', path: '/register', icon: UserPlus },
+        { label: 'Vendor Login', path: '/register', icon: LogIn },
+        { label: 'Vendor Register', path: '/vendor/register', icon: UserPlus },
         { label: 'Forgot Password', path: '/forgot-password', icon: Shield },
       ]
     },

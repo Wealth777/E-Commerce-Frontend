@@ -31,22 +31,54 @@ const getPrimaryId = (value) => (
   ''
 );
 
-const normalizeAuthUser = (nextUser, fallbackUser = null, fallbackRole = null) => {
+const normalizeAuthUser = (
+  nextUser,
+  fallbackUser = null,
+  fallbackRole = null
+) => {
   const user = nextUser || {};
   const previous = fallbackUser || {};
-  const role = user.role || user.userRole || previous.role || previous.userRole || fallbackRole || null;
-  const accountId = getPrimaryId(previous) || getPrimaryId(user);
-  const profileId = user.profileId || user._id || user.id || user?.profile?._id || user?.profile?.id || previous.profileId || '';
+
+  const role =
+    user.role ||
+    user.userRole ||
+    previous.role ||
+    previous.userRole ||
+    fallbackRole ||
+    null;
+
+  const accountId =
+    getPrimaryId(previous) ||
+    getPrimaryId(user);
+
+  const profileId =
+    user.profileId ||
+    user._id ||
+    user.id ||
+    user?.profile?._id ||
+    user?.profile?.id ||
+    previous.profileId ||
+    '';
+
+  const onboardingCompleted =
+    user.onboardingCompleted ??
+    user.profile?.onboardingCompleted ??
+    user.buyer?.onboardingCompleted ??
+    previous.onboardingCompleted ??
+    false;
 
   return {
     ...previous,
     ...user,
+
     _id: accountId || user._id || previous._id,
     id: accountId || user.id || previous.id,
     userId: accountId || user.userId || previous.userId,
     accountId: accountId || user.accountId || previous.accountId,
     profileId,
     role,
+
+    onboardingCompleted,
   };
 };
 
@@ -88,6 +120,7 @@ export const fetchUser = () => async (dispatch, getState) => {
     const profile = getPayload(res, null);
     const currentUser = getState().auth.user || getStoredUser();
     const user = normalizeAuthUser(profile, currentUser, role);
+
 
     dispatch(setUser(user));
     return user;

@@ -11,14 +11,24 @@ import { FiMail, FiLock, FiShoppingBag } from 'react-icons/fi'
 import { FaGoogle, FaFacebook } from 'react-icons/fa'
 import { useToast } from '../../context/ToastContext';
 import { GoogleLogin } from "@react-oauth/google";
-import axios from "axios";
+import { Eye, EyeOff } from 'lucide-react';
 
 const Login = () => {
   const [loading, setLoading] = React.useState(false)
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { showToast } = useToast();
-  const { isAuthenticated } = useSelector((state) => state.auth);
+  const [showPassword, setShowPassword] = React.useState(false);
+  const { isAuthenticated, role } = useSelector(
+    (state) => state.auth
+  );
+
+  useEffect(() => {
+    if (isAuthenticated && role === "buyer") {
+      navigate("/buyer/dashboard", { replace: true });
+    }
+  }, [isAuthenticated, role, navigate]);
+
 
   const formik = useFormik({
     initialValues: {
@@ -36,7 +46,7 @@ const Login = () => {
       setLoading(true)
       dispatch(loginStart());
       try {
-        const response = await apiClient.post(`/${values.role}/auth/login`, {
+        const response = await apiClient.post(`/buyer/auth/login`, {
           email: values.email,
           password: values.password,
         });
@@ -52,13 +62,11 @@ const Login = () => {
         dispatch(loginSuccess({
           user,
           token,
-          role: values.role,
+          role: 'buyer',
         }));
 
-        // dispatch(mergeCart());
-
         showToast('Login successful!', 'success');
-        navigate(`/${values.role}/dashboard`);
+        navigate(`/buyer/dashboard`);
       } catch (error) {
         const message = getMessage(error, 'Login failed.');
         dispatch(loginFailure(message));
@@ -78,6 +86,51 @@ const Login = () => {
   const handleSocialLogin = (provider) => {
     showToast(`${provider} login coming soon`, 'info')
   }
+
+  const handleGoogleLogin = async (
+    credentialResponse
+  ) => {
+    try {
+      const response = await apiClient.post(
+        "/buyer/auth/google",
+        {
+          idToken: credentialResponse.credential,
+        }
+      );
+
+      const token = getTokenFromResponse(response);
+      const user = getUserFromResponse(response);
+
+      dispatch(
+        loginSuccess({
+          user,
+          token,
+          role: "buyer",
+        })
+      );
+
+      showToast(
+        "Google login successful",
+        "success"
+      );
+
+      if (!user.onboardingCompleted) {
+        navigate("/buyer/profile/complete");
+        return;
+      }
+
+      navigate("/buyer/dashboard");
+
+    } catch (error) {
+      showToast(
+        getMessage(
+          error,
+          "Google login failed"
+        ),
+        "error"
+      );
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
@@ -111,31 +164,6 @@ const Login = () => {
 
         <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow rounded-lg sm:px-10">
           <form className="space-y-6" onSubmit={formik.handleSubmit}>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                I am a...
-              </label>
-
-              <div className="grid grid-cols-3 gap-3">
-                {['buyer', 'vendor', 'founder'].map((type) => (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => formik.setFieldValue('role', type)}
-                    className={`py-2 px-3 rounded-lg text-sm font-medium ${formik.values.role === type
-                      ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-2 border-green-500'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                      }`}
-                  >
-                    {type === 'buyer' ? 'Buyer' : type === 'vendor' ? 'Vendor' : 'Founder'}
-                  </button>
-                ))}
-              </div>
-
-              {formik.touched.role && formik.errors.role && (
-                <p className="mt-1 text-xs text-red-500">{formik.errors.role}</p>
-              )}
-            </div>
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -176,12 +204,20 @@ const Login = () => {
                 <input
                   id="password"
                   name="password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={formik.values.password}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                   className="block w-full pl-10 pr-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-black dark:text-white"
                 />
+
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
 
               {formik.touched.password && formik.errors.password && (
@@ -199,40 +235,14 @@ const Login = () => {
           </form>
 
           <div className="mt-6 grid grid-cols-2 gap-3">
-            {/* <button
-              onClick={() => handleGoogleSignin()}
-              className="flex items-center justify-center py-2 px-4 border rounded-md"
-            >
-              <FaGoogle className="h-5 w-5 text-red-500" />
-              <span className="ml-2">Google</span>
-            </button> */}
             <GoogleLogin
-              onSuccess={async (credentialResponse) => {
-                try {
-                  const response = await apiClient.post(
-                    `/${formik.values.role}/auth/google`,
-                    {
-                      idToken: credentialResponse.credential,
-                    }
-                  );
-
-                  const token = getTokenFromResponse(response);
-                  const user = getUserFromResponse(response);
-
-                  dispatch(loginSuccess({
-                    user,
-                    token,
-                    role: formik.values.role,
-                  }));
-
-                  showToast("Google login successful", "success");
-
-                  navigate(`/${formik.values.role}/dashboard`);
-                } catch (err) {
-                  showToast(err);
-                }
-              }}
-              onError={() => showToast("Login failed")}
+              onSuccess={handleGoogleLogin}
+              onError={() =>
+                showToast(
+                  "Google login failed",
+                  "error"
+                )
+              }
             />
 
             <button

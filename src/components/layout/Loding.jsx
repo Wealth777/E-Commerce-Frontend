@@ -1,5 +1,6 @@
 import React from 'react'
 import { useTheme } from '../../context/ThemeContext';
+import '../../App.css'
 
 export default function Loading({ text = "Loading...", fullScreen = true }) {
 
@@ -16,6 +17,10 @@ export default function Loading({ text = "Loading...", fullScreen = true }) {
                     {text}
                 </p>
             </div>
+            {/* <div class="loader"></div>
+            <p className={`${textColor} animate-pulse uppercase text-sm`}>
+                {text}
+            </p> */}
         </div>
     );
 }
