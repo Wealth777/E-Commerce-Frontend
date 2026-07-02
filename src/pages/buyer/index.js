@@ -1,6 +1,9 @@
+export { default as BuyerOnboarding } from './BuyerOnboarding';
 export { default as BuyerDashboard } from './Dashboard';
 export { default as Cart } from './Cart';
 export { default as Checkout } from './Checkout';
 export { default as Orders } from './Orders';
 export { default as Profile } from './Profile';
 export { default as Wishlist } from './Wishlist';
+export { default as BuyerRatingsReviews } from './RatingsReviews';
+export { default as BuyerReports } from './Reports';

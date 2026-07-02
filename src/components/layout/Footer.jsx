@@ -34,7 +34,7 @@ const Footer = () => {
 
   const sellerResources = [
     { name: 'Become a Vendor', path: '/vendor/register' },
-    { name: 'Vendor Dashboard', path: '/login' },
+    { name: 'Vendor Dashboard', path: '/vendor/login' },
     { name: 'Vendor Guidelines', path: '/vendor-guidelines' },
   ];
 

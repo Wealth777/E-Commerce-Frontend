@@ -14,19 +14,14 @@ import apiClient from '../../api/apiClient';
 export default function VendorRegister() {
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
-    const navigate = useNavigate ? useNavigate() : () => { };
+    const navigate = useNavigate();
     const { showToast } = useToast();
-    const [schools, setSchools] = useState([]);
-    const [states, setStates] = useState([]);
-    const [loadingStates, setLoadingStates] = useState(false);
 
     const formik = useFormik({
         initialValues: {
             fullName: '',
             email: '',
             phoneNo: '',
-            schoolId: '',
-            stateId: '',
             password: '',
             confirmPassword: '',
             role: 'vendor',
@@ -35,8 +30,6 @@ export default function VendorRegister() {
             fullName: Yup.string().required('Full name is required'),
             email: Yup.string().email('Invalid email address').required('Email is required'),
             phoneNo: Yup.string().required('Phone number is required'),
-            schoolId: Yup.string().required('Institution/Campus is required'),
-            stateId: Yup.string().required('State is required'),
             password: Yup.string()
                 .min(8, 'Password must be at least 8 characters')
                 .matches(/[A-Z]/, 'Password must contain at least one uppercase letter')
@@ -56,13 +49,11 @@ export default function VendorRegister() {
                     fullName: values.fullName,
                     email: values.email,
                     phoneNo: values.phoneNo,
-                    school: values.schoolId,
-                    state: values.stateId,
                     password: values.password,
                 };
                 await apiClient.post(`/vendor/auth/register`, payload);
                 showToast('Registration successful!', 'success');
-                navigate('/login');
+                navigate('/vendor/login');
             } catch (error) {
                 showToast(getMessage(error, 'Registration failed'), 'error');
             } finally {
@@ -71,62 +62,11 @@ export default function VendorRegister() {
         }
     });
 
-    useEffect(() => {
-        const fetchSchools = async () => {
-            try {
-                const res = await apiClient.get("/schools/");
-
-                setSchools(res.data?.data || []);
-            } catch (err) {
-                showToast(
-                    err?.response?.data?.message ||
-                    "Failed to load schools",
-                    "error"
-                );
-            }
-        };
-
-        fetchSchools();
-    }, [showToast]);
-
-    useEffect(() => {
-        const fetchStates = async () => {
-            if (!formik.values.schoolId) {
-                setStates([]);
-                formik.setFieldValue('stateId', '');
-                return;
-            }
-
-            try {
-                setLoadingStates(true);
-
-                const res = await apiClient.get(
-                    `/schools/${formik.values.schoolId}/states`
-                );
-
-                setStates(res.data?.data || []);
-
-                formik.setFieldValue('stateId', '');
-            } catch (err) {
-                showToast(
-                    err?.response?.data?.message ||
-                    'Failed to load states',
-                    'error'
-                );
-            } finally {
-                setLoadingStates(false);
-            }
-        };
-
-        fetchStates();
-    }, [formik.values.schoolId, showToast]);
-
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F19] flex flex-col lg:flex-row font-sans selection:bg-emerald-500/20 selection:text-emerald-500">
 
             {/* LEFT SIDEBAR: Premium Branding & Social Proof */}
             <div className="relative w-full lg:w-[45%] xl:w-[40%] bg-slate-900 dark:bg-[#070A13] p-8 sm:p-12 lg:p-16 flex flex-col justify-between overflow-hidden border-b lg:border-b-0 lg:border-r border-slate-800">
-                {/* Background Ambient Gradients */}
                 <div className="absolute top-0 left-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none" />
                 <div className="absolute bottom-10 right-0 w-72 h-72 bg-blue-500/10 rounded-full blur-[100px] pointer-events-none" />
 
@@ -292,87 +232,6 @@ export default function VendorRegister() {
                                     )}
                                 </div>
 
-
-                                {/* school */}
-                                <div className="sm:col-span-1 flex flex-col">
-                                    <label className="text-[10px] font-bold tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 uppercase">
-                                        Institution / Campus
-                                    </label>
-
-                                    <div className="relative">
-                                        <GraduationCap className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-
-                                        <select
-                                            name="schoolId"
-                                            disabled={loading}
-                                            value={formik.values.schoolId}
-                                            onChange={formik.handleChange}
-                                            onBlur={formik.handleBlur}
-                                            className="w-full bg-slate-50 dark:bg-[#161D30] border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm"
-                                        >
-                                            <option value="">
-                                                Select School
-                                            </option>
-
-                                            {schools.map((school) => (
-                                                <option
-                                                    key={school._id}
-                                                    value={school._id}
-                                                >
-                                                    {school.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    {formik.touched.schoolId && formik.errors.schoolId && (
-                                        <p className="mt-1.5 text-xs text-red-500">
-                                            {formik.errors.schoolId}
-                                        </p>
-                                    )}
-                                </div>
-
-                                {/* state */}
-                                <div className="sm:col-span-1 flex flex-col">
-                                    <label className="text-[10px] font-bold tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 uppercase">
-                                        State
-                                    </label>
-
-                                    <div className="relative">
-                                        <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-
-                                        <select
-                                            name="stateId"
-                                            value={formik.values.stateId}
-                                            onChange={formik.handleChange}
-                                            onBlur={formik.handleBlur}
-                                            disabled={loading || !formik.values.schoolId || loadingStates}
-                                            className="w-full bg-slate-50 dark:bg-[#161D30] border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm disabled:opacity-60"
-                                        >
-                                            <option value="">
-                                                {loadingStates
-                                                    ? 'Loading states...'
-                                                    : 'Select State'}
-                                            </option>
-
-                                            {states.map((state) => (
-                                                <option
-                                                    key={state._id}
-                                                    value={state._id}
-                                                >
-                                                    {state.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    {formik.touched.stateId && formik.errors.stateId && (
-                                        <p className="mt-1.5 text-xs text-red-500">
-                                            {formik.errors.stateId}
-                                        </p>
-                                    )}
-                                </div>
-
                                 {/* password */}
                                 <div className="sm:col-span-1 flex flex-col">
                                     <label className="text-[10px] font-bold tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 uppercase">
@@ -476,7 +335,7 @@ export default function VendorRegister() {
                             </div>
 
                             {/* Guardrails / Agreement */}
-                            <div className="flex items-start bg-slate-50 dark:bg-[#161D30] p-3.5 rounded-xl border border-slate-100 dark:border-slate-800/40 mt-2">
+                            {/* <div className="flex items-start bg-slate-50 dark:bg-[#161D30] p-3.5 rounded-xl border border-slate-100 dark:border-slate-800/40 mt-2">
                                 <input
                                     id="terms"
                                     type="checkbox"
@@ -487,7 +346,7 @@ export default function VendorRegister() {
                                     I authorize commercial verification of my campus identity and agree to the{' '}
                                     <a href="#terms" className="text-emerald-600 dark:text-emerald-400 hover:underline font-semibold">Vendor Agreement</a> and structural fee models.
                                 </label>
-                            </div>
+                            </div> */}
 
                             {/* Submit CTA */}
                             <div className="pt-2">

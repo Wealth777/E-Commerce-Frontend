@@ -31,6 +31,46 @@ const getPrimaryId = (value) => (
   ''
 );
 
+const toBooleanFlag = (value) => {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'true') return true;
+    if (normalized === 'false') return false;
+  }
+  return null;
+};
+
+const getOnboardingStatus = (user, previous) => {
+  const candidates = [
+    user?.onboardingCompleted,
+    user?.profile?.onboardingCompleted,
+    user?.buyer?.onboardingCompleted,
+    user?.vendor?.onboardingCompleted,
+    user?.isOnboardingCompleted,
+    user?.profile?.isOnboardingCompleted,
+    user?.buyer?.isOnboardingCompleted,
+    user?.vendor?.isOnboardingCompleted,
+    previous?.onboardingCompleted,
+    previous?.profile?.onboardingCompleted,
+    previous?.buyer?.onboardingCompleted,
+    previous?.vendor?.onboardingCompleted,
+    previous?.isOnboardingCompleted,
+    previous?.profile?.isOnboardingCompleted,
+    previous?.buyer?.isOnboardingCompleted,
+    previous?.vendor?.isOnboardingCompleted,
+  ];
+
+  for (const candidate of candidates) {
+    const parsed = toBooleanFlag(candidate);
+    if (parsed !== null) {
+      return parsed;
+    }
+  }
+
+  return false;
+};
+
 const normalizeAuthUser = (
   nextUser,
   fallbackUser = null,
@@ -60,12 +100,7 @@ const normalizeAuthUser = (
     previous.profileId ||
     '';
 
-  const onboardingCompleted =
-    user.onboardingCompleted ??
-    user.profile?.onboardingCompleted ??
-    user.buyer?.onboardingCompleted ??
-    previous.onboardingCompleted ??
-    false;
+  const onboardingCompleted = getOnboardingStatus(user, previous);
 
   return {
     ...previous,

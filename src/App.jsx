@@ -7,6 +7,7 @@ import useNotificationSocket from './hooks/useNotificationSocket';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
+import VendorDashboardGuard from './components/VendorDashboardGuard';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 
@@ -26,7 +27,7 @@ import VendorGuidelines from './pages/public/VendorGuidelines';
 import Sitemap from './pages/public/Sitemap';
 
 // Buyer Pages
-import CompleteProfile from './pages/buyer/CompleteProfile';
+import CompleteProfile from './pages/buyer/BuyerOnboarding';
 import BuyerDashboard from './pages/buyer/Dashboard';
 import Cart from './pages/buyer/Cart';
 import Checkout from './pages/buyer/Checkout';
@@ -40,6 +41,7 @@ import BuyerReports from './pages/buyer/Reports';
 // Vendor Pages
 import VendorRegister from './pages/vendor/vendorRegsiter';
 import VendorLogin from './pages/vendor/VendorLogin';
+import VendorOnboarding from './pages/vendor/VendorOnboarding';
 import VendorDashboard from './pages/vendor/Dashboard';
 import VendorProducts from './pages/vendor/Products';
 import AddProduct from './pages/vendor/AddProduct';
@@ -219,10 +221,18 @@ function App() {
                 }
               />
               <Route
+                path="/vendor/onboarding"
+                element={
+                  <VendorOnboarding />
+                }
+              />
+              <Route
                 path="/vendor/dashboard"
                 element={
                   <ProtectedRoute requiredRole="vendor">
-                    <VendorDashboard />
+                    <VendorDashboardGuard>
+                      <VendorDashboard />
+                    </VendorDashboardGuard>
                   </ProtectedRoute>
                 }
               />
@@ -230,7 +240,9 @@ function App() {
                 path="/vendor/products"
                 element={
                   <ProtectedRoute requiredRole="vendor">
-                    <VendorProducts />
+                    <VendorDashboardGuard>
+                      <VendorProducts />
+                    </VendorDashboardGuard>
                   </ProtectedRoute>
                 }
               />
@@ -238,7 +250,9 @@ function App() {
                 path="/vendor/products/add"
                 element={
                   <ProtectedRoute requiredRole="vendor">
-                    <AddProduct />
+                    <VendorDashboardGuard>
+                      <AddProduct />
+                    </VendorDashboardGuard>
                   </ProtectedRoute>
                 }
               />
@@ -246,7 +260,9 @@ function App() {
                 path="/vendor/orders"
                 element={
                   <ProtectedRoute requiredRole="vendor">
-                    <VendorOrders />
+                    <VendorDashboardGuard>
+                      <VendorOrders />
+                    </VendorDashboardGuard>
                   </ProtectedRoute>
                 }
               />
@@ -254,7 +270,9 @@ function App() {
                 path="/vendor/orders/:orderId"
                 element={
                   <ProtectedRoute requiredRole="vendor">
-                    <VendorOrderDetails />
+                    <VendorDashboardGuard>
+                      <VendorOrderDetails />
+                    </VendorDashboardGuard>
                   </ProtectedRoute>
                 }
               />
@@ -262,7 +280,9 @@ function App() {
                 path="/vendor/analytics"
                 element={
                   <ProtectedRoute requiredRole="vendor">
-                    <VendorAnalytics />
+                    <VendorDashboardGuard>
+                      <VendorAnalytics />
+                    </VendorDashboardGuard>
                   </ProtectedRoute>
                 }
               />
@@ -270,7 +290,9 @@ function App() {
                 path="/vendor/profile"
                 element={
                   <ProtectedRoute requiredRole="vendor">
-                    <VendorProfile />
+                    <VendorDashboardGuard>
+                      <VendorProfile />
+                    </VendorDashboardGuard>
                   </ProtectedRoute>
                 }
               />
@@ -278,7 +300,9 @@ function App() {
                 path="/vendor/payment"
                 element={
                   <ProtectedRoute requiredRole="vendor">
-                    <VendorPayment />
+                    <VendorDashboardGuard>
+                      <VendorPayment />
+                    </VendorDashboardGuard>
                   </ProtectedRoute>
                 }
               />
@@ -286,7 +310,9 @@ function App() {
                 path="/vendor/refund-requests"
                 element={
                   <ProtectedRoute requiredRole="vendor">
-                    <VendorRefundRequests />
+                    <VendorDashboardGuard>
+                      <VendorRefundRequests />
+                    </VendorDashboardGuard>
                   </ProtectedRoute>
                 }
               />
@@ -294,7 +320,9 @@ function App() {
                 path="/vendor/notifications"
                 element={
                   <ProtectedRoute requiredRole="vendor">
-                    <Notifications />
+                    <VendorDashboardGuard>
+                      <Notifications />
+                    </VendorDashboardGuard>
                   </ProtectedRoute>
                 }
               />
@@ -302,7 +330,9 @@ function App() {
                 path="/vendor/return-requests"
                 element={
                   <ProtectedRoute requiredRole="vendor">
-                    <VendorReturnRequests />
+                    <VendorDashboardGuard>
+                      <VendorReturnRequests />
+                    </VendorDashboardGuard>
                   </ProtectedRoute>
                 }
               />
@@ -310,7 +340,9 @@ function App() {
                 path="/vendor/messages"
                 element={
                   <ProtectedRoute requiredRole="vendor">
-                    <Messages />
+                    <VendorDashboardGuard>
+                      <Messages />
+                    </VendorDashboardGuard>
                   </ProtectedRoute>
                 }
               />
@@ -318,7 +350,9 @@ function App() {
                 path="/vendor/ratings-reviews"
                 element={
                   <ProtectedRoute requiredRole="vendor">
-                    <VendorRatingsReviews />
+                    <VendorDashboardGuard>
+                      <VendorRatingsReviews />
+                    </VendorDashboardGuard>
                   </ProtectedRoute>
                 }
               />
@@ -326,7 +360,9 @@ function App() {
                 path="/vendor/reports"
                 element={
                   <ProtectedRoute requiredRole="vendor">
-                    <VendorReports />
+                    <VendorDashboardGuard>
+                      <VendorReports />
+                    </VendorDashboardGuard>
                   </ProtectedRoute>
                 }
               />
@@ -352,7 +388,7 @@ function App() {
               <Route
                 path="/founder/login"
                 element={
-                    <FounderLogin />
+                  <FounderLogin />
                 }
               />
               <Route

@@ -15,7 +15,7 @@ const validationSchema = Yup.object().shape({
     .required('Phone number is required'),
 });
 
-const CompleteProfile = () => {
+const BuyerOnboarding = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { showToast } = useToast();
@@ -281,4 +281,4 @@ const CompleteProfile = () => {
   );
 };
 
-export default CompleteProfile;
+export default BuyerOnboarding;

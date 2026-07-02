@@ -1,5 +1,14 @@
+export { default as VendorRegister } from './vendorRegsiter';
+export { default as VendorLogin } from './VendorLogin';
+export { default as VendorOnboarding } from './VendorOnboarding';
+export { default as WaitingApproval } from './WaitingApproval';
 export { default as VendorDashboard } from './Dashboard';
-export { default as Products } from './Products';
+export { default as Payouts } from './Products';
 export { default as AddProduct } from './AddProduct';
 export { default as Orders } from './Orders';
+export { default as Payment } from './Payment';
 export { default as Analytics } from './Analytics';
+export { default as VendorRefundRequests } from './RefundRequests';
+export { default as VendorReturnRequests } from './ReturnRequests';
+export { default as VendorReports } from './Reports';
+export { default as VendorRatingsReviews } from './RatingsReviews';
