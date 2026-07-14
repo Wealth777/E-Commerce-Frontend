@@ -1,230 +1,169 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
+import apiClient from '../../api/apiClient'; // Switched to central Axios client
 
 const FounderVendors = () => {
   const { isDark } = useTheme();
 
-  // Styling helpers
+  // --- LIVE BACKEND STATE ---
+  const [vendors, setVendors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [filterTab, setFilterTab] = useState('Pending'); // Options: 'Pending', 'Approved', 'All'
+
+  // Theme Helpers
   const bgColor = isDark ? 'bg-gray-900' : 'bg-gray-50';
   const cardBg = isDark ? 'bg-gray-800' : 'bg-white';
   const textColor = isDark ? 'text-white' : 'text-gray-900';
   const subTextColor = isDark ? 'text-gray-400' : 'text-gray-600';
   const borderColor = isDark ? 'border-gray-700' : 'border-gray-200';
 
-  // --- TABS STATE ---
-  const [activeTab, setActiveTab] = useState('Pending'); // Pending | Approved | Rejected
-  const [selectedVendor, setSelectedVendor] = useState(null);
-
-  // --- PHASE 1 MOCK VENDORS ---
-  const [vendors, setVendors] = useState([
-    { 
-      id: 'V-201', 
-      storeName: 'Unilag Tech Hub', 
-      owner: 'Emeka Okafor', 
-      status: 'Approved', 
-      category: 'Electronics', 
-      joinedDate: '2026-05-10',
-      products: [
-        { name: 'HP EliteBook 840 G5', price: '₦320,000', stock: 3 },
-        { name: 'Rechargeable Desk Fan', price: '₦18,500', stock: 12 }
-      ]
-    },
-    { 
-      id: 'V-202', 
-      storeName: 'Campus Bookstore', 
-      owner: 'Tunde Bakare', 
-      status: 'Approved', 
-      category: 'Books & Stationery', 
-      joinedDate: '2026-05-01',
-      products: [
-        { name: 'Engineering Mathematics Vol 2', price: '₦8,500', stock: 45 },
-        { name: 'Scientific Calculator fx-991EX', price: '₦15,000', stock: 10 }
-      ]
-    },
-    { 
-      id: 'V-203', 
-      storeName: 'Kofa Groceries', 
-      owner: 'Zainab Bello', 
-      status: 'Pending', 
-      category: 'Food & Groceries', 
-      joinedDate: '2026-05-28',
-      products: [] 
-    },
-    { 
-      id: 'V-204', 
-      storeName: 'Smart Fashion', 
-      owner: 'David Kola', 
-      status: 'Pending', 
-      category: 'Clothing', 
-      joinedDate: '2026-05-29',
-      products: [] 
-    },
-    { 
-      id: 'V-205', 
-      storeName: 'Cheap Grills', 
-      owner: 'Samson Akpan', 
-      status: 'Rejected', 
-      category: 'Food & Groceries', 
-      joinedDate: '2026-04-12',
-      products: [] 
-    }
-  ]);
-
-  // --- ACTION CONTROLLERS ---
-  const handleApprove = (id) => {
-    setVendors(vendors.map(v => v.id === id ? { ...v, status: 'Approved' } : v));
-    if (selectedVendor?.id === id) setSelectedVendor({ ...selectedVendor, status: 'Approved' });
-  };
-
-  const handleReject = (id) => {
-    setVendors(vendors.map(v => v.id === id ? { ...v, status: 'Rejected' } : v));
-    if (selectedVendor?.id === id) setSelectedVendor({ ...selectedVendor, status: 'Rejected' });
-  };
-
-  const handleSuspend = (id) => {
-    if (window.confirm("Suspend this vendor's shop and listings permanently?")) {
-      setVendors(vendors.map(v => v.id === id ? { ...v, status: 'Suspended' } : v));
-      if (selectedVendor?.id === id) setSelectedVendor({ ...selectedVendor, status: 'Suspended' });
+  // --- FETCH VENDORS FROM API ---
+  const fetchVendors = async () => {
+    try {
+      setLoading(true);
+      // Connects to your partner's vendor query path
+      const response = await API.get('/api/founder/vendors');
+      setVendors(response.data.vendors || response.data);
+      setError(null);
+    } catch (err) {
+      console.error("Error loading vendors:", err);
+      setError("Failed to retrieve the vendor applications directory.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Filter based on selected UI Tab status selection
-  const filteredVendors = vendors.filter(v => v.status === activeTab);
+  useEffect(() => {
+    fetchVendors();
+  }, []);
+
+  // --- APPROVAL / REJECTION ACTIONS ---
+  const handleApproveVendor = async (id) => {
+    if (window.confirm("Approve this vendor application? They will gain full market permissions immediately.")) {
+      try {
+        await API.patch(`/api/founder/vendors/${id}/approve`);
+        
+        // Smoothly update state locally
+        setVendors(vendors.map(v => v.id === id ? { ...v, verificationStatus: 'Approved' } : v));
+      } catch (err) {
+        console.error("Approval request failed:", err);
+        alert("Could not process vendor approval.");
+      }
+    }
+  };
+
+  const handleRejectVendor = async (id) => {
+    const reason = window.prompt("Enter reason for rejection (this will be sent to the student):");
+    if (reason === null) return; // Cancelled prompt
+
+    try {
+      await API.patch(`/api/founder/vendors/${id}/reject`, { reason });
+      
+      // Update state locally
+      setVendors(vendors.map(v => v.id === id ? { ...v, verificationStatus: 'Rejected' } : v));
+    } catch (err) {
+      console.error("Rejection request failed:", err);
+      alert("Could not process vendor rejection.");
+    }
+  };
+
+  // Filter Logic based on active Tab
+  const filteredVendors = vendors.filter(vendor => {
+    if (filterTab === 'All') return true;
+    return vendor.verificationStatus === filterTab;
+  });
+
+   if (loading) {
+      return <Loading text="Loading Registered Vendors..." />;
+    }
 
   return (
     <div className={`min-h-screen ${bgColor} py-12 transition-colors duration-200`}>
       <div className="max-w-7xl mx-auto px-4">
         
-        <h1 className={`text-3xl font-bold ${textColor} mb-8`}>Vendor Management</h1>
+        <h1 className={`text-3xl font-bold ${textColor} mb-2`}>Vendor Verification Hub</h1>
+        <p className={`${subTextColor} mb-8`}>Review student business applications and manage storefront selling privileges.</p>
 
-        {/* Dynamic Status Tabs */}
-        <div className="flex border-b border-gray-200 dark:border-gray-700 mb-8 space-x-4">
-          {['Pending', 'Approved', 'Rejected'].map((tab) => (
+        {/* Tab Switcher Controller */}
+        <div className="flex border-b ${borderColor} mb-6 gap-6">
+          {['Pending', 'Approved', 'All'].map((tab) => (
             <button
               key={tab}
-              onClick={() => { setActiveTab(tab); setSelectedVendor(null); }}
-              className={`pb-3 text-sm font-semibold border-b-2 transition-all px-2 ${
-                activeTab === tab 
-                  ? 'border-emerald-500 text-emerald-600' 
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              onClick={() => setFilterTab(tab)}
+              className={`pb-3 text-sm font-semibold transition-colors relative ${
+                filterTab === tab ? 'text-emerald-500' : subTextColor
               }`}
             >
-              {tab} Approvals ({vendors.filter(v => v.status === tab).length})
+              {tab} Requests
+              {filterTab === tab && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500 rounded-full" />
+              )}
             </button>
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-          
-          {/* Main List Table Area */}
-          <div className={`lg:col-span-2 ${cardBg} shadow-md rounded-xl border ${borderColor} overflow-hidden`}>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className={`border-b ${borderColor} ${isDark ? 'bg-gray-900/50' : 'bg-gray-100'}`}>
-                    <th className={`p-4 text-sm font-semibold ${textColor}`}>Store Details</th>
-                    <th className={`p-4 text-sm font-semibold ${textColor}`}>Category</th>
-                    <th className={`p-4 text-sm font-semibold text-right ${textColor}`}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {filteredVendors.length > 0 ? (
-                    filteredVendors.map((vendor) => (
-                      <tr key={vendor.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition-colors">
-                        <td className="p-4">
-                          <div className={`font-bold ${textColor}`}>{vendor.storeName}</div>
-                          <div className={`text-xs ${subTextColor}`}>Owner: {vendor.owner} • ID: {vendor.id}</div>
-                        </td>
-                        <td className="p-4 text-sm">
-                          <span className={textColor}>{vendor.category}</span>
-                        </td>
-                        <td className="p-4 text-right space-x-2">
-                          <button
-                            onClick={() => setSelectedVendor(vendor)}
-                            className="text-xs font-semibold px-2.5 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md hover:opacity-90"
-                          >
-                            Inspect View
-                          </button>
-                          
-                          {vendor.status === 'Pending' && (
-                            <>
-                              <button
-                                onClick={() => handleApprove(vendor.id)}
-                                className="text-xs font-semibold px-2.5 py-1.5 bg-emerald-600 text-white rounded-md hover:bg-emerald-700"
-                              >
-                                Approve
-                              </button>
-                              <button
-                                onClick={() => handleReject(vendor.id)}
-                                className="text-xs font-semibold px-2.5 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700"
-                              >
-                                Reject
-                              </button>
-                            </>
-                          )}
+        {error && (
+          <div className="mb-6 p-4 bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300 rounded-xl text-center">
+            {error}
+          </div>
+        )}
 
-                          {vendor.status === 'Approved' && (
-                            <button
-                              onClick={() => handleSuspend(vendor.id)}
-                              className="text-xs font-semibold px-2.5 py-1.5 bg-orange-500 text-white rounded-md hover:bg-orange-600"
-                            >
-                              Suspend Shop
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="3" className={`p-8 text-center text-sm ${subTextColor}`}>
-                        No vendors inside the "{activeTab}" records view block.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+        {/* Vendors Grid / List Workspace */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {loading ? (
+            <div className="col-span-full py-12 text-center text-sm ${subTextColor}">
+              <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-500 mb-2"></div>
+              <p>Syncing verification channels...</p>
             </div>
-          </div>
-
-          {/* Right Detailed & Product Inspection Column Side Widget */}
-          <div>
-            {selectedVendor ? (
-              <div className={`${cardBg} p-6 rounded-xl shadow-md border ${borderColor} space-y-6`}>
+          ) : filteredVendors.length > 0 ? (
+            filteredVendors.map((vendor) => (
+              <div key={vendor.id} className={`${cardBg} p-6 rounded-xl shadow-md border ${borderColor} flex flex-col justify-between`}>
                 <div>
-                  <h3 className={`text-lg font-bold ${textColor}`}>{selectedVendor.storeName} Profile</h3>
-                  <p className={`text-xs ${subTextColor}`}>Registered Date: {selectedVendor.joinedDate}</p>
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className={`text-lg font-bold ${textColor}`}>{vendor.shopName || vendor.name}</h3>
+                    <span className={`px-2.5 py-0.5 text-xs font-bold rounded-full ${
+                      vendor.verificationStatus === 'Approved' 
+                        ? 'bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300'
+                        : vendor.verificationStatus === 'Rejected'
+                        ? 'bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300'
+                        : 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 animate-pulse'
+                    }`}>
+                      {vendor.verificationStatus}
+                    </span>
+                  </div>
+                  <p className={`text-xs ${subTextColor} mb-4`}>Owner: {vendor.ownerName} ({vendor.email})</p>
+                  
+                  <div className={`p-3 rounded-lg ${isDark ? 'bg-gray-900/50' : 'bg-gray-100'} text-sm ${textColor} mb-4`}>
+                    <p className="text-xs text-gray-400 font-medium uppercase mb-1">Declared Inventory Catalog</p>
+                    {vendor.description || "No description catalog supplied by applicant."}
+                  </div>
                 </div>
-                <hr className={borderColor} />
 
-                {/* Vendor Live Inventory List */}
-                <div>
-                  <h4 className={`text-sm font-semibold uppercase tracking-wider text-emerald-600 mb-3`}>
-                    Listed Products ({selectedVendor.products.length})
-                  </h4>
-                  {selectedVendor.products.length > 0 ? (
-                    <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                      {selectedVendor.products.map((p, i) => (
-                        <div key={i} className={`p-2.5 rounded-lg border ${borderColor} bg-gray-50/50 dark:bg-gray-900/30 flex justify-between items-center text-xs`}>
-                          <div>
-                            <p className={`font-semibold ${textColor}`}>{p.name}</p>
-                            <p className={subTextColor}>Available Stock: {p.stock} units</p>
-                          </div>
-                          <span className={`font-bold text-emerald-600`}>{p.price}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className={`text-xs italic ${subTextColor}`}>This account vendor currently doesn't have any products uploaded to the platform marketplace structure.</p>
-                  )}
-                </div>
+                {/* Conditional Action Controls Panel */}
+                {vendor.verificationStatus === 'Pending' && (
+                  <div className="flex gap-3 mt-2">
+                    <button
+                      onClick={() => handleApproveVendor(vendor.id)}
+                      className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold text-sm transition-colors"
+                    >
+                      Approve Merchant
+                    </button>
+                    <button
+                      onClick={() => handleRejectVendor(vendor.id)}
+                      className="flex-1 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-red-600 dark:hover:bg-red-700 text-gray-800 dark:text-white rounded-lg font-semibold text-sm transition-colors"
+                    >
+                      Decline Request
+                    </button>
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className={`${cardBg} p-6 rounded-xl border-2 border-dashed ${borderColor} text-center ${subTextColor} p-8`}>
-                Click "Inspect View" on any vendor row record to process action credentials and map their catalog parameters directly.
-              </div>
-            )}
-          </div>
-
+            ))
+          ) : (
+            <div className={`col-span-full p-12 text-center text-sm border-2 border-dashed ${borderColor} rounded-xl ${subTextColor}`}>
+              No {filterTab.toLowerCase()} merchant requests listed in local queue registries.
+            </div>
+          )}
         </div>
 
       </div>

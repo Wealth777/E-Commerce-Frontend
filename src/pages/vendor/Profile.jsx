@@ -5,7 +5,7 @@ import apiClient from '../../api/apiClient';
 import { getList, getMessage, getPayload } from '../../utils/apiResponse';
 import { useTheme } from '../../context/ThemeContext';
 import { useToast } from '../../context/ToastContext';
-import Loading from '../../components/layout/Loding';
+import Loading from '../../components/layout/Loading';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, PhoneCall } from 'lucide-react';
 
