@@ -67,6 +67,7 @@ const Navbar = () => {
                     { name: 'Analytics', path: '/vendor/analytics' },
                     { name: 'Payment', path: '/vendor/payment' },
                     { name: 'My Profile', path: '/vendor/profile' },
+                    { name: 'Settings', path: '/vendor/settings' },
                 ];
             case 'buyer':
                 return [
@@ -176,7 +177,7 @@ const Navbar = () => {
                                         <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-xl py-1 z-50 border border-gray-200 dark:border-gray-700">
                                             <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
                                                 <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{user?.identity?.fullName}</p>
-                                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.contact?.email}</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.account?.email}</p>
                                             </div>
                                             {getRoleBasedLinks().map((link) => (
                                                 <Link

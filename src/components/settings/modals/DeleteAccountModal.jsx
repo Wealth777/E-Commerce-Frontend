@@ -27,9 +27,9 @@ export default function DeleteAccountModal({
   useEffect(() => {
     if (isOpen) {
       previousFocusRef.current = document.activeElement;
-      setReason('');
-      setEnteredSerial('');
-      setError('');
+      // setReason('');
+      // setEnteredSerial('');
+      // setError('');
       
       // Allow transition tick to execute before grabbing target focus
       setTimeout(() => {

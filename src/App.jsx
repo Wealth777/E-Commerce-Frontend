@@ -56,6 +56,7 @@ import VendorRatingsReviews from './pages/vendor/RatingsReviews';
 import VendorReports from './pages/vendor/Reports';
 import Notifications from './pages/notifications/Notifications';
 import Messages from './pages/chat/Messages';
+import VendorSettings from './pages/vendor/Settings';
 
 // Founder Pages
 import FounderLogin from './pages/founder/Login';
@@ -96,6 +97,8 @@ function App() {
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<Home />} />
+              {/* <Route path="/settings" element={<VendorSettings />} /> */}
+
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/products" element={<Products />} />
@@ -362,6 +365,16 @@ function App() {
                   <ProtectedRoute requiredRole="vendor">
                     <VendorDashboardGuard>
                       <VendorReports />
+                    </VendorDashboardGuard>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/vendor/settings"
+                element={
+                  <ProtectedRoute requiredRole="vendor">
+                    <VendorDashboardGuard>
+                      <VendorSettings />
                     </VendorDashboardGuard>
                   </ProtectedRoute>
                 }

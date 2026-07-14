@@ -3,11 +3,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setProducts, setFilter, filterProducts } from '../../store/productSlice';
 import ProductCard from '../../components/cards/ProductCard';
 import { useTheme } from '../../context/ThemeContext';
-import { toast } from 'react-toastify';
 import apiClient from '../../api/apiClient';
 import { getList, getMessage, getPayload } from '../../utils/apiResponse';
 import { FaSearch, FaSlidersH, FaLayerGroup } from 'react-icons/fa';
-import Loading from '../../components/layout/Loading';
+import Loading from '../../components/layout/Loding';
 import { useToast } from '../../context/ToastContext';
 
 const Products = () => {

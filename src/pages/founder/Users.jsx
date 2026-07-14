@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
-import API from '../../api/axios'; // Import the central Axios instance we made
+// import API from '../../api/axios';
 
 const FounderUsers = () => {
   const { isDark } = useTheme();
@@ -19,10 +19,6 @@ const FounderUsers = () => {
   const subTextColor = isDark ? 'text-gray-400' : 'text-gray-600';
   const borderColor = isDark ? 'border-gray-700' : 'border-gray-200';
 
-  // --- LIVE BACKEND STATE ---
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchUsers();
@@ -126,7 +122,7 @@ const FounderUsers = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           
           {/* User Data Table Panel */}
-          <div className={`lg:col-span-2 ${cardBg} shadow-md rounded-xl border ${borderColor} overflow-hidden`}>
+          {/* <div className={`lg:col-span-2 ${cardBg} shadow-md rounded-xl border ${borderColor} overflow-hidden`}>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
@@ -192,7 +188,7 @@ const FounderUsers = () => {
                 <div className={`p-12 text-center text-sm ${subTextColor}`}>No matching users found.</div>
               )}
             </div>
-          </div>
+          </div> */}
 
           {/* Right Column Side Panel */}
           <div>

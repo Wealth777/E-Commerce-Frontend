@@ -6,7 +6,7 @@ import { getList, getMessage, getPayload } from '../../utils/apiResponse';
 import { useTheme } from '../../context/ThemeContext';
 import { ArrowLeft, PhoneCall, ShoppingBag } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import Loading from '../../components/layout/Loading';
+import Loading from '../../components/layout/Loding';
 
 // West African countries
 const WEST_AFRICAN_COUNTRIES = [

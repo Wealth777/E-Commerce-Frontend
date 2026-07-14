@@ -1,48 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { FaEdit, FaSave, FaTimes, FaCamera, FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaStore, FaLock, FaGlobe, FaBell, FaFacebook, FaInstagram, FaTwitter, FaImage, FaChevronDown } from 'react-icons/fa';
-import { toast } from 'react-toastify';
-import apiClient from '../../api/apiClient';
-import { getList, getMessage, getPayload } from '../../utils/apiResponse';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+    FaEdit, FaSave, FaTimes, FaCamera, FaUser, FaStore,
+    FaFacebook, FaInstagram, FaWhatsapp, FaTiktok, FaCopy, FaCheck, FaImage, FaGraduationCap
+} from 'react-icons/fa';
 import { useTheme } from '../../context/ThemeContext';
 import { useToast } from '../../context/ToastContext';
-import Loading from '../../components/layout/Loading';
+import apiClient from '../../api/apiClient';
+import { getMessage, getPayload } from '../../utils/apiResponse';
+import Loading from '../../components/layout/Loding';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, PhoneCall } from 'lucide-react';
-
-// West African countries
-const WEST_AFRICAN_COUNTRIES = [
-    'Nigeria', 'Ghana', 'Ivory Coast', 'Senegal', 'Togo',
-    'Benin', 'Burkina Faso', 'Mali', 'Niger', 'Sierra Leone',
-    'Liberia', 'Guinea', 'Guinea-Bissau', 'Gambia', 'Cape Verde'
-];
-
-// Nigerian states
-const NIGERIAN_STATES = [
-    'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue',
-    'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'Gombe',
-    'Imo', 'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara',
-    'Lagos', 'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau',
-    'Sokoto', 'Taraba', 'Yobe', 'Zamfara', 'FCT'
-];
-
-// Language preferences by country
-const COUNTRY_LANGUAGES = {
-    'Nigeria': ['English'],
-    'Ghana': ['English'],
-    'Ivory Coast': ['French'],
-    'Senegal': ['French'],
-    'Togo': ['French'],
-    'Benin': ['French'],
-    'Burkina Faso': ['French'],
-    'Mali': ['French'],
-    'Niger': ['French'],
-    'Sierra Leone': ['English'],
-    'Liberia': ['English'],
-    'Guinea': ['French'],
-    'Guinea-Bissau': ['Portuguese'],
-    'Gambia': ['English'],
-    'Cape Verde': ['Portuguese']
-};
+import { ArrowLeft, PhoneCall, Sparkles, CheckCircle, ShieldAlert } from 'lucide-react';
 
 const Profile = () => {
     const { isDark } = useTheme();
@@ -52,34 +19,38 @@ const Profile = () => {
     const [editing, setEditing] = useState(false);
     const [saving, setSaving] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [copied, setCopied] = useState(false);
 
-    // Form state
+    // Dynamic Form Data matching requirements
     const [formData, setFormData] = useState({
+        accountStatus: 'Active',
         serialNumber: '',
-        username: '',
-        fullName: '',
         profilePhoto: '',
-        country: '',
-        state: '',
-        email: '',
-        phone: '',
-        businessAddress: '',
-        customerSupportContact: '',
+        profilePhotoFile: null,
+        fullName: '',
+        gender: 'Not Specified',
+        institution: '',
+        stateCampus: '',
+        faculty: '',
+        department: '',
+        level: '',
+        matricNumber: '',
+        residence: '',
+        address: '',
+        storeLogo: '',
+        storeBanner: '',
+        storeLogoFile: null,
         storeName: '',
-        storeDescription: '',
-        bannerImage: '',
+        businessType: '',
+        businessDescription: '',
         facebook: '',
         instagram: '',
-        twitter: '',
-        preferredLanguage: '',
-        notificationPreference: 'email',
-        showPasswordModal: false,
-        currentPassword: '',
-        newPassword: ''
+        whatsapp: '',
+        tiktok: ''
     });
 
-    const [showCountryDropdown, setShowCountryDropdown] = useState(false);
-    const [showStateDropdown, setShowStateDropdown] = useState(false);
+    // To properly rollback states on cancel
+    const pristineDataRef = useRef(null);
 
     useEffect(() => {
         fetchProfile();
@@ -88,49 +59,50 @@ const Profile = () => {
     const fetchProfile = async () => {
         try {
             const res = await apiClient.get('/vendor/profile/me');
-
             const data = getPayload(res, {});
-
             setProfile(data);
 
-            setFormData({
-                // identity
-                username: data.identity?.username || '',
-                fullName: data.identity?.fullName || '',
-                profilePhoto: data.identity?.profilePhoto || '',
-                serialNumber: data.identity?.serialNumber || '',
+            const initialFormState = {
+                accountStatus: data.verification?.accountStatus || "pending",
+                verificationStatus: data.verification?.verificationStatus || "",
+                isVerified: data.verification?.isVerified || "",
+                serialNumber: data.identity?.serialNumber || "",
 
-                // location
-                country: data.location?.country || '',
-                state: data.location?.state || '',
+                profilePhoto: data.student?.profilePhoto || "",
+                profilePhotoFile: null,
 
-                // contact
-                email: data.contact?.email || '',
-                phone: data.contact?.phoneNo || '',
-                businessAddress: data.contact?.businessAddress || '',
-                customerSupportContact: data.contact?.supportContact || '',
+                fullName: data.identity?.fullName || "",
+                gender: data.student?.gender || "",
 
-                // store
-                storeName: data.store?.storeName || '',
-                storeDescription: data.store?.storeDescription || '',
-                bannerImage: data.store?.bannerImage || '',
+                institution: data.student?.institution?.name || "",
+                stateCampus: data.student?.state?.name || "",
 
-                // social
-                facebook: data.socialLinks?.facebook || '',
-                instagram: data.socialLinks?.instagram || '',
-                twitter: data.socialLinks?.twitter || '',
+                faculty: data.student?.faculty || "",
+                department: data.student?.department || "",
+                level: data.student?.level || "",
+                matricNumber: data.student?.matricNumber || "",
+                residence: data.student?.residence || "",
+                address: data.student?.address || "",
 
-                // preferences
-                preferredLanguage: data.preferences?.preferredLanguage || '',
-                notificationPreference:
-                    data.preferences?.notificationPreference || '',
+                storeLogo: data.business?.logo || "",
+                storeLogoFile: null,
+                storeBanner: data.business?.banner || "",
+                storeBannerFile: null,
 
-                // security
-                showPasswordModal: false,
-                currentPassword: '',
-                newPassword: ''
-            });
+                storeName: data.business?.storeName || "",
+                businessType: data.business?.type || "",
+                businessDescription: data.business?.description || "",
 
+                facebook: data.business?.socials?.facebook || "",
+                instagram: data.business?.socials?.instagram || "",
+                whatsapp: data.business?.socials?.whatsapp || "",
+                tiktok: data.business?.socials?.tiktok || ""
+            };
+
+            console.log(initialFormState.storeName)
+
+            setFormData(initialFormState);
+            pristineDataRef.current = initialFormState;
         } catch (err) {
             showToast(getMessage(err, 'Failed to load profile'), 'error');
         } finally {
@@ -138,60 +110,13 @@ const Profile = () => {
         }
     };
 
-
+    // FIXED: Form input change updates local states immediately 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({
             ...prev,
             [name]: value
         }));
-
-        // Reset state when country changes
-        if (name === 'country') {
-            setFormData(prev => ({ ...prev, state: '', preferredLanguage: '' }));
-        }
-    };
-
-    const handleSave = async () => {
-        setSaving(true);
-        try {
-            const formDataObj = new FormData();
-            formDataObj.append('username', formData.username);
-            formDataObj.append('fullName', formData.fullName);
-            formDataObj.append('country', formData.country);
-            formDataObj.append('state', formData.state);
-            formDataObj.append('email', formData.email);
-            formDataObj.append('phone', formData.phone);
-            formDataObj.append('businessAddress', formData.businessAddress);
-            formDataObj.append('customerSupportContact', formData.customerSupportContact);
-            formDataObj.append('storeName', formData.storeName);
-            formDataObj.append('storeDescription', formData.storeDescription);
-            formDataObj.append('preferredLanguage', formData.preferredLanguage);
-            formDataObj.append('notificationPreference', formData.notificationPreference);
-
-            // Append images
-            if (formData.profilePhotoFile) formDataObj.append('profilePhoto', formData.profilePhotoFile);
-            if (formData.bannerImageFile) formDataObj.append('bannerImage', formData.bannerImageFile);
-
-            // Append social media as JSON string
-            formDataObj.append('socialMedia', JSON.stringify({
-                facebook: formData.facebook,
-                instagram: formData.instagram,
-                twitter: formData.twitter
-            }));
-
-            const res = await apiClient.put('/vendor/profile/me', formDataObj, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
-
-            setProfile(getPayload(res, {}));
-            setEditing(false);
-            showToast('Profile updated successfully!', 'success');
-        } catch (err) {
-            showToast(getMessage(err, 'Update failed. Please try again.'), 'error');
-        } finally {
-            setSaving(false);
-        }
     };
 
     const handleImageUpload = (e, field) => {
@@ -199,451 +124,499 @@ const Profile = () => {
         if (file) {
             setFormData(prev => ({
                 ...prev,
-                [field + 'File']: file,
+                [`${field}File`]: file,
                 [field]: URL.createObjectURL(file)
             }));
         }
     };
 
+    const handleRemoveImage = (field) => {
+        setFormData(prev => ({
+            ...prev,
+            [`${field}File`]: null,
+            [field]: ''
+        }));
+    };
 
-    const handleClose = () => {
-        setEditing(false)
-        window.location.href = '/vendor/profile'
-    }
+    const copyToClipboard = (text) => {
+        if (!text) return;
+        navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+        showToast('Serial copied to clipboard', 'success');
+    };
 
-    // Theme classes
+    const handleSave = async () => {
+        if (!formData.storeName.trim() || !formData.fullName.trim()) {
+            return showToast('Required fields are missing', 'error');
+        }
+
+        setSaving(true);
+        try {
+            const formDataObj = new FormData();
+
+            formDataObj.append("fullName", formData.fullName);
+
+            formDataObj.append(
+                "business",
+                JSON.stringify({
+                    storeName: formData.storeName,
+                    type: formData.businessType,
+                    description: formData.businessDescription,
+                    socials: {
+                        facebook: formData.facebook,
+                        instagram: formData.instagram,
+                        whatsapp: formData.whatsapp,
+                        tiktok: formData.tiktok
+                    }
+                })
+            );
+
+            if (formData.profilePhotoFile) {
+                formDataObj.append(
+                    "student.profilePhoto",
+                    formData.profilePhotoFile
+                );
+            }
+
+            if (formData.storeLogoFile) {
+                formDataObj.append(
+                    "business.logo",
+                    formData.storeLogoFile
+                );
+            }
+
+            if (formData.storeBannerFile) {
+                formDataObj.append(
+                    "business.banner",
+                    formData.storeBannerFile
+                );
+            }
+            const res = await apiClient.put('/vendor/profile/me', formDataObj, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            setProfile(getPayload(res, {}));
+            setEditing(false);
+            pristineDataRef.current = formData;
+            showToast('Profile updated successfully!', 'success');
+        } catch (err) {
+            showToast(getMessage(err, 'Update failed.'), 'error');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleCancel = () => {
+        if (pristineDataRef.current) {
+            setFormData(pristineDataRef.current);
+        }
+        setEditing(false);
+    };
+
+    // Evaluate mutations
+    const isFormPristine = JSON.stringify(pristineDataRef.current) === JSON.stringify(formData);
+
+    // Exact Core App Color Systems Retained From Profile.jsx
     const bg = isDark ? 'bg-gray-900' : 'bg-gray-50';
     const cardBg = isDark ? 'bg-gray-800' : 'bg-white';
     const text = isDark ? 'text-white' : 'text-gray-900';
     const textSecondary = isDark ? 'text-gray-400' : 'text-gray-500';
     const border = isDark ? 'border-gray-700' : 'border-gray-200';
     const inputBg = isDark ? 'bg-gray-700' : 'bg-gray-50';
-    const hoverBg = isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-50';
-    const secondaryText = isDark ? 'text-gray-400' : 'text-gray-500';
+
+    const getStatusBadge = (status) => {
+        const normalStyle = "inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm border ";
+        switch (status?.toLowerCase()) {
+            case 'active':
+                return normalStyle + "bg-green-500/10 text-green-500 border-green-500/20 animate-pulse";
+            case 'pending':
+                return normalStyle + "bg-yellow-500/10 text-yellow-500 border-yellow-500/20";
+            case 'suspended':
+                return normalStyle + "bg-orange-500/10 text-orange-500 border-orange-500/20";
+            case "banned":
+                return normalStyle + "bg-red-500/10 text-red-500 border-red-500/20";
+            case "deleted":
+                return normalStyle + "bg-gray-500/10 text-gray-500 border-gray-500/20";
+            default:
+                return normalStyle + "bg-red-500/10 text-red-500 border-red-500/20";
+        }
+    };
+
+    const getVerificationBadge = (verified) => {
+        const style =
+            "inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm border ";
+
+        return verified
+            ? style + "bg-green-500/10 text-green-500 border-green-500/20"
+            : style + "bg-red-500/10 text-red-500 border-red-500/20";
+    };
 
     if (loading) {
         return (
             <div className={`min-h-screen ${bg} flex items-center justify-center`}>
-                <Loading text='Loading Profile...' />
+                <Loading text='Loading Premium Profile Panel...' />
             </div>
         );
     }
+
     return (
-        <div className={`min-h-screen ${bg} p-4 md:p-8`}>
-            <div className="max-w-5xl mx-auto">
-                <Link to="/vendor/dashboard" className={`flex items-center gap-2 text-sm mb-4 ${secondaryText} hover:${text}`}>
-                    <ArrowLeft className="w-4 h-4" />
-                    Back to Dashboard
-                </Link>
-                {/* Header */}
-                <div className={`flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8`}>
+        <div className={`min-h-screen ${bg} p-4 sm:p-6 lg:p-8 transition-all duration-300 antialiased font-sans selection:bg-green-500 selection:text-white`}>
+            <div className="max-w-5xl mx-auto space-y-8 animate-fade-in">
+
+                {/* Upper Premium Header Action Bar */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-gray-700/30">
                     <div>
-                        <h1 className={`text-3xl font-bold ${text}`}>Vendor Profile</h1>
-                        <p className={`${textSecondary} mt-1`}>Manage your store and account settings</p>
+                        <Link to="/vendor/dashboard" className="group inline-flex items-center gap-2 text-sm text-gray-400 hover:text-green-500 transition-colors mb-2">
+                            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Back to Dashboard
+                        </Link>
+                        <h1 className={`text-3xl font-extrabold tracking-tight ${text} flex items-center gap-2`}>
+                            Vendor Showcase <span className="font-light text-green-500">Profile</span>
+                        </h1>
                     </div>
-                    <div className="flex gap-3">
-                        {!editing ? (
+
+                    {!editing ? (
+                        <button
+                            onClick={() => setEditing(true)}
+                            className="inline-flex items-center gap-2 bg-white text-red-600 px-6 py-3 rounded-xl font-semibold hover:bg-red-50 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                        >
+                            <FaEdit /> Edit Profile
+                        </button>
+                    ) : (
+                        <div className="flex gap-3 animate-fade-in">
                             <button
-                                onClick={() => setEditing(true)}
-                                className="inline-flex items-center gap-2 bg-white text-red-600 px-6 py-3 rounded-xl font-semibold hover:bg-red-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                                onClick={handleSave}
+                                disabled={isFormPristine || saving}
+                                className="flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all shadow-md disabled:opacity-40 disabled:scale-100 transform hover:-translate-y-0.5"
                             >
-                                <FaEdit /> Edit Profile
+                                {saving ? (
+                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                ) : (
+                                    <FaSave />
+                                )}
+                                Save Changes
                             </button>
-                        ) : (
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={handleSave}
-                                    disabled={saving}
-                                    className="flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all shadow-md disabled:opacity-50"
-                                >
-                                    {saving ? (
-                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                    ) : (
-                                        <FaSave />
-                                    )}
-                                    Save Changes
-                                </button>
-                                <button
-                                    onClick={handleClose}
-                                    className="flex items-center gap-2 px-5 py-2.5 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all shadow-md"
-                                >
-                                    <FaTimes /> Cancel
-                                </button>
+                            <button
+                                onClick={handleCancel}
+                                className="flex items-center gap-2 px-5 py-2.5 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all shadow-md transform hover:-translate-y-0.5"
+                            >
+                                <FaTimes /> Cancel
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                {/* SECTION 1. ACCOUNT OVERVIEW */}
+                <div className="relative group overflow-hidden rounded-2xl shadow-xl transition-all duration-300 hover:shadow-2xl">
+                    <div className="absolute inset-0 bg-gradient-to-r from-green-600/10 via-transparent to-yellow-500/10 opacity-60 pointer-events-none" />
+                    <div className={`${cardBg} border ${border} p-6 relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6`}>
+                        <div className="space-y-1">
+                            <h2 className={`text-lg font-black tracking-tight ${text}`}>System Security Ledger</h2>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+                            <div className="space-y-1">
+                                <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Account Standing</span>
+                                <div className={getStatusBadge(formData.accountStatus)}>
+                                    {formData.accountStatus}
+                                </div>
                             </div>
-                        )}
+                            <div className="space-y-1">
+                                <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Verified</span>
+                                <div className={getVerificationBadge(formData.isVerified)}>
+                                    {formData.isVerified ? "Verified" : "Not Verified"}
+                                </div>
+                            </div>
+                            <div className="space-y-1">
+                                <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Verification Status</span>
+                                <div className={getStatusBadge(formData.accountStatus)}>
+                                    {formData.verificationStatus}
+                                </div>
+                            </div>
+                            <div className="h-10 w-px bg-gray-700/40 hidden sm:block"></div>
+                            <div className="space-y-1">
+                                <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Vendor Serial Code</span>
+                                <div className={`flex items-center gap-2 px-4 py-2 rounded-xl ${inputBg} border ${border} transition-all focus-within:border-green-500`}>
+                                    <code className={`text-xs font-mono font-bold tracking-widest ${text}`}>{formData.serialNumber || 'VND-EMPTY'}</code>
+                                    <button
+                                        onClick={() => copyToClipboard(formData.serialNumber)}
+                                        className="text-gray-400 hover:text-green-500 transition-colors p-0.5"
+                                        title="Copy to Clipboard"
+                                    >
+                                        {copied ? <FaCheck size={12} className="text-green-500 animate-scale" /> : <FaCopy size={12} />}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                {/* Profile Photo & Banner Section */}
-                <div className="relative mb-8">
-                    {/* Banner Image */}
-                    <div className={`h-48 rounded-xl overflow-hidden ${cardBg} border ${border} relative`}>
-                        {formData.bannerImage ? (
-                            <img src={formData.bannerImage} alt="Banner" className="w-full h-full object-cover" />
-                        ) : (
-                            <div className={`w-full h-full flex items-center justify-center ${isDark ? 'bg-gradient-to-r from-green-600 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-green-600 via-green-500 to-yellow-500'}`}>
-                                <FaImage className="text-4xl text-white opacity-50" />
-                            </div>
-                        )}
-                        {editing && (
-                            <label className="absolute bottom-4 right-4 cursor-pointer bg-black/50 hover:bg-black/70 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition">
-                                <FaCamera /> Change Banner
-                                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'bannerImage')} />
-                            </label>
-                        )}
+                {/* THE GRADIENT IDENTITY BANNER */}
+                <div className="relative">
+                    <div className={`h-40 rounded-2xl overflow-hidden ${cardBg} border ${border} shadow-inner relative group`}>
+                        <div
+                            className={`w-full h-full bg-gradient-to-r from-green-600 via-green-500 to-yellow-500 transform group-hover:scale-[1.01] transition-transform duration-700 relative overflow-hidden`}
+                        >
+                            {formData.storeBanner ? (
+                                <>
+                                    <img
+                                        src={formData.storeBanner}
+                                        alt={formData.storeName}
+                                        className="w-full h-full object-contain p-6"
+                                    />
+
+                                    <div className="absolute inset-0 bg-black/10"></div>
+                                </>
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                    <FaImage className="text-5xl text-white opacity-25 animate-pulse" />
+                                </div>
+                            )}
+                            {editing && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-[1px]">
+                                    <label className="flex items-center gap-2 px-5 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl cursor-pointer shadow-xl transition-all duration-200 hover:scale-105">
+                                        <FaImage size={18} />
+                                        <span className="font-semibold">Change Banner</span>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            className="hidden"
+                                            onChange={(e) => handleImageUpload(e, "storeBanner")}
+                                        />
+                                    </label>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
-                    {/* Profile Photo */}
-                    <div className="absolute -bottom-16 left-8">
-                        <div className="relative">
-                            <div className={`w-32 h-32 rounded-full border-4 ${cardBg} overflow-hidden shadow-lg`}>
+                    {/* SECTION 2. PERSONAL INFORMATION ACCENT CARD */}
+                    <div className="absolute -bottom-16 left-6 right-6 md:left-10 md:right-10 flex flex-col sm:flex-row items-center sm:items-end gap-4 z-20">
+                        <div className="relative group">
+                            <div className={`w-28 h-28 rounded-2xl border-4 ${cardBg} overflow-hidden shadow-2xl transition-all duration-300 group-hover:scale-105 ${border}`}>
                                 {formData.profilePhoto ? (
-                                    <img src={formData.profilePhoto} alt="Profile" className="w-full h-full object-cover" />
+                                    <img src={formData.profilePhoto} alt="Identity Preview" className="w-full h-full object-cover" />
                                 ) : (
-                                    <div className={`w-full h-full flex items-center justify-center ${isDark ? 'bg-gray-700' : 'bg-gray-300'}`}>
-                                        <FaUser className={`text-4xl ${textSecondary}`} />
+                                    <div className="w-full h-full flex items-center justify-center bg-gray-700 text-gray-400">
+                                        <FaUser className="text-3xl" />
                                     </div>
                                 )}
                             </div>
                             {editing && (
-                                <label className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full cursor-pointer hover:bg-blue-700 transition shadow-md">
-                                    <FaCamera size={14} />
+                                <label className="absolute bottom-1 right-1 bg-green-600 hover:bg-green-700 text-white p-2 rounded-xl cursor-pointer shadow-xl transition-all transform hover:scale-110">
+                                    <FaCamera size={13} />
                                     <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'profilePhoto')} />
                                 </label>
+                            )}
+                        </div>
+                        <div className="text-center sm:text-left sm:pb-2 flex-1 w-full">
+                            <h3 className={`text-xl font-black ${isDark ? 'text-white' : 'text-gray-900'} drop-shadow-sm truncate`}>
+                                {formData.fullName || 'Unassigned Record'}
+                            </h3>
+                            <p className="text-sm text-green-500 font-semibold mt-1">
+                                {formData.storeName || "Store Name Not Set"}
+                            </p>
+                            {editing && formData.profilePhoto && (
+                                <button onClick={() => handleRemoveImage('profilePhoto')} className="text-xs text-red-500 hover:underline font-bold mt-1 block">
+                                    [ Remove Photo ]
+                                </button>
                             )}
                         </div>
                     </div>
                 </div>
 
-                {/* Main Content Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-20">
-                    {/* Left Column - Core Identity & Contact */}
+                {/* PROFILE CORE DYNAMIC MATRICES GRID */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-12">
+
+                    {/* LEFT COLUMN: PRIMARY INPUT MODULES */}
                     <div className="lg:col-span-2 space-y-6">
-                        {/* Core Identity Section */}
-                        <div className={`${cardBg} rounded-xl border ${border} p-6 shadow-sm`}>
-                            <h3 className={`text-lg font-semibold ${text} mb-4 flex items-center gap-2`}>
-                                <FaUser className="text-blue-500" /> Core Identity
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className={`block text-sm font-medium ${textSecondary} mb-2`}>Username</label>
-                                    <input
-                                        type="text"
-                                        name="username"
-                                        value={formData.username}
-                                        onChange={handleChange}
-                                        disabled={!editing}
-                                        className={`w-full px-4 py-3 rounded-lg border ${border} ${inputBg} ${text} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition disabled:cursor-not-allowed`}
-                                        placeholder="Enter username"
-                                    />
-                                </div>
-                                <div>
-                                    <label className={`block text-sm font-medium ${textSecondary} mb-2`}>Serial Number</label>
-                                    <input
-                                        type="text"
-                                        name="serialNumber"
-                                        value={formData.serialNumber}
-                                        disabled={!editing}
-                                        className={`w-full px-4 py-3 rounded-lg border ${border} ${inputBg} ${text} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition cursor-not-allowed`}
-                                        placeholder="Serial Number"
-                                    />
-                                </div>
-                                <div>
-                                    <label className={`block text-sm font-medium ${textSecondary} mb-2`}>Full Name</label>
+
+                        {/* PERSONAL IDENTITY CONTINUATION FIELDS */}
+                        <div className={`${cardBg} rounded-2xl border ${border} p-6 shadow-md space-y-4`}>
+                            <h4 className={`text-sm font-bold uppercase tracking-wider ${text} flex items-center gap-2`}>
+                                <FaUser className="text-green-500" /> Identity Matrix Parameters
+                            </h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Full Identity Name</label>
                                     <input
                                         type="text"
                                         name="fullName"
                                         value={formData.fullName}
                                         onChange={handleChange}
-                                        disabled
-                                        className={`w-full px-4 py-3 rounded-lg border ${border} ${inputBg} ${text} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition disabled:cursor-not-allowed`}
-                                        placeholder="Enter full name"
+                                        disabled={!editing}
+                                        className={`w-full px-4 py-3 rounded-xl border ${border} ${inputBg} ${text} transition-all duration-200 outline-none focus:ring-2 focus:ring-green-500/50 disabled:opacity-60 disabled:cursor-not-allowed`}
+                                        placeholder="Full Legal Name"
                                     />
                                 </div>
-                                <div className="relative">
-                                    <label className={`block text-sm font-medium ${textSecondary} mb-2`}>Country</label>
-                                    <button
-                                        type="button"
-                                        onClick={() => editing && setShowCountryDropdown(!showCountryDropdown)}
-                                        disabled={!editing}
-                                        className={`w-full px-4 py-3 rounded-lg border ${border} ${inputBg} ${text} text-left flex justify-between items-center transition disabled:cursor-not-allowed`}
-                                    >
-                                        <span>{formData.country || 'Select country'}</span>
-                                        <FaChevronDown className={`text-xs ${textSecondary}`} />
-                                    </button>
-                                    {showCountryDropdown && (
-                                        <div className={`absolute z-10 w-full mt-1 ${cardBg} border ${border} rounded-lg shadow-lg max-h-60 overflow-auto`}>
-                                            {WEST_AFRICAN_COUNTRIES.map(country => (
-                                                <button
-                                                    key={country}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setFormData(prev => ({ ...prev, country, state: '', preferredLanguage: COUNTRY_LANGUAGES[country]?.[0] || '' }));
-                                                        setShowCountryDropdown(false);
-                                                    }}
-                                                    className={`w-full text-left px-4 py-2 ${hoverBg} ${text}`}
-                                                >
-                                                    {country}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
+                                <div className="space-y-1.5">
+                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Gender Orientation (Read Only)</label>
+                                    <div className={`w-full px-4 py-3 rounded-xl border ${border} bg-gray-900/10 text-gray-400 font-semibold text-sm cursor-not-allowed`}>
+                                        {formData.gender}
+                                    </div>
                                 </div>
-                                <div className="relative">
-                                    <label className={`block text-sm font-medium ${textSecondary} mb-2`}>State</label>
-                                    {formData.country === 'Nigeria' ? (
-                                        <button
-                                            type="button"
-                                            onClick={() => editing && setShowStateDropdown(!showStateDropdown)}
-                                            disabled={!editing}
-                                            className={`w-full px-4 py-3 rounded-lg border ${border} ${inputBg} ${text} text-left flex justify-between items-center transition disabled:cursor-not-allowed`}
-                                        >
-                                            <span>{formData.state || 'Select state'}</span>
-                                            <FaChevronDown className={`text-xs ${textSecondary}`} />
-                                        </button>
+                            </div>
+                        </div>
+
+                        {/* SECTION 4. BUSINESS INFORMATION COMPONENT */}
+                        <div className={`${cardBg} rounded-2xl border ${border} p-6 shadow-md space-y-6`}>
+                            <div className="flex justify-between items-center border-b border-gray-700/20 pb-3">
+                                <div className="space-y-0.5">
+                                    <h3 className={`text-base font-black tracking-tight ${text} flex items-center gap-2`}>
+                                        <FaStore className="text-green-500" /> Operational Storefront Configuration
+                                    </h3>
+                                </div>
+                            </div>
+
+                            {/* Store Emblem Controller block */}
+                            <div className={`flex flex-col sm:flex-row items-center gap-4 p-4 rounded-xl border ${border} ${inputBg}/30 transition-all`}>
+                                <div className={`w-16 h-16 rounded-xl overflow-hidden shadow-inner ${border} ${inputBg} flex-shrink-0 relative group border-2`}>
+                                    {formData.storeLogo ? (
+                                        <img src={formData.storeLogo} alt="Logo Matrix" className="w-full h-full object-cover" />
                                     ) : (
-                                        <input
-                                            type="text"
-                                            name="state"
-                                            value={formData.state}
-                                            onChange={handleChange}
-                                            disabled={!editing}
-                                            className={`w-full px-4 py-3 rounded-lg border ${border} ${inputBg} ${text} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition disabled:cursor-not-allowed`}
-                                            placeholder="Enter state"
-                                        />
-                                    )}
-                                    {showStateDropdown && formData.country === 'Nigeria' && (
-                                        <div className={`absolute z-10 w-full mt-1 ${cardBg} border ${border} rounded-lg shadow-lg max-h-60 overflow-auto`}>
-                                            {NIGERIAN_STATES.map(state => (
-                                                <button
-                                                    key={state}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setFormData(prev => ({ ...prev, state }));
-                                                        setShowStateDropdown(false);
-                                                    }}
-                                                    className={`w-full text-left px-4 py-2 ${hoverBg} ${text}`}
-                                                >
-                                                    {state}
-                                                </button>
-                                            ))}
+                                        <div className="w-full h-full flex items-center justify-center text-gray-500">
+                                            <FaStore size={22} />
                                         </div>
                                     )}
                                 </div>
-                            </div>
-                        </div>
-
-                        {/* Contact Details Section */}
-                        <div className={`${cardBg} rounded-xl border ${border} p-6 shadow-sm`}>
-                            <h3 className={`text-lg font-semibold ${text} mb-4 flex items-center gap-2`}>
-                                <FaPhone className="text-green-500" /> Contact Details
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className={`block text-sm font-medium ${textSecondary} mb-2`}>Email Address</label>
-                                    <div className="relative">
-                                        <FaEnvelope className={`absolute left-4 top-1/2 -translate-y-1/2 ${textSecondary}`} />
-                                        <input
-                                            type="email"
-                                            name="email"
-                                            value={formData.email}
-                                            onChange={handleChange}
-                                            disabled
-                                            className={`w-full pl-12 pr-4 py-3 rounded-lg border ${border} ${inputBg} ${text} cursor-not-allowed`}
-                                        />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className={`block text-sm font-medium ${textSecondary} mb-2`}>Phone Number</label>
-                                    <div className="relative">
-                                        <FaPhone className={`absolute left-4 top-1/2 -translate-y-1/2 ${textSecondary}`} />
-                                        <input
-                                            type="tel"
-                                            name="phone"
-                                            value={formData.phone}
-                                            onChange={handleChange}
-                                            disabled={!editing}
-                                            className={`w-full pl-12 pr-4 py-3 rounded-lg border ${border} ${inputBg} ${text} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition disabled:cursor-not-allowed`}
-                                            placeholder="Enter phone number"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="md:col-span-2">
-                                    <label className={`block text-sm font-medium ${textSecondary} mb-2`}>Business Address</label>
-                                    <div className="relative">
-                                        <FaMapMarkerAlt className={`absolute left-4 top-4 ${textSecondary}`} />
-                                        <textarea
-                                            name="businessAddress"
-                                            value={formData.businessAddress}
-                                            onChange={handleChange}
-                                            disabled={!editing}
-                                            rows={3}
-                                            className={`w-full pl-12 pr-4 py-3 rounded-lg border ${border} ${inputBg} ${text} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition disabled:cursor-not-allowed resize-none`}
-                                            placeholder="Enter business address"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="md:col-span-2">
-                                    <label className={`block text-sm font-medium ${textSecondary} mb-2`}>Customer Support Contact</label>
-                                    <div className="relative">
-                                        <FaPhone className={`absolute left-4 top-1/2 -translate-y-1/2 ${textSecondary}`} />
-                                        <input
-                                            type="tel"
-                                            name="customerSupportContact"
-                                            value={formData.customerSupportContact}
-                                            onChange={handleChange}
-                                            disabled={!editing}
-                                            className={`w-full pl-12 pr-4 py-3 rounded-lg border ${border} ${inputBg} ${text} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition disabled:cursor-not-allowed`}
-                                            placeholder="Enter customer support phone"
-                                        />
-                                    </div>
+                                <div className="space-y-1 text-center sm:text-left">
+                                    <h5 className={`text-sm font-bold ${text}`}>Commercial Storefront Logo</h5>
+                                    {editing ? (
+                                        <div className="flex gap-3 pt-1">
+                                            <label className="text-xs font-bold text-green-500 cursor-pointer hover:text-green-600 transition-colors">
+                                                Update Emblem
+                                                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'storeLogo')} />
+                                            </label>
+                                            {formData.storeLogo && (
+                                                <button onClick={() => handleRemoveImage('storeLogo')} className="text-xs font-bold text-red-500 hover:underline">
+                                                    Discard
+                                                </button>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <p className="text-xs text-gray-400 italic">Unlock editing controls above to update vector parameters.</p>
+                                    )}
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Store Profile Section */}
-                        <div className={`${cardBg} rounded-xl border ${border} p-6 shadow-sm`}>
-                            <h3 className={`text-lg font-semibold ${text} mb-4 flex items-center gap-2`}>
-                                <FaStore className="text-purple-500" /> Store Profile
-                            </h3>
-                            <div className="space-y-4">
-                                <div>
-                                    <label className={`block text-sm font-medium ${textSecondary} mb-2`}>Store Name</label>
+                            {/* Operational String Inputs Matrix row */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Registered Store Name</label>
                                     <input
                                         type="text"
                                         name="storeName"
                                         value={formData.storeName}
                                         onChange={handleChange}
                                         disabled={!editing}
-                                        className={`w-full px-4 py-3 rounded-lg border ${border} ${inputBg} ${text} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition disabled:cursor-not-allowed`}
-                                        placeholder="Enter store name"
+                                        className={`w-full px-4 py-3 rounded-xl border ${border} ${inputBg} ${text} transition-all outline-none focus:ring-2 focus:ring-green-500/50 disabled:opacity-60`}
+                                        placeholder="e.g. Alaba Tech Hub"
                                     />
                                 </div>
-                                <div>
-                                    <label className={`block text-sm font-medium ${textSecondary} mb-2`}>Store Description</label>
-                                    <textarea
-                                        name="storeDescription"
-                                        value={formData.storeDescription}
-                                        onChange={handleChange}
-                                        disabled={!editing}
-                                        rows={4}
-                                        className={`w-full px-4 py-3 rounded-lg border ${border} ${inputBg} ${text} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition disabled:cursor-not-allowed resize-none`}
-                                        placeholder="Describe your store..."
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Social Media & Preferences Section */}
-                        <div className={`${cardBg} rounded-xl border ${border} p-6 shadow-sm`}>
-                            <h3 className={`text-lg font-semibold ${text} mb-4 flex items-center gap-2`}>
-                                <FaGlobe className="text-indigo-500" /> Social Media & Preferences
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className={`block text-sm font-medium ${textSecondary} mb-2`}>Facebook</label>
-                                    <div className="relative">
-                                        <FaFacebook className={`absolute left-4 top-1/2 -translate-y-1/2 text-blue-600`} />
-                                        <input
-                                            type="url"
-                                            name="facebook"
-                                            value={formData.facebook}
-                                            onChange={handleChange}
-                                            disabled={!editing}
-                                            className={`w-full pl-12 pr-4 py-3 rounded-lg border ${border} ${inputBg} ${text} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition disabled:cursor-not-allowed`}
-                                            placeholder="Facebook URL"
-                                        />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className={`block text-sm font-medium ${textSecondary} mb-2`}>Instagram</label>
-                                    <div className="relative">
-                                        <FaInstagram className={`absolute left-4 top-1/2 -translate-y-1/2 text-pink-600`} />
-                                        <input
-                                            type="url"
-                                            name="instagram"
-                                            value={formData.instagram}
-                                            onChange={handleChange}
-                                            disabled={!editing}
-                                            className={`w-full pl-12 pr-4 py-3 rounded-lg border ${border} ${inputBg} ${text} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition disabled:cursor-not-allowed`}
-                                            placeholder="Instagram URL"
-                                        />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className={`block text-sm font-medium ${textSecondary} mb-2`}>X (Twitter)</label>
-                                    <div className="relative">
-                                        <FaTwitter className={`absolute left-4 top-1/2 -translate-y-1/2 text-black dark:text-white`} />
-                                        <input
-                                            type="url"
-                                            name="twitter"
-                                            value={formData.twitter}
-                                            onChange={handleChange}
-                                            disabled={!editing}
-                                            className={`w-full pl-12 pr-4 py-3 rounded-lg border ${border} ${inputBg} ${text} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition disabled:cursor-not-allowed`}
-                                            placeholder="X/Twitter URL"
-                                        />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className={`block text-sm font-medium ${textSecondary} mb-2`}>Preferred Language</label>
+                                <div className="space-y-1.5">
+                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Business Activity Type</label>
                                     <select
-                                        name="preferredLanguage"
-                                        value={formData.preferredLanguage}
+                                        name="businessType"
+                                        value={formData.businessType}
                                         onChange={handleChange}
                                         disabled={!editing}
-                                        className={`w-full px-4 py-3 rounded-lg border ${border} ${inputBg} ${text} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition disabled:cursor-not-allowed`}
+                                        className={`w-full px-4 py-3 rounded-xl border ${border} ${inputBg} ${text}`}
                                     >
-                                        <option value="">Select language</option>
-                                        {COUNTRY_LANGUAGES[formData.country]?.map(lang => (
-                                            <option key={lang} value={lang}>{lang}</option>
-                                        ))}
-                                        {formData.country && !COUNTRY_LANGUAGES[formData.country] && (
-                                            <option value="English">English</option>
-                                        )}
+                                        <option value="">Select Business Type</option>
+                                        <option value="freelancer">Freelancer</option>
+                                        <option value="reseller">Reseller</option>
+                                        <option value="service-provider">Service Provider</option>
                                     </select>
                                 </div>
-                                <div className="md:col-span-2">
-                                    <label className={`block text-sm font-medium ${textSecondary} mb-2`}>Notification Preferences</label>
-                                    <div className="flex flex-wrap gap-3">
-                                        {['email', 'whatsapp', 'both'].map(option => (
-                                            <button
-                                                key={option}
-                                                type="button"
-                                                onClick={() => editing && setFormData(prev => ({ ...prev, notificationPreference: option }))}
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Corporate Description Abstract</label>
+                                <textarea
+                                    name="businessDescription"
+                                    value={formData.businessDescription}
+                                    onChange={handleChange}
+                                    disabled={!editing}
+                                    rows={4}
+                                    className={`w-full px-4 py-3 rounded-xl border ${border} ${inputBg} ${text} transition-all outline-none focus:ring-2 focus:ring-green-500/50 disabled:opacity-60 resize-none leading-relaxed`}
+                                    placeholder="State your specialized market offerings, delivery timelines, and logistics scope..."
+                                />
+                            </div>
+
+                            {/* Social Vector Streams Box */}
+                            <div className="space-y-3 pt-2">
+                                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Social Connectivity Gateways</label>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {[
+                                        { icon: <FaFacebook className="text-blue-500" />, name: 'facebook', placeholder: 'Facebook URL Link' },
+                                        { icon: <FaInstagram className="text-pink-500" />, name: 'instagram', placeholder: 'Instagram URL Profile' },
+                                        { icon: <FaWhatsapp className="text-green-500" />, name: 'whatsapp', placeholder: 'WhatsApp API Terminal' },
+                                        { icon: <FaTiktok className={isDark ? "text-white" : "text-black"} />, name: 'tiktok', placeholder: 'TikTok Feed Vector' },
+                                    ].map((channel, cIdx) => (
+                                        <div key={cIdx} className="relative flex items-center group">
+                                            <div className="absolute left-4 pointer-events-none transition-transform group-focus-within:scale-110">{channel.icon}</div>
+                                            <input
+                                                type="text"
+                                                name={channel.name}
+                                                value={formData[channel.name]}
+                                                onChange={handleChange}
                                                 disabled={!editing}
-                                                className={`px-4 py-2 rounded-lg border ${border} transition ${formData.notificationPreference === option
-                                                    ? 'bg-blue-600 text-white border-blue-600'
-                                                    : `${cardBg} ${text} ${!editing ? 'cursor-not-allowed' : 'hover:bg-blue-50 dark:hover:bg-gray-700'}`
-                                                    }`}
-                                            >
-                                                {option === 'email' && <FaEnvelope className="inline mr-2" />}
-                                                {option === 'whatsapp' && <FaBell className="inline mr-2" />}
-                                                {option === 'both' && <FaBell className="inline mr-2" />}
-                                                {option.charAt(0).toUpperCase() + option.slice(1)}
-                                            </button>
-                                        ))}
-                                    </div>
+                                                className={`w-full pl-11 pr-4 py-3 rounded-xl border ${border} ${inputBg} ${text} text-xs font-mono transition-all outline-none focus:border-green-500 disabled:opacity-60`}
+                                                placeholder={channel.placeholder}
+                                            />
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Right Column - Security */}
+                    {/* RIGHT COLUMN: READ-ONLY SYSTEM PARAMS */}
                     <div className="space-y-6">
-                        {/* Help Section */}
-                        <div className="bg-gradient-to-br from-green-700 to-green-500 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
-                            <div className="relative z-10">
-                                <h3 className="text-lg font-bold mb-2">Need assistance?</h3>
-                                <p className="text-sm text-green-50 mb-6">Our dedicated vendor support team is available 24/7 to help you.</p>
-                                <Link to='/contactus' className="flex items-center justify-center gap-2 w-full py-3 bg-white text-green-700 font-bold rounded-xl hover:bg-yellow-400 hover:text-green-900 transition-all">
-                                    <PhoneCall className="w-4 h-4" /> Contact Support
+
+                        {/* SECTION 3. STUDENT PROFILE INFORMATION */}
+                        <div className={`${cardBg} rounded-2xl border ${border} p-6 shadow-lg relative overflow-hidden group`}>
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-green-500/10 to-transparent rounded-bl-full opacity-60 pointer-events-none" />
+                            <div className="border-b border-gray-700/20 pb-3 mb-4">
+                                <h3 className={`text-base font-black tracking-tight ${text} flex items-center gap-2`}>
+                                    <FaGraduationCap className="text-green-500" /> Academic Dossier
+                                </h3>
+                                <p className="text-[10px] text-yellow-500 font-medium mt-0.5">Read-only institutional security alignment.</p>
+                            </div>
+
+                            <div className="space-y-3">
+                                {[
+                                    { label: 'Institution', val: formData.institution },
+                                    { label: 'State / Campus', val: formData.stateCampus },
+                                    { label: 'Faculty Directorate', val: formData.faculty },
+                                    { label: 'Department Division', val: formData.department },
+                                    { label: 'Level Standing', val: formData.level },
+                                    { label: 'Matriculation Number', val: formData.matricNumber },
+                                    { label: 'Residential Status', val: formData.residence },
+                                    { label: 'Registered Address', val: formData.address },
+                                ].map((fieldObj, fIdx) => (
+                                    <div key={fIdx} className={`p-2.5 rounded-xl border ${border} ${isDark ? 'bg-gray-900/50' : 'bg-gray-50'} transition-all hover:bg-green-500/5`}>
+                                        <span className="block text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-0.5">{fieldObj.label}</span>
+                                        <span className={`text-xs font-semibold ${text} block truncate`}>{fieldObj.val || '—'}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* CORE SUPPORT ACCENT CARD */}
+                        <div className="bg-gradient-to-br from-green-700 to-green-500 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden transform hover:scale-[1.01] transition-transform duration-300">
+                            <div className="relative z-10 space-y-4">
+                                <div className="space-y-1">
+                                    <h3 className="text-lg font-black tracking-tight">Need verification aid?</h3>
+                                    <p className="text-xs text-green-100 opacity-90 leading-relaxed">Our unified desk infrastructure validates merchant status records 24/7.</p>
+                                </div>
+                                <Link to='/contactus' className="flex items-center justify-center gap-2 w-full py-3 bg-white text-green-700 font-bold text-xs uppercase tracking-wider rounded-xl hover:bg-yellow-400 hover:text-green-950 transition-all shadow-md">
+                                    <PhoneCall className="w-3.5 h-3.5 animate-bounce" /> Call Support Lines
                                 </Link>
                             </div>
-                            <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
+                            <div className="absolute -bottom-6 -right-6 w-28 h-28 bg-white/10 rounded-full blur-2xl" />
                         </div>
                     </div>
                 </div>
+
             </div>
         </div>
     );
