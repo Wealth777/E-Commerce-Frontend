@@ -5,9 +5,7 @@ import {
 } from 'react-icons/fa';
 import { useTheme } from '../../context/ThemeContext';
 import { useToast } from '../../context/ToastContext';
-import apiClient from '../../api/apiClient';
-import { getMessage, getPayload } from '../../utils/apiResponse';
-import Loading from '../../components/layout/Loding';
+import Loading from '../../components/layout/Loading';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, PhoneCall, Sparkles, CheckCircle, ShieldAlert } from 'lucide-react';
 

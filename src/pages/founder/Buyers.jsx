@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
-import Loading from '../../components/layout/Loding';
+import Loading from '../../components/Layout/Loading';
 import apiClient, { founderAPI } from '../../api/apiClient'; // Fixed central import setup
 
 const FounderBuyers = () => {

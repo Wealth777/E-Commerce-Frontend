@@ -74,8 +74,8 @@ const FounderDashboard = () => {
   ];
 
   // Map live data arrays directly from backend response if they exist
-  const recentActivitie = metrics?.recentActivities || [];
-  const notification = metrics?.notifications || [];
+  const recentActivities = metrics?.recentActivities || [];
+  const notifications = metrics?.notifications || [];
 
    if (loading) {
       return <Loading text="Loading Dashboard Overview..." />;

@@ -12,7 +12,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import Loading from '../../components/layout/Loding';
+import Loading from '../../components/layout/Loading';
 import ReviewRefundReturnModal from '../../components/common/ReviewRefundReturnModal';
 
 const REVIEWABLE_STATUSES = [

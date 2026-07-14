@@ -16,7 +16,7 @@ import {
   CircleDot,
   User,
 } from "lucide-react";
-import Loading from "../../components/layout/Loding";
+import Loading from "../../components/layout/Loading";
 
 export default function VendorOrdersDetails() {
   const { orderId } = useParams();

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
-// import API from '../../api/axios';
+import API from '../../api/axios'; // Import the central Axios instance we made
 
 const FounderUsers = () => {
   const { isDark } = useTheme();
@@ -19,6 +19,10 @@ const FounderUsers = () => {
   const subTextColor = isDark ? 'text-gray-400' : 'text-gray-600';
   const borderColor = isDark ? 'border-gray-700' : 'border-gray-200';
 
+  // --- LIVE BACKEND STATE ---
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchUsers();

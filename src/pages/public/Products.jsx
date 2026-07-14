@@ -6,7 +6,7 @@ import { useTheme } from '../../context/ThemeContext';
 import apiClient from '../../api/apiClient';
 import { getList, getMessage, getPayload } from '../../utils/apiResponse';
 import { FaSearch, FaSlidersH, FaLayerGroup } from 'react-icons/fa';
-import Loading from '../../components/layout/Loding';
+import Loading from '../../components/layout/Loading';
 import { useToast } from '../../context/ToastContext';
 
 const Products = () => {
