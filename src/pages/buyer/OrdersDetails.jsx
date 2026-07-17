@@ -25,7 +25,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { useSelector } from "react-redux";
-import Loading from "../../components/layout/Loading";
+import Loading from "../../components/layout/Loding";
 import RefundReturnModal from "../../components/common/RefundReturnModal";
 
 const containerVariants = {

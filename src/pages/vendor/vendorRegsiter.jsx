@@ -51,8 +51,8 @@ export default function VendorRegister() {
                     phoneNo: values.phoneNo,
                     password: values.password,
                 };
-                await apiClient.post(`/vendor/auth/register`, payload);
-                showToast('Registration successful!', 'success');
+               const res =  await apiClient.post(`/vendor/auth/register`, payload);
+                showToast(res.data.message, 'success');
                 navigate('/vendor/login');
             } catch (error) {
                 showToast(getMessage(error, 'Registration failed'), 'error');

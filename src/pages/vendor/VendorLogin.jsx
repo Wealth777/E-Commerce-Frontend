@@ -204,9 +204,9 @@ export default function VendorLogin() {
                                     <label className="text-[10px] font-bold tracking-wider text-slate-500 dark:text-slate-400 uppercase">
                                         Password
                                     </label>
-                                    <a href="#forgot-password" className="text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:underline">
+                                    <Link to={'/forget-password'} className="text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:underline">
                                         Forgot password?
-                                    </a>
+                                    </Link>
                                 </div>
 
                                 <div className="relative">

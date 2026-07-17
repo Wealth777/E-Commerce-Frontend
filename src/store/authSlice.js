@@ -51,6 +51,7 @@ const getOnboardingStatus = (user, previous) => {
     user?.profile?.isOnboardingCompleted,
     user?.buyer?.isOnboardingCompleted,
     user?.vendor?.isOnboardingCompleted,
+
     previous?.onboardingCompleted,
     previous?.profile?.onboardingCompleted,
     previous?.buyer?.onboardingCompleted,
@@ -69,6 +70,30 @@ const getOnboardingStatus = (user, previous) => {
   }
 
   return false;
+};
+
+const getEmailVerificationStatus = (user, previous) => {
+    const candidates = [
+        user?.emailVerified,
+        user?.profile?.emailVerified,
+        user?.buyer?.emailVerified,
+        user?.vendor?.emailVerified,
+
+        previous?.emailVerified,
+        previous?.profile?.emailVerified,
+        previous?.buyer?.emailVerified,
+        previous?.vendor?.emailVerified,
+    ];
+
+    for (const candidate of candidates) {
+        const parsed = toBooleanFlag(candidate);
+
+        if (parsed !== null) {
+            return parsed;
+        }
+    }
+
+    return false;
 };
 
 const normalizeAuthUser = (
@@ -100,6 +125,7 @@ const normalizeAuthUser = (
     previous.profileId ||
     '';
 
+  const emailVerified = getEmailVerificationStatus(user, previous)
   const onboardingCompleted = getOnboardingStatus(user, previous);
 
   return {
@@ -113,6 +139,7 @@ const normalizeAuthUser = (
     profileId,
     role,
 
+    emailVerified,
     onboardingCompleted,
   };
 };

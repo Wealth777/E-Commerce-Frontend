@@ -1,13 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
     FaEdit, FaSave, FaTimes, FaCamera, FaUser, FaStore,
     FaFacebook, FaInstagram, FaWhatsapp, FaTiktok, FaCopy, FaCheck, FaImage, FaGraduationCap
 } from 'react-icons/fa';
 import { useTheme } from '../../context/ThemeContext';
 import { useToast } from '../../context/ToastContext';
-import Loading from '../../components/layout/Loading';
+import Loading from '../../components/layout/Loding';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, PhoneCall, Sparkles, CheckCircle, ShieldAlert } from 'lucide-react';
+import apiClient from '../../api/apiClient';
+import { getMessage } from '../../utils/apiResponse';
 
 const Profile = () => {
     const { isDark } = useTheme();
@@ -47,6 +49,45 @@ const Profile = () => {
         tiktok: ''
     });
 
+    const mapVendorToForm = (data) => ({
+        accountStatus: data.verification?.accountStatus || "pending",
+        verificationStatus: data.verification?.verificationStatus || "",
+        isVerified: data.verification?.isVerified || false,
+
+        serialNumber: data.identity?.serialNumber || "",
+
+        profilePhoto: data.student?.profilePhoto || "",
+        profilePhotoFile: null,
+
+        fullName: data.identity?.fullName || "",
+        gender: data.student?.gender || "",
+
+        institution: data.student?.institution?.name || "",
+        stateCampus: data.student?.state?.name || "",
+
+        faculty: data.student?.faculty || "",
+        department: data.student?.department || "",
+        level: data.student?.level || "",
+        matricNumber: data.student?.matricNumber || "",
+        residence: data.student?.residence || "",
+        address: data.student?.address || "",
+
+        storeLogo: data.business?.logo || "",
+        storeLogoFile: null,
+
+        storeBanner: data.business?.banner || "",
+        storeBannerFile: null,
+
+        storeName: data.business?.storeName || "",
+        businessType: data.business?.type || "",
+        businessDescription: data.business?.description || "",
+
+        facebook: data.business?.socials?.facebook || "",
+        instagram: data.business?.socials?.instagram || "",
+        whatsapp: data.business?.socials?.whatsapp || "",
+        tiktok: data.business?.socials?.tiktok || "",
+    });
+
     // To properly rollback states on cancel
     const pristineDataRef = useRef(null);
 
@@ -57,50 +98,17 @@ const Profile = () => {
     const fetchProfile = async () => {
         try {
             const res = await apiClient.get('/vendor/profile/me');
-            const data = getPayload(res, {});
-            setProfile(data);
 
-            const initialFormState = {
-                accountStatus: data.verification?.accountStatus || "pending",
-                verificationStatus: data.verification?.verificationStatus || "",
-                isVerified: data.verification?.isVerified || "",
-                serialNumber: data.identity?.serialNumber || "",
+            const updatedProfile = res.data.data;
 
-                profilePhoto: data.student?.profilePhoto || "",
-                profilePhotoFile: null,
+            setProfile(updatedProfile);
 
-                fullName: data.identity?.fullName || "",
-                gender: data.student?.gender || "",
+            const mapped = mapVendorToForm(updatedProfile);
 
-                institution: data.student?.institution?.name || "",
-                stateCampus: data.student?.state?.name || "",
+            setFormData(mapped);
+            pristineDataRef.current = mapped;
 
-                faculty: data.student?.faculty || "",
-                department: data.student?.department || "",
-                level: data.student?.level || "",
-                matricNumber: data.student?.matricNumber || "",
-                residence: data.student?.residence || "",
-                address: data.student?.address || "",
-
-                storeLogo: data.business?.logo || "",
-                storeLogoFile: null,
-                storeBanner: data.business?.banner || "",
-                storeBannerFile: null,
-
-                storeName: data.business?.storeName || "",
-                businessType: data.business?.type || "",
-                businessDescription: data.business?.description || "",
-
-                facebook: data.business?.socials?.facebook || "",
-                instagram: data.business?.socials?.instagram || "",
-                whatsapp: data.business?.socials?.whatsapp || "",
-                tiktok: data.business?.socials?.tiktok || ""
-            };
-
-            console.log(initialFormState.storeName)
-
-            setFormData(initialFormState);
-            pristineDataRef.current = initialFormState;
+            setEditing(false);
         } catch (err) {
             showToast(getMessage(err, 'Failed to load profile'), 'error');
         } finally {
@@ -120,19 +128,37 @@ const Profile = () => {
     const handleImageUpload = (e, field) => {
         const file = e.target.files[0];
         if (file) {
+            const preview = URL.createObjectURL(file);
+
             setFormData(prev => ({
                 ...prev,
                 [`${field}File`]: file,
-                [field]: URL.createObjectURL(file)
+                [field]: preview
             }));
         }
     };
+
+    useEffect(() => {
+        return () => {
+            if (formData.profilePhoto?.startsWith("blob:")) {
+                URL.revokeObjectURL(formData.profilePhoto);
+            }
+
+            if (formData.storeLogo?.startsWith("blob:")) {
+                URL.revokeObjectURL(formData.storeLogo);
+            }
+
+            if (formData.storeBanner?.startsWith("blob:")) {
+                URL.revokeObjectURL(formData.storeBanner);
+            }
+        };
+    }, [formData.profilePhoto, formData.storeLogo, formData.storeBanner]);
 
     const handleRemoveImage = (field) => {
         setFormData(prev => ({
             ...prev,
             [`${field}File`]: null,
-            [field]: ''
+            [field]: pristineDataRef.current[field]
         }));
     };
 
@@ -190,11 +216,12 @@ const Profile = () => {
                     formData.storeBannerFile
                 );
             }
-            const res = await apiClient.put('/vendor/profile/me', formDataObj, {
+            await apiClient.put('/vendor/profile/me', formDataObj, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
-            setProfile(getPayload(res, {}));
+            await fetchProfile();
+
             setEditing(false);
             pristineDataRef.current = formData;
             showToast('Profile updated successfully!', 'success');
@@ -207,13 +234,36 @@ const Profile = () => {
 
     const handleCancel = () => {
         if (pristineDataRef.current) {
-            setFormData(pristineDataRef.current);
+            setFormData({
+                ...pristineDataRef.current,
+                profilePhotoFile: null,
+                storeLogoFile: null,
+                storeBannerFile: null,
+            });
         }
         setEditing(false);
     };
 
-    // Evaluate mutations
-    const isFormPristine = JSON.stringify(pristineDataRef.current) === JSON.stringify(formData);
+
+    const isFormPristine = useMemo(() => {
+        if (!pristineDataRef.current) return true;
+
+        const {
+            profilePhotoFile,
+            storeLogoFile,
+            storeBannerFile,
+            ...current
+        } = formData;
+
+        const {
+            profilePhotoFile: _1,
+            storeLogoFile: _2,
+            storeBannerFile: _3,
+            ...original
+        } = pristineDataRef.current;
+
+        return JSON.stringify(current) === JSON.stringify(original);
+    }, [formData]);
 
     // Exact Core App Color Systems Retained From Profile.jsx
     const bg = isDark ? 'bg-gray-900' : 'bg-gray-50';
@@ -253,7 +303,7 @@ const Profile = () => {
     if (loading) {
         return (
             <div className={`min-h-screen ${bg} flex items-center justify-center`}>
-                <Loading text='Loading Premium Profile Panel...' />
+                <Loading text='Loading Profile Panel...' />
             </div>
         );
     }

@@ -14,7 +14,7 @@ import apiClient from '../../api/apiClient';
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate ? useNavigate() : () => { };
+  const navigate = useNavigate();
   const { showToast } = useToast();
   const [schools, setSchools] = useState([]);
   const [states, setStates] = useState([]);
@@ -122,22 +122,48 @@ export default function Register() {
   }, [formik.values.schoolId, showToast]);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F19] font-sans selection:bg-emerald-500/20 selection:text-emerald-500">
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
 
+      {/* Top Premium Brand Header - Sticky/Top flow fixed */}
+      <header className="w-full bg-[#1F2937] border-b border-gray-800 py-4 px-6 sm:px-12 flex justify-between items-center">
+        <div className="flex items-center space-x-2">
+          <div className="h-8 w-1 bg-gradient-to-b from-[#10B981] to-[#F59E0B] rounded-full" />
+          <span className="text-xl font-extrabold tracking-tight text-white">
+            Campus<span className="text-[#10B981]">Trade</span>
+          </span>
+        </div>
+        <div className="flex items-center text-xs tracking-wider uppercase text-gray-400 font-bold space-x-1">
+          <ShieldCheck className="w-4 h-4 text-[#10B981]" />
+          <span>Secure Gateway</span>
+        </div>
+      </header>
 
-      {/* RIGHT SIDEBAR: Elegant Form Framework */}
-      <div className="flex-1 flex flex-col justify-center items-center px-4 sm:px-12 lg:px-16 xl:px-24 py-12 lg:py-16 overflow-y-auto max-h-screen">
-        <div className="w-full max-w-xl space-y-8">
+      {/* Main Content Area - Properly Centers the Register Box */}
+      <div className="flex-1 flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
+          <div>
+            <div className="flex justify-center">
+              <Link to="/" className="flex items-center">
+                <FiShoppingBag className="h-12 w-12 text-green-600" />
+                <div className="ml-3">
+                  <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+                    CampusTrade
+                  </h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Independent platform for the student community
+                  </p>
+                </div>
+              </Link>
+            </div>
 
-          {/* Form Intro Meta */}
-          <div className="flex flex-col space-y-2">
-            <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-              Create your account
+            <h2 className="mt-6 text-center text-2xl font-bold text-gray-900 dark:text-white">
+              Create an account
             </h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              Already has an account?{' '}
-              <Link to="/login" className="font-medium text-emerald-600 dark:text-emerald-400 hover:underline">
-                Sign in to your account
+
+            <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+              Or{' '}
+              <Link to="/Login" className="font-medium text-green-600 hover:text-green-500">
+                Already has an account?
               </Link>
             </p>
           </div>

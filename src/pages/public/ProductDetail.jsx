@@ -4,7 +4,7 @@ import {
   FaShoppingCart, FaHeart, FaArrowLeft, FaShieldAlt,
   FaTruck, FaUndo, FaShare, FaCheck, FaStore, FaMinus, FaPlus, FaChevronRight,
 } from 'react-icons/fa';
-import Loading from '../../components/layout/Loading';
+import Loading from '../../components/layout/Loding';
 import apiClient from '../../api/apiClient';
 import { getList, getMessage, getPayload } from '../../utils/apiResponse';
 import { useToast } from '../../context/ToastContext';

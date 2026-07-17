@@ -40,7 +40,13 @@ const VendorDashboard = () => {
         setOrders(getList(ordersRes, ['orders']));
         setActivity(getList(activityRes, ['activity', 'activities']).slice(0, 3));
       } catch (error) {
-        showToast(getMessage(error, 'Failed to load dashboard stats'), 'error');
+        const message = getMessage(error, 'Failed to load dashboard stats');
+        const lowerMessage = String(message || '').toLowerCase();
+        const isOnboardingGateError = lowerMessage.includes('onboarding') && lowerMessage.includes('complete');
+
+        if (!isOnboardingGateError) {
+          showToast(message, 'error');
+        }
       } finally {
         setLoadingStats(false);
       }

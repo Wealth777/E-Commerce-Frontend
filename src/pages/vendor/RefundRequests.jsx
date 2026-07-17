@@ -13,7 +13,7 @@ import {
   CreditCard,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import Loading from '../../components/layout/Loading';
+import Loading from '../../components/layout/Loding';
 import ReviewRefundReturnModal from '../../components/common/ReviewRefundReturnModal';
 
 const REVIEWABLE_STATUSES = [

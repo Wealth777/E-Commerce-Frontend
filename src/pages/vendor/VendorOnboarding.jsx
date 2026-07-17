@@ -12,7 +12,7 @@ import { useToast } from '../../context/ToastContext';
 import apiClient from '../../api/apiClient';
 import { FaFacebook, FaInstagram, FaTiktok, FaWhatsapp } from 'react-icons/fa';
 import { useDispatch, useSelector } from "react-redux";
-import { setUser } from '../../store/authSlice';
+import { fetchUser, setUser } from '../../store/authSlice';
 
 export default function VendorOnboarding() {
     const [step, setStep] = useState(1);
@@ -182,8 +182,10 @@ export default function VendorOnboarding() {
                     role: serverUser?.role || 'vendor',
                 };
 
-                showToast('Onboarding application submitted successfully!', 'success');
                 dispatch(setUser(updatedUser));
+                await dispatch(fetchUser());
+
+                showToast('Onboarding application submitted successfully!', 'success');
                 navigate('/vendor/dashboard', { replace: true });
             } catch (error) {
                 showToast(error?.response?.data?.message || 'Failed to submit onboarding details.', 'error');
