@@ -29,6 +29,13 @@ export default function VendorLogin() {
         }
     }, [isAuthenticated, role, navigate]);
 
+    const isEmailVerificationError = (message) => {
+        const lowerMessage = String(message || '').toLowerCase();
+        return (
+            lowerMessage.includes('verify') && (lowerMessage.includes('email') || lowerMessage.includes('verification'))
+        ) || lowerMessage.includes('email not verified') || lowerMessage.includes('not verified');
+    };
+
     const formik = useFormik({
         initialValues: {
             email: '',
@@ -71,6 +78,10 @@ export default function VendorLogin() {
                 const message = getMessage(error, 'Unable to login. Please try again.');
                 dispatch(loginFailure(message));
                 showToast(message, 'error');
+
+                if (isEmailVerificationError(message)) {
+                    setTimeout(() => navigate('/resend-verification-email', { replace: true }), 150);
+                }
             } finally {
                 setLoading(false);
             }

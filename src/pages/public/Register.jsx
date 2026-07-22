@@ -60,8 +60,8 @@ export default function Register() {
           state: values.stateId,
           password: values.password,
         };
-        await apiClient.post(`/buyer/auth/register`, payload);
-        showToast('Registration successful!', 'success');
+        const res = await apiClient.post(`/buyer/auth/register`, payload);
+        showToast(res.data.message, 'success');
         navigate('/login');
       } catch (error) {
         showToast(getMessage(error, 'Registration failed'), 'error');

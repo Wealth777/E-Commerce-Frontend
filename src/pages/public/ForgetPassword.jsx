@@ -7,10 +7,12 @@ import { ShieldCheck } from 'lucide-react';
 import apiClient from '../../api/apiClient';
 import { useToast } from '../../context/ToastContext';
 import { getMessage } from '../../utils/apiResponse';
+import { useNavigate } from 'react-router-dom';
 
 const ForgotPassword = () => {
     const [loading, setLoading] = useState(false);
     const { showToast } = useToast();
+    const navigate = useNavigate();
 
     const formik = useFormik({
         initialValues: {
@@ -125,13 +127,13 @@ const ForgotPassword = () => {
 
                         {/* Back to Login Link */}
                         <div className="mt-6 flex justify-center border-t border-gray-200 dark:border-gray-700 pt-6">
-                            <Link
-                                to={() => -1}
+                            <button
+                                onClick={() => navigate(-1)}
                                 className="inline-flex items-center text-sm font-medium text-green-600 hover:text-green-500 transition-colors"
                             >
                                 <FiArrowLeft className="mr-2 h-4 w-4" />
                                 Back to sign in
-                            </Link>
+                            </button>
                         </div>
 
                     </div>

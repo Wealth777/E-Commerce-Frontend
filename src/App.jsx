@@ -27,9 +27,11 @@ import CookiePolicy from './pages/public/CookiePolicy';
 import VendorGuidelines from './pages/public/VendorGuidelines';
 import Sitemap from './pages/public/Sitemap';
 import VerifyEmail from './pages/public/VerifyEmail';
+import VerifyChangeEmail from './pages/public/VerifyChangedEmail';
 import ForgetPassword from './pages/public/ForgetPassword';
 import ResetPassword from './pages/public/ResetPassword';
 import ResendVerificationLink from './pages/public/ResendVerificationLink';
+import UnauthorizedEmailChange from './pages/public/UnauthorizedEmailChange';
 
 // Buyer Pages
 import CompleteProfile from './pages/buyer/BuyerOnboarding';
@@ -101,12 +103,14 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/verify-change-email" element={<VerifyChangeEmail />} />
             <Route path="/resend-verification-email" element={<ResendVerificationLink />} />
             <Route path="/forget-password" element={<ForgetPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/vendor/register" element={<VendorRegister />} />
             <Route path="/vendor/login" element={<VendorLogin />} />
             <Route path="/founder/login" element={<FounderLogin />} />
+            <Route path="/security/unauthorized-email-change" element={<UnauthorizedEmailChange />} />
           </Route>
 
           <Route element={<PublicLayout />}>
@@ -124,7 +128,7 @@ function App() {
 
             {/* Buyer's Route */}
             <Route
-              path="/buyer/profile/complete"
+              path="/buyer/onboarding"
               element={
                 <ProtectedRoute requiredRole="buyer">
                   <CompleteProfile />

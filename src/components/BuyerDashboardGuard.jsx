@@ -7,7 +7,11 @@ const BuyerDashboardGuard = ({ children }) => {
     if (loading) return null;
 
     if (!user?.emailVerified) {
-        return <Navigate to="/verify-email" replace />;
+        return <Navigate to="/resend-verification-email" replace />;
+    }
+    
+    if (!user?.onboardingCompleted) {
+        return <Navigate to="/buyer/onboarding" replace />;
     }
 
     return children;

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { FiMail, FiArrowLeft, FiShoppingBag } from 'react-icons/fi';
-import { ShieldCheck } from 'lucide-react';
+import { FiMail, FiArrowLeft } from 'react-icons/fi';
+import { ShieldCheck, Loader2 } from 'lucide-react';
+import { FiShoppingBag } from 'react-icons/fi';
 import apiClient from '../../api/apiClient';
 import { useToast } from '../../context/ToastContext';
 import { getMessage } from '../../utils/apiResponse';
@@ -11,6 +12,7 @@ import { getMessage } from '../../utils/apiResponse';
 const ResendVerificationLink = () => {
   const [loading, setLoading] = useState(false);
   const { showToast } = useToast();
+  const navigate = useNavigate();
 
   const formik = useFormik({
     initialValues: {
@@ -20,18 +22,19 @@ const ResendVerificationLink = () => {
       email: Yup.string().email('Invalid email address').required('Email is required'),
     }),
     onSubmit: async (values) => {
+      if (loading) return;
       setLoading(true);
       try {
         const payload = {
-            email: values.email
+          email: values.email,
         };
         
-        await apiClient.post('/auth/forget-password', payload);
+        await apiClient.post('/auth/resend-verification', payload);
 
-        showToast('Password reset link sent to your email!', 'success');
+        showToast('Verification link sent successfully! Please check your inbox.', 'success');
         formik.resetForm();
       } catch (error) {
-        const message = getMessage(error, 'Something went wrong. Please try again.');
+        const message = getMessage(error, 'Failed to resend verification link. Please try again.');
         showToast(message, 'error');
       } finally {
         setLoading(false);
@@ -62,9 +65,9 @@ const ResendVerificationLink = () => {
           {/* Logo and Typography */}
           <div>
             <div className="flex justify-center">
-              <Link to="/" className="flex items-center">
+              <button onClick={() => navigate('/')} className="flex items-center cursor-pointer">
                 <FiShoppingBag className="h-12 w-12 text-green-600" />
-                <div className="ml-3">
+                <div className="ml-3 text-left">
                   <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
                     CampusTrade
                   </h2>
@@ -72,7 +75,7 @@ const ResendVerificationLink = () => {
                     Independent platform for the student community
                   </p>
                 </div>
-              </Link>
+              </button>
             </div>
 
             <h2 className="mt-6 text-center text-2xl font-bold text-gray-900 dark:text-white">
@@ -80,7 +83,7 @@ const ResendVerificationLink = () => {
             </h2>
 
             <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-              Enter your email address and we'll send you a link to verify you.
+              Enter your registered email address and we'll dispatch a fresh security link to verify your profile.
             </p>
           </div>
 
@@ -117,21 +120,28 @@ const ResendVerificationLink = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2 px-4 rounded-md text-white bg-green-600 hover:bg-green-700 transition duration-150 ease-in-out font-medium disabled:opacity-50 flex justify-center items-center"
+                className="w-full py-2 px-4 rounded-md text-white bg-green-600 hover:bg-green-700 transition duration-150 ease-in-out font-medium disabled:opacity-50 flex justify-center items-center gap-2"
               >
-                {loading ? 'Sending link...' : 'Send Reset Link'}
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                    <span>Sending link...</span>
+                  </>
+                ) : (
+                  'Send Verification Link'
+                )}
               </button>
             </form>
 
             {/* Back to Login Link */}
             <div className="mt-6 flex justify-center border-t border-gray-200 dark:border-gray-700 pt-6">
-              <Link
-                to={()=> -1}
-                className="inline-flex items-center text-sm font-medium text-green-600 hover:text-green-500 transition-colors"
+              <button
+                onClick={() => navigate(-1)}
+                className="inline-flex items-center text-sm font-medium text-green-600 hover:text-green-500 transition-colors cursor-pointer"
               >
                 <FiArrowLeft className="mr-2 h-4 w-4" />
                 Back to sign in
-              </Link>
+              </button>
             </div>
 
           </div>

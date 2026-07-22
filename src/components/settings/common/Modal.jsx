@@ -89,7 +89,7 @@ const Modal = ({
                         type="button"
                         onClick={onClose}
                         aria-label="Close modal"
-                        className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+                        className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300 "
                     >
                         <X className="h-5 w-5" />
                     </button>

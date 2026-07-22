@@ -44,6 +44,7 @@ const toBooleanFlag = (value) => {
 const getOnboardingStatus = (user, previous) => {
   const candidates = [
     user?.onboardingCompleted,
+    user?.verification?.onboardingCompleted,
     user?.profile?.onboardingCompleted,
     user?.buyer?.onboardingCompleted,
     user?.vendor?.onboardingCompleted,
@@ -53,6 +54,7 @@ const getOnboardingStatus = (user, previous) => {
     user?.vendor?.isOnboardingCompleted,
 
     previous?.onboardingCompleted,
+    previous?.verification?.onboardingCompleted,
     previous?.profile?.onboardingCompleted,
     previous?.buyer?.onboardingCompleted,
     previous?.vendor?.onboardingCompleted,
@@ -64,6 +66,7 @@ const getOnboardingStatus = (user, previous) => {
 
   for (const candidate of candidates) {
     const parsed = toBooleanFlag(candidate);
+
     if (parsed !== null) {
       return parsed;
     }
@@ -73,27 +76,109 @@ const getOnboardingStatus = (user, previous) => {
 };
 
 const getEmailVerificationStatus = (user, previous) => {
-    const candidates = [
-        user?.emailVerified,
-        user?.profile?.emailVerified,
-        user?.buyer?.emailVerified,
-        user?.vendor?.emailVerified,
+  const candidates = [
+    user?.emailVerified,
+    user?.verification?.emailVerified,
+    user?.profile?.emailVerified,
+    user?.buyer?.emailVerified,
+    user?.vendor?.emailVerified,
 
-        previous?.emailVerified,
-        previous?.profile?.emailVerified,
-        previous?.buyer?.emailVerified,
-        previous?.vendor?.emailVerified,
-    ];
+    previous?.emailVerified,
+    previous?.verification?.emailVerified,
+    previous?.profile?.emailVerified,
+    previous?.buyer?.emailVerified,
+    previous?.vendor?.emailVerified,
+  ];
 
-    for (const candidate of candidates) {
-        const parsed = toBooleanFlag(candidate);
+  for (const candidate of candidates) {
+    const parsed = toBooleanFlag(candidate);
 
-        if (parsed !== null) {
-            return parsed;
-        }
+    if (parsed !== null) {
+      return parsed;
     }
+  }
 
-    return false;
+  return false;
+};
+
+const getAccountStatus = (user, previous) => {
+  return (
+    user?.accountStatus ||
+    user?.verification?.accountStatus ||
+    previous?.accountStatus ||
+    previous?.verification?.accountStatus ||
+    "Active"
+  );
+};
+
+const getLockedStatus = (user, previous) => {
+  const candidates = [
+    user?.isLocked,
+    user?.verification?.isLocked,
+
+    previous?.isLocked,
+    previous?.verification?.isLocked,
+  ];
+
+  for (const candidate of candidates) {
+    const parsed = toBooleanFlag(candidate);
+
+    if (parsed !== null) {
+      return parsed;
+    }
+  }
+
+  return false;
+};
+
+const getSuspendedStatus = (user, previous) => {
+  const candidates = [
+    user?.isSuspend,
+    user?.verification?.isSuspend,
+
+    previous?.isSuspend,
+    previous?.verification?.isSuspend,
+  ];
+
+  for (const candidate of candidates) {
+    const parsed = toBooleanFlag(candidate);
+
+    if (parsed !== null) {
+      return parsed;
+    }
+  }
+
+  return false;
+};
+
+const getVerifiedStatus = (user, previous) => {
+  const candidates = [
+    user?.isVerified,
+    user?.verification?.isVerified,
+
+    previous?.isVerified,
+    previous?.verification?.isVerified,
+  ];
+
+  for (const candidate of candidates) {
+    const parsed = toBooleanFlag(candidate);
+
+    if (parsed !== null) {
+      return parsed;
+    }
+  }
+
+  return false;
+};
+
+const getVerificationStatus = (user, previous) => {
+  return (
+    user?.verificationStatus ||
+    user?.verification?.verificationStatus ||
+    previous?.verificationStatus ||
+    previous?.verification?.verificationStatus ||
+    null
+  );
 };
 
 const normalizeAuthUser = (
@@ -125,8 +210,14 @@ const normalizeAuthUser = (
     previous.profileId ||
     '';
 
-  const emailVerified = getEmailVerificationStatus(user, previous)
+  const emailVerified = getEmailVerificationStatus(user, previous);
   const onboardingCompleted = getOnboardingStatus(user, previous);
+
+  const accountStatus = getAccountStatus(user, previous);
+  const isLocked = getLockedStatus(user, previous);
+  const isSuspend = getSuspendedStatus(user, previous);
+  const isVerified = getVerifiedStatus(user, previous);
+  const verificationStatus = getVerificationStatus(user, previous);
 
   return {
     ...previous,
@@ -141,6 +232,12 @@ const normalizeAuthUser = (
 
     emailVerified,
     onboardingCompleted,
+
+    accountStatus,
+    isLocked,
+    isSuspend,
+    isVerified,
+    verificationStatus,
   };
 };
 

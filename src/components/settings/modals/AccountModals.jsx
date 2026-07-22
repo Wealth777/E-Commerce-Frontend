@@ -5,7 +5,7 @@ import Modal from "../common/Modal";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const passwordValidationSchema = Yup.object().shape({
-    currentPassword: Yup.string()
+    oldPassword: Yup.string()
         .required("Current password is required"),
     newPassword: Yup.string()
         .min(8, "Password must be at least 8 characters")
@@ -22,7 +22,7 @@ const phoneValidationSchema = Yup.object().shape({
 });
 
 const emailValidationSchema = Yup.object().shape({
-    email: Yup.string()
+    newEmail: Yup.string()
         .email("Invalid email address")
         .required("Email address is required"),
 });
@@ -44,7 +44,7 @@ const AccountModals = ({
     const inputStyle = "w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500";
     const errorStyle = "text-sm text-red-500 mt-1 block";
     const labelStyle = "block text-sm font-medium mb-1";
-    const buttonStyle = "w-full py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition mt-4 disabled:opacity-50";
+    const buttonStyle = "w-full py-2 text-white bg-green-600 hover:bg-green-700 font-medium rounded-md transition mt-4 disabled:opacity-50";
 
     return (
         <>
@@ -56,12 +56,23 @@ const AccountModals = ({
                 description="Update your password to keep your account secure."
             >
                 <Formik
-                    initialValues={{ currentPassword: "", newPassword: "", confirmPassword: "" }}
+                    initialValues={{
+                        oldPassword: "",
+                        newPassword: "",
+                        confirmPassword: "",
+                    }}
                     validationSchema={passwordValidationSchema}
-                    onSubmit={async (values, { resetForm, setSubmitting }) => {
-                        await onPasswordSubmit(values);
-                        resetForm();
-                        onClose();
+                    onSubmit={async (values, helpers) => {
+                        try {
+                            await onPasswordSubmit(values);
+
+                            helpers.resetForm();
+                            onClose();
+                        } catch (error) {
+                            // toast already shown
+                        } finally {
+                            helpers.setSubmitting(false);
+                        }
                     }}
                 >
                     {({ isSubmitting }) => (
@@ -71,7 +82,7 @@ const AccountModals = ({
                                 <div className="relative flex items-center">
                                     <Field
                                         type={showPassword ? 'text' : 'password'}
-                                        name="currentPassword"
+                                        name="oldPassword"
                                         className={`${inputStyle} w-full pr-10`}
                                     />
                                     <button
@@ -82,7 +93,7 @@ const AccountModals = ({
                                         {showPassword ? <FaEyeSlash /> : <FaEye />}
                                     </button>
                                 </div>
-                                <ErrorMessage name="currentPassword" component="span" className={errorStyle} />
+                                <ErrorMessage name="oldPassword" component="span" className={errorStyle} />
                             </div>
                             <div>
                                 <label className={labelStyle}>New Password</label>
@@ -148,23 +159,30 @@ const AccountModals = ({
                 isOpen={activeModal === "email"}
                 onClose={onClose}
                 title="Change Email Address"
-                description="Update your account email."
+                description="A verification link will be sent to your new email address before the change is applied."
             >
                 <Formik
-                    initialValues={{ email: "" }}
+                    initialValues={{ newEmail: "" }}
                     validationSchema={emailValidationSchema}
-                    onSubmit={async (values, { resetForm, setSubmitting }) => {
-                        await onEmailSubmit(values);
-                        resetForm();
-                        onClose();
+                    onSubmit={async (values, helpers) => {
+                        try {
+                            await onEmailSubmit(values);
+
+                            helpers.resetForm();
+                            onClose();
+                        } catch (error) {
+                            // Toast already displayed
+                        } finally {
+                            helpers.setSubmitting(false);
+                        }
                     }}
                 >
                     {({ isSubmitting }) => (
                         <Form className="space-y-4">
                             <div>
                                 <label className={labelStyle}>New Email Address</label>
-                                <Field type="email" name="email" placeholder="you@example.com" className={inputStyle} />
-                                <ErrorMessage name="email" component="span" className={errorStyle} />
+                                <Field type="email" name="newEmail" placeholder="you@example.com" className={inputStyle} />
+                                <ErrorMessage name="newEmail" component="span" className={errorStyle} />
                             </div>
                             <button type="submit" disabled={isSubmitting} className={buttonStyle}>
                                 {isSubmitting ? "Saving..." : "Update Email"}

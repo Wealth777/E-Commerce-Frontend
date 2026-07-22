@@ -31,7 +31,14 @@ const Navbar = () => {
         dispatch(logout());
         setIsMenuOpen(false);
         setIsProfileMenuOpen(false);
-        navigate('/');
+
+        if (role === 'vendor') {
+            navigate('/vendor/login', { replace: true });
+        } else if (role === 'founder') {
+            navigate('/founder/login', { replace: true });
+        } else {
+            navigate('/login', { replace: true });
+        }
     };
 
     const cartItems = useSelector(state => state.cart.items);
@@ -90,7 +97,7 @@ const Navbar = () => {
         <nav className="sticky top-0 z-50 bg-white dark:bg-gray-800 shadow-md">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-16">
-                    
+
                     {/* Logo and brand */}
                     <div className="flex items-center flex-shrink-0">
                         <Link to="/" className="flex items-center space-x-2">
@@ -234,7 +241,7 @@ const Navbar = () => {
                             <Link to="/products" className="py-3 px-2 text-gray-700 dark:text-gray-300 font-medium border-b border-gray-50 dark:border-gray-700" onClick={() => setIsMenuOpen(false)}>
                                 Browse Products
                             </Link>
-                            
+
                             {isAuthenticated ? (
                                 <>
                                     {getRoleBasedLinks().map((link) => (

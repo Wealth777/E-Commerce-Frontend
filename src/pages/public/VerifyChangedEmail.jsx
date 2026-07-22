@@ -19,7 +19,6 @@ import apiClient from '../../api/apiClient';
 import { getMessage } from '../../utils/apiResponse';
 import Loading from '../../components/layout/Loding';
 
-// DECORATIVE RIGHT VECTOR ART WORK COMPONENT
 export function CampusIllustration() {
   return (
     <div className="relative h-full w-full overflow-hidden">
@@ -59,10 +58,10 @@ export function CampusIllustration() {
               </div>
               <div>
                 <div className="text-xs font-bold text-gray-400">
-                  CampusTrade
+                  Email Change
                 </div>
                 <div className="text-sm font-extrabold text-white">
-                  Active Trade Registry
+                  Account Security
                 </div>
               </div>
             </div>
@@ -146,7 +145,7 @@ function FloatBadge({ icon, className, color, delay }) {
   );
 }
 
-const EmailVerification = () => {
+const VerifyChangeEmail = () => {
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState('verifying');
   const [errorMessage, setErrorMessage] = useState('');
@@ -154,7 +153,7 @@ const EmailVerification = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const hasVerified = useRef(false);
-  const [redirectTo, setRedirectTo] = useState("/login");
+  const [redirectTo, setRedirectTo] = useState("/vendor/login");
 
   const token = searchParams.get('token');
 
@@ -169,7 +168,7 @@ const EmailVerification = () => {
       setLoading(true);
 
       try {
-        const response = await apiClient.get("/auth/verify-email", {
+        const response = await apiClient.get("/auth/verify-changed-email", {
           params: { token },
         });
 
@@ -194,7 +193,6 @@ const EmailVerification = () => {
     verifyEmailToken();
   }, [token]);
 
-  // Auto-redirect countdown once verified successfully
   useEffect(() => {
     let timer;
 
@@ -211,6 +209,7 @@ const EmailVerification = () => {
     return () => clearTimeout(timer);
   }, [status, countdown, navigate]);
 
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans selection:bg-[#10B981]/10 selection:text-[#10B981]">
 
@@ -225,7 +224,7 @@ const EmailVerification = () => {
         </div>
         <div className="flex items-center text-xs tracking-wider uppercase text-gray-400 font-bold space-x-1">
           <ShieldCheck className="w-4 h-4 text-[#10B981]" />
-          <span>Email Verification</span>
+          <span>Email Change Verification</span>
         </div>
       </header>
 
@@ -256,10 +255,10 @@ const EmailVerification = () => {
                     </div>
                     <div className="space-y-2">
                       <h2 className="text-2xl font-extrabold text-[#1E293B] tracking-tight">
-                        Validating Credentials
+                        Verifying New Email Address
                       </h2>
                       <p className="text-sm text-gray-500 leading-relaxed max-w-xs mx-auto">
-                        Please wait a moment while we're verifying your email address...
+                        Please wait while we verify your new email address and update your account.
                       </p>
                     </div>
                   </div>
@@ -273,10 +272,10 @@ const EmailVerification = () => {
                     </div>
                     <div className="space-y-2">
                       <h2 className="text-2xl font-extrabold text-[#1E293B] tracking-tight">
-                        🎉 Your email has been verified successfully.
+                        🎉 Your email address has been updated successfully.
                       </h2>
                       <p className="text-sm text-gray-500 leading-relaxed max-w-xs mx-auto">
-                        Congratulations. Your email address has been verified successfully.
+                        Your new email address has been verified and is now active on your account.
                       </p>
                     </div>
 
@@ -311,18 +310,11 @@ const EmailVerification = () => {
                         {errorMessage}
                       </p>
                       <p className="text-xs text-gray-400 mt-2 max-w-xs mx-auto">
-                        This verification link is invalid or has expired.
+                        This email change verification link is invalid, expired, or has already been used.
                       </p>
                     </div>
 
                     <div className="pt-2 flex flex-col sm:flex-row gap-3">
-                      <button
-                        onClick={() => navigate('/resend-verification')}
-                        className="flex-1 inline-flex items-center justify-center px-4 py-3 bg-[#1F2937] hover:bg-gray-800 text-white text-xs font-bold rounded-xl transition-all duration-150"
-                      >
-                        <Mail className="w-4 h-4 mr-1.5" />
-                        Resend Verification Email
-                      </button>
                       <button
                         onClick={() => navigate('/vendor/login')}
                         className="flex-1 inline-flex items-center justify-center px-4 py-3 bg-white hover:bg-[#F8FAFC] border border-[#E2E8F0] text-gray-700 text-xs font-bold rounded-xl transition-all duration-150"
@@ -359,4 +351,4 @@ const EmailVerification = () => {
   );
 };
 
-export default EmailVerification;
+export default VerifyChangeEmail;

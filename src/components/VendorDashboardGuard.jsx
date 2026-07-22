@@ -6,12 +6,28 @@ const VendorDashboardGuard = ({ children }) => {
 
     if (loading) return null;
 
+    if (user?.isLocked || user?.accountStatus === "Locked") {
+        return (
+            <Navigate to="/security/account-locked" replace />
+        );
+    }
+
+    // if (user?.isSuspend || user?.accountStatus === "Suspended") {
+    //     return (
+    //         <Navigate to="/account-suspended" replace />
+    //     );
+    // }
+
     if (!user?.emailVerified) {
-        return <Navigate to="/verify-email" replace />;
+        return (
+            <Navigate to="/resend-verification-email" replace />
+        );
     }
 
     if (!user?.onboardingCompleted) {
-        return <Navigate to="/vendor/onboarding" replace />;
+        return (
+            <Navigate to="/vendor/onboarding" replace />
+        );
     }
 
     return children;

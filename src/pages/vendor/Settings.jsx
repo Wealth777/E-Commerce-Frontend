@@ -32,7 +32,27 @@ export default function Settings() {
     const closeModal = () => setActiveModal(null);
 
     const handlePasswordSubmit = async (values) => {
-        console.log("Password submit", values);
+        try {
+            const payload = {
+                oldPassword: values.oldPassword,
+                newPassword: values.newPassword,
+            };
+
+            const { data } = await apiClient.put(
+                "/auth/settings/change-password",
+                payload
+            );
+
+            showToast(data.message, "success");
+        } catch (error) {
+            showToast(
+                error.response?.data?.message ||
+                "Failed to change password.",
+                "error"
+            );
+
+            throw error;
+        }
     };
 
     const handlePhoneSubmit = async (values) => {
@@ -40,7 +60,31 @@ export default function Settings() {
     };
 
     const handleEmailSubmit = async (values) => {
-        console.log("Email submit", values);
+        try {
+            const { data } = await apiClient.put(
+                "/auth/settings/change-email",
+                {
+                    newEmail: values.newEmail,
+                }
+            );
+
+            showToast(data.message, "success");
+
+            dispatch(
+                setUser({
+                    ...user,
+                    pendingEmail: values.newEmail,
+                })
+            );
+        } catch (error) {
+            showToast(
+                error.response?.data?.message ||
+                "Failed to change email.",
+                "error"
+            );
+
+            throw error;
+        }
     };
 
     const handleToggleTwoFactor = async () => {
