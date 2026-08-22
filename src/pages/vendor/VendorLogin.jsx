@@ -66,8 +66,11 @@ export default function VendorLogin() {
                 }
 
                 dispatch(loginSuccess({
-                    user,
-                    token,
+                    user: {
+                        ...user,
+                        sessionId: response.data.data.sessionId
+                    },
+                    token: response.data.data.accessToken,
                     role: 'vendor',
                 }));
 

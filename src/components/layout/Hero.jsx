@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { FiShoppingBag, FiBookOpen, FiTruck } from 'react-icons/fi';
 import { FaUniversity } from 'react-icons/fa';
+import Logo from '/Campus_trade_logo_green_2.png'
 
 const Hero = () => {
   return (
@@ -13,7 +14,7 @@ const Hero = () => {
           {/* Left side - Content */}
           <div>
             <div className="flex items-center mb-6">
-              <FaUniversity className="h-12 w-12 mr-4" />
+              <img src={Logo} alt='CampusTrade' className="h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24 mr-4 object-contain" />
               <div>
                 <h1 className="text-4xl md:text-5xl font-bold mb-2">
                   CampusTrade

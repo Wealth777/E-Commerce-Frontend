@@ -28,75 +28,56 @@ export default function RecoverAccount() {
 
     // Validation Schema synced completely with your requested structures
     const validationSchema = Yup.object({
-        fullName: Yup.string().required("Profile photo is required"),
-        email: Yup.email().required("Profile photo is required"),
+        fullName: Yup.string().required("Full name is required"),
+
+        email: Yup.string()
+            .email("Enter a valid email")
+            .required("Previous email is required"),
+
+        storeName: Yup.string()
+            .required("Store name is required"),
+
         student: Yup.object({
-            profilePhoto: Yup.mixed().required("Profile photo is required"),
-            gender: Yup.string().oneOf(["male", "female"]).required('Gender is required'),
-            institution: Yup.string().required('Institution is required'),
-            state: Yup.string().required('State is required'),
-            matricNumber: Yup.string().trim().required('Matric number is required'),
-            faculty: Yup.string().trim().required('Faculty is required'),
-            department: Yup.string().trim().required('Department is required'),
-            level: Yup.string().required('Academic level is required'),
-            residence: Yup.string().oneOf(['hostel', 'off-campus'], 'Select valid residence option').required('Residence details required'),
-            address: Yup.string().trim().required('Current physical address is required'),
+            institution: Yup.string().required(),
+            matricNumber: Yup.string().required(),
+            faculty: Yup.string().required(),
+            department: Yup.string().required(),
+            level: Yup.string().required()
         }),
-        business: Yup.object({
-            storeName: Yup.string().trim().required('Store name is required'),
-            type: Yup.string().oneOf(['freelancer', 'reseller', 'service-provider'], 'Select valid type').required('Business type is required'),
-            description: Yup.string().trim().min(20, 'Please write a brief description (min 20 characters)').required('Business description is required'),
-            logo: Yup.mixed().nullable(),
-            socials: Yup.object({
-                facebook: Yup.string().url('Must be a valid URL').nullable(),
-                instagram: Yup.string().url('Must be a valid URL').nullable(),
-                whatsapp: Yup.string().url('Must be a valid URL').nullable(),
-                tiktok: Yup.string().url('Must be a valid URL').nullable(),
-            })
-        }),
+
         verificationDocuments: Yup.object({
-            schoolIdCard: Yup.mixed().required('Please upload your Student ID Card image'),
-            nationalId: Yup.mixed().required('Please upload your National ID document image')
+            selfie: Yup.mixed().required("Selfie is required"),
+            schoolIdCard: Yup.mixed().required(),
+            nationalId: Yup.mixed().required()
         }),
-        terms: Yup.object({
-            acceptedVendorTerms: Yup.boolean().oneOf([true], 'You must accept the Vendor Terms'),
-            acceptedMarketplacePolicy: Yup.boolean().oneOf([true], 'You must agree to the marketplace product policies'),
-            acceptedFraudPolicy: Yup.boolean().oneOf([true], 'You must accept our fraud Zero-Tolerance policy')
-        })
+
+        declaration: Yup.boolean().oneOf(
+            [true],
+            "You must confirm ownership"
+        )
     });
 
     const formik = useFormik({
         initialValues: {
-            fullName: '',
-            email: '',
+            fullName: "",
+            email: "",
+            storeName: "",
+
             student: {
-                profilePhoto: '',
-                gender: '',
-                institution: '',
-                state: '',
-                matricNumber: '',
-                faculty: '',
-                department: '',
-                level: '',
-                residence: '',
-                address: ''
+                institution: "",
+                matricNumber: "",
+                faculty: "",
+                department: "",
+                level: ""
             },
-            business: {
-                storeName: '',
-                type: '',
-                description: '',
-                logo: '',
-                socials: { facebook: '', instagram: '', whatsapp: '', tiktok: '' }
-            },
+
             verificationDocuments: {
-                schoolIdCard: '',
-                nationalId: ''
+                selfie: "",
+                schoolIdCard: "",
+                nationalId: ""
             },
-            terms: {
-                acceptedVendorTerms: false,
-                acceptedMarketplacePolicy: false,
-                acceptedFraudPolicy: false
-            }
+
+            declaration: false
         },
         validationSchema,
         onSubmit: async (values) => {
@@ -104,62 +85,44 @@ export default function RecoverAccount() {
             try {
                 const formData = new FormData();
 
-                const student = {
-                    ...values.student,
-                    profilePhoto: undefined,
-                };
+                formData.append("fullName", values.fullName);
+                formData.append("email", values.email);
+                formData.append("storeName", values.storeName);
 
-                const business = {
-                    ...values.business,
-                    logo: undefined,
-                };
-
-                const verificationDocuments = {};
-
-                formData.append("student", JSON.stringify(student));
-                formData.append("business", JSON.stringify(business));
                 formData.append(
-                    "verificationDocuments",
-                    JSON.stringify(verificationDocuments)
+                    "student",
+                    JSON.stringify(values.student)
                 );
 
                 formData.append(
-                    "terms",
-                    JSON.stringify({
-                        ...values.terms,
-                        acceptedAt: new Date().toISOString(),
-                    })
+                    "declaration",
+                    values.declaration
                 );
 
-                if (values.student.profilePhoto) {
-                    formData.append(
-                        "profilePhoto",
-                        values.student.profilePhoto
-                    );
-                }
+                formData.append(
+                    "selfie",
+                    values.verificationDocuments.selfie
+                );
 
-                if (values.business.logo) {
-                    formData.append(
-                        "businessLogo",
-                        values.business.logo
-                    );
-                }
+                formData.append(
+                    "schoolIdCard",
+                    values.verificationDocuments.schoolIdCard
+                );
 
-                if (values.verificationDocuments.schoolIdCard) {
-                    formData.append(
-                        "schoolIdCard",
-                        values.verificationDocuments.schoolIdCard
-                    );
-                }
+                formData.append(
+                    "nationalId",
+                    values.verificationDocuments.nationalId
+                );
 
-                if (values.verificationDocuments.nationalId) {
-                    formData.append(
-                        "nationalId",
-                        values.verificationDocuments.nationalId
-                    );
-                }
-
-                await apiClient.post('/vendor/profile/onboarding', formData, { headers: { "Content-Type": "multipart/form-data" } });
+                await apiClient.post(
+                    "/security/recover-account",
+                    formData,
+                    {
+                        headers: {
+                            "Content-Type": "multipart/form-data"
+                        }
+                    }
+                );
 
                 showToast('Onboarding application submitted successfully!', 'success');
             } catch (error) {
@@ -400,14 +363,14 @@ export default function RecoverAccount() {
                                         {/* Full Name */}
                                         <div className="flex">
                                             <label className="text-xs font-semibold mb-1.5">Full Name</label>
-                                            <input type="text" placeholder="John Alani" className="w-full bg-slate-50 dark:bg-[#161D30] border rounded-xl px-4 py-2.5 text-sm border-slate-200 dark:border-slate-800 outline-none" />
+                                            <input type="text"  {...formik.getFieldProps("fullName")} placeholder="John Alani" className="w-full bg-slate-50 dark:bg-[#161D30] border rounded-xl px-4 py-2.5 text-sm border-slate-200 dark:border-slate-800 outline-none" />
                                             {formik.touched.fullName && formik.errors.fullName && <p className="text-xs text-red-500 mt-1">{formik.errors.fullName}</p>}
                                         </div>
 
                                         {/* Email */}
                                         <div className="flex">
                                             <label className="text-xs font-semibold mb-1.5">Original Email</label>
-                                            <input type="email" placeholder="johnalani@gmail.com" className="w-full bg-slate-50 dark:bg-[#161D30] border rounded-xl px-4 py-2.5 text-sm border-slate-200 dark:border-slate-800 outline-none" />
+                                            <input type="email"  {...formik.getFieldProps("email")} placeholder="johnalani@gmail.com" className="w-full bg-slate-50 dark:bg-[#161D30] border rounded-xl px-4 py-2.5 text-sm border-slate-200 dark:border-slate-800 outline-none" />
                                             {formik.touched.email && formik.errors.email && <p className="text-xs text-red-500 mt-1">{formik.errors.email}</p>}
                                         </div>
 
@@ -559,56 +522,6 @@ export default function RecoverAccount() {
                                 {formik.touched.business?.description && formik.errors.business?.description && <p className="text-xs text-red-500 mt-1">{formik.errors.business.description}</p>}
                             </div>
 
-                            {/* Store Front Optional Logo upload */}
-                            <div className="flex flex-col items-center sm:flex-row gap-4 bg-slate-50 dark:bg-[#161D30] p-4 rounded-xl border border-slate-200 dark:border-slate-800">
-                                <div className="relative w-14 h-14 bg-slate-200 dark:bg-slate-800 rounded-xl overflow-hidden flex items-center justify-center">
-                                    {formik.values.business.logo ? (
-                                        <img
-                                            src={
-                                                formik.values.business.logo instanceof File
-                                                    ? URL.createObjectURL(formik.values.business.logo)
-                                                    : formik.values.business.logo
-                                            }
-                                            alt="Logo"
-                                            className="w-full h-full object-cover"
-                                        />
-                                    ) : (
-                                        <Image className="w-5 h-5 text-slate-400" />
-                                    )}
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold mb-0.5">Business Logo <span className="text-slate-400 font-normal">(Optional)</span></label>
-                                    <p className="text-[11px] text-slate-400 mb-2">Help your store stand out with clear distinct branding.</p>
-                                    <input type="file" accept="image/*" id="businessLogo" onChange={(e) => handleFileUpload(e, 'business.logo')} className="hidden" />
-                                    <label htmlFor="businessLogo" className="cursor-pointer inline-flex items-center space-x-1 px-2.5 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 rounded-lg text-xs font-semibold transition-colors">
-                                        <Upload className="w-3 h-3" /> <span>Upload Logo</span>
-                                    </label>
-                                </div>
-                            </div>
-
-                            {/* Social Outlets Setup Container */}
-                            <div className="space-y-3">
-                                <label className="text-xs font-semibold text-slate-400 block">Social Medias / Outlets (Optional)</label>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <div className="relative">
-                                        <FaFacebook className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1877F2]" />
-                                        <input type="url" placeholder="https://facebook.com/brand" {...formik.getFieldProps('business.socials.facebook')} className="w-full bg-slate-50 dark:bg-[#161D30] border rounded-xl pl-10 pr-4 py-2 text-xs border-slate-200 dark:border-slate-800 outline-none" />
-                                    </div>
-                                    <div className="relative">
-                                        <FaInstagram className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#E4405F]" />
-                                        <input type="url" placeholder="https://instagram.com/brand" {...formik.getFieldProps('business.socials.instagram')} className="w-full bg-slate-50 dark:bg-[#161D30] border rounded-xl pl-10 pr-4 py-2 text-xs border-slate-200 dark:border-slate-800 outline-none" />
-                                    </div>
-                                    <div className="relative">
-                                        <FaWhatsapp className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#25D366]" />
-                                        <input type="url" placeholder="https://wa.me/number" {...formik.getFieldProps('business.socials.whatsapp')} className="w-full bg-slate-50 dark:bg-[#161D30] border rounded-xl pl-10 pr-4 py-2 text-xs border-slate-200 dark:border-slate-800 outline-none" />
-                                    </div>
-                                    <div className="relative">
-                                        <FaTiktok className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-900 dark:text-white" />
-                                        <input type="url" placeholder="https://tiktok.com/@brand" {...formik.getFieldProps('business.socials.tiktok')} className="w-full bg-slate-50 dark:bg-[#161D30] border rounded-xl pl-10 pr-4 py-2 text-xs border-slate-200 dark:border-slate-800 outline-none" />
-                                    </div>
-                                </div>
-                            </div>
-
                             <div className="pt-4 flex items-center justify-between border-t border-slate-100 dark:border-slate-800/60">
                                 <button type="button" onClick={() => setStep(1)} className="px-4 py-2 text-slate-400 hover:text-slate-200 text-sm font-medium flex items-center space-x-1"><ArrowLeft className="w-4 h-4" /><span>Back</span></button>
                                 <button type="button" onClick={() => validateStep(2)} className="px-5 py-2.5 bg-slate-900 dark:bg-emerald-600 hover:opacity-90 text-white text-sm font-medium rounded-xl flex items-center space-x-2"><span>Identity Verification</span> <ArrowRight className="w-4 h-4" /></button>
@@ -666,65 +579,23 @@ export default function RecoverAccount() {
                         </div>
                     )}
 
-                    {/* PAGE 4: TERMS & COMPLIANCE AGREEMENT COVENANT */}
-                    {step === 4 && (
-                        <div className="space-y-6 animate-fadeIn">
-                            <div className="flex items-start bg-amber-50 dark:bg-amber-950/30 border border-amber-200/50 dark:border-amber-900/40 p-4 rounded-xl mb-2">
-                                <AlertTriangle className="w-5 h-5 text-amber-500 mr-3 flex-shrink-0 mt-0.5" />
-                                <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
-                                    <strong>Final Verification Notice:</strong> Please read carefully. Violating these conditions leads to immediate, irreversible suspension of your shop and potential referral to institutional disciplinary committees.
-                                </p>
-                            </div>
+                    <div className="pt-4 flex items-center justify-between border-t border-slate-100 dark:border-slate-800/60">
+                        <button type="button" onClick={() => setStep(3)} className="px-4 py-2 text-slate-400 hover:text-slate-200 text-sm font-medium flex items-center space-x-1"><ArrowLeft className="w-4 h-4" /><span>Back</span></button>
 
-                            <h3 className="text-lg font-semibold flex items-center gap-2"><FileText className="w-5 h-5 text-emerald-500" /> Legal Framework & Terms</h3>
-
-                            {/* Checkboxes Wrapper Segment */}
-                            <div className="space-y-4 bg-slate-50 dark:bg-[#161D30] p-5 rounded-xl border border-slate-200 dark:border-slate-800">
-
-                                <label className="flex items-start gap-3 cursor-pointer select-none">
-                                    <input type="checkbox" {...formik.getFieldProps('terms.acceptedVendorTerms')} checked={formik.values.terms.acceptedVendorTerms} className="mt-1 w-4 h-4 accent-emerald-500 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
-                                    <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                                        I agree to the official platform Vendor Terms, operational compliance rules, and standard commission/payout terms.
-                                    </span>
-                                </label>
-                                {formik.touched.terms?.acceptedVendorTerms && formik.errors.terms?.acceptedVendorTerms && <p className="text-[11px] text-red-500 pl-7">{formik.errors.terms.acceptedVendorTerms}</p>}
-
-                                <label className="flex items-start gap-3 cursor-pointer select-none">
-                                    <input type="checkbox" {...formik.getFieldProps('terms.acceptedMarketplacePolicy')} checked={formik.values.terms.acceptedMarketplacePolicy} className="mt-1 w-4 h-4 accent-emerald-500 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
-                                    <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                                        I agree not to upload, list, or sell contraband, plagiarism services, dangerous substances, or prohibited items.
-                                    </span>
-                                </label>
-                                {formik.touched.terms?.acceptedMarketplacePolicy && formik.errors.terms?.acceptedMarketplacePolicy && <p className="text-[11px] text-red-500 pl-7">{formik.errors.terms.acceptedMarketplacePolicy}</p>}
-
-                                <label className="flex items-start gap-3 cursor-pointer select-none">
-                                    <input type="checkbox" {...formik.getFieldProps('terms.acceptedFraudPolicy')} checked={formik.values.terms.acceptedFraudPolicy} className="mt-1 w-4 h-4 accent-emerald-500 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
-                                    <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                                        I explicitly understand that structural fraud, catfishing, fake deliveries, or double dealing leads to profile suspension.
-                                    </span>
-                                </label>
-                                {formik.touched.terms?.acceptedFraudPolicy && formik.errors.terms?.acceptedFraudPolicy && <p className="text-[11px] text-red-500 pl-7">{formik.errors.terms.acceptedFraudPolicy}</p>}
-                            </div>
-
-                            <div className="pt-4 flex items-center justify-between border-t border-slate-100 dark:border-slate-800/60">
-                                <button type="button" onClick={() => setStep(3)} className="px-4 py-2 text-slate-400 hover:text-slate-200 text-sm font-medium flex items-center space-x-1"><ArrowLeft className="w-4 h-4" /><span>Back</span></button>
-
-                                <button type="submit" disabled={loading} className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-600/70 text-white text-sm font-medium rounded-xl transition-all flex items-center space-x-2 shadow-md">
-                                    {loading ? (
-                                        <>
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                            <span>Processing Profile...</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <CheckCircle2 className="w-4 h-4" />
-                                            <span>Send Recover Request</span>
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-                    )}
+                        <button type="submit" disabled={loading} className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-600/70 text-white text-sm font-medium rounded-xl transition-all flex items-center space-x-2 shadow-md">
+                            {loading ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    <span>Processing Profile...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <CheckCircle2 className="w-4 h-4" />
+                                    <span>Send Recover Request</span>
+                                </>
+                            )}
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>

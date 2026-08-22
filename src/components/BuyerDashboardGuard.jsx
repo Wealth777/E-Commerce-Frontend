@@ -9,7 +9,7 @@ const BuyerDashboardGuard = ({ children }) => {
     if (!user?.emailVerified) {
         return <Navigate to="/resend-verification-email" replace />;
     }
-    
+
     if (!user?.onboardingCompleted) {
         return <Navigate to="/buyer/onboarding" replace />;
     }

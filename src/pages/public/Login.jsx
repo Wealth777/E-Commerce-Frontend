@@ -63,10 +63,13 @@ const Login = () => {
           throw new Error('Login succeeded but no token was returned by the server.');
         }
 
+        const payload = response.data.data;
+
         dispatch(loginSuccess({
           user,
           token,
           role: 'buyer',
+          sessionId: payload.sessionId,
         }));
 
         showToast('Login successful!', 'success');

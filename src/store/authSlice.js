@@ -276,10 +276,11 @@ export const fetchUser = () => async (dispatch, getState) => {
 
   try {
     const res = await apiClient.get(endpoint);
+
     const profile = getPayload(res, null);
     const currentUser = getState().auth.user || getStoredUser();
-    const user = normalizeAuthUser(profile, currentUser, role);
 
+    const user = normalizeAuthUser(profile, currentUser, role);
 
     dispatch(setUser(user));
     return user;
@@ -313,9 +314,9 @@ const authSlice = createSlice({
       state.error = null;
     },
     loginSuccess: (state, action) => {
-      const { user, accessToken, token, role } = action.payload;
+      const { user, accessToken, token, sessionId, role } = action.payload;
       const authToken = accessToken || token;
-      const normalizedUser = normalizeAuthUser(user, state.user, role);
+      const normalizedUser = normalizeAuthUser({...user, sessionId,}, state.user, role);
 
       state.user = normalizedUser;
       state.token = authToken;

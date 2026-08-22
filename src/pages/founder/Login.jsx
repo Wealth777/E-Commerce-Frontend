@@ -54,10 +54,13 @@ export default function FounderLogin() {
                 const token = getTokenFromResponse(response);
                 const user = getUserFromResponse(response);
 
+                const payloadd = response.data.data;
+
                 dispatch(loginSuccess({
                     user,
                     token,
                     role: 'founder',
+                    sessionId: payloadd.sessionId,
                 }));
 
                 showToast('Login successful!', 'success');

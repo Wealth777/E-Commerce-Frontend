@@ -61,7 +61,7 @@ export default function Register() {
           password: values.password,
         };
         const res = await apiClient.post(`/buyer/auth/register`, payload);
-        showToast(res.data.message, 'success');
+        showToast(res.data.data, 'success');
         navigate('/login');
       } catch (error) {
         showToast(getMessage(error, 'Registration failed'), 'error');

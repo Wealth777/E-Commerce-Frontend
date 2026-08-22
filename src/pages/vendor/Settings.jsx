@@ -13,6 +13,7 @@ import apiClient from '../../api/apiClient';
 import { useDispatch, useSelector } from 'react-redux'
 import { useToast } from '../../context/ToastContext';
 import { setUser, logout } from "../../store/authSlice";
+import { getMessage } from "../../utils/apiResponse";
 
 export default function Settings() {
     const { isDark } = useTheme();
@@ -20,14 +21,27 @@ export default function Settings() {
     const [twoFactorEnabled, setTwoFactorEnabled] = useState(true);
     const [notificationPreference, setNotificationPreference] = useState("email");
     const [promotionalMessages, setPromotionalMessages] = useState(false);
-    const [activeDevices, setActiveDevices] = useState([]);
     const [loginHistory, setLoginHistory] = useState([]);
     const [recentActivities, setRecentActivities] = useState([]);
+    const [loginHistoryLoading, setLoginHistoryLoading] = useState(false);
     const dispatch = useDispatch();
     const { user } = useSelector((state) => state.auth);
     const { showToast } = useToast()
     const isSuspended = user?.accountStatus === "suspended";
-    const navigate = useNavigate()
+    const navigate = useNavigate();
+    const [loading, setLoading] = useState({
+        suspend: false,
+        reactivate: false,
+        delete: false,
+    });
+    const [activeSessions, setActiveSessions] = useState([]);
+    const [activeDevices, setActiveDevices] = useState([]);
+    const [loadingActiveDevice, setLoadingActiveDevice] = useState(false);
+    const [loadingSessions, setLoadingSessions] = useState(false);
+    const [loadingActivities, setLoadingActivities] = useState(false);
+    const [loadingLogout, setLoadingLogout] = useState(false);
+    const [notificationLoading, setNotificationLoading] = useState(false);
+    const [promotionalLoading, setPromotionalLoading] = useState(false);
 
     const closeModal = () => setActiveModal(null);
 
@@ -43,13 +57,10 @@ export default function Settings() {
                 payload
             );
 
-            showToast(data.message, "success");
+            showToast(getMessage(data), "success");
+
         } catch (error) {
-            showToast(
-                error.response?.data?.message ||
-                "Failed to change password.",
-                "error"
-            );
+            showToast(getMessage(error, "Failed to change password."), "error");
 
             throw error;
         }
@@ -77,12 +88,7 @@ export default function Settings() {
                 })
             );
         } catch (error) {
-            showToast(
-                error.response?.data?.message ||
-                "Failed to change email.",
-                "error"
-            );
-
+            showToast(getMessage(error, "Failed to change email."), "error");
             throw error;
         }
     };
@@ -93,14 +99,110 @@ export default function Settings() {
     };
 
     const handleLogoutAllDevices = async () => {
-        console.log("Logout all devices");
-        closeModal();
+        setLoadingLogout(true)
+        try {
+            const res = await apiClient.post('auth/settings/login-all-devices');
+
+            showToast(res.data.message, "success")
+        } catch (error) {
+            showToast(getMessage(error, ""), "error")
+            throw error;
+        } finally {
+            setLoadingLogout(false);
+            closeModal();
+        }
+    };
+
+    const openLogoutModal = async () => {
+        setLoadingSessions(true);
+
+        try {
+            const { data } = await apiClient.get(
+                "/auth/settings/active-sessions"
+            );
+
+            setActiveSessions(data.data.sessions);
+
+            setActiveModal("logoutAll");
+        } catch (error) {
+            showToast(
+                getMessage(error, "Unable to load devices"),
+                "error"
+            );
+        } finally {
+            setLoadingSessions(false);
+        }
+    };
+
+    const fetchLoginHistory = async () => {
+        if (loginHistoryLoading) return;
+
+        setLoginHistoryLoading(true);
+
+        try {
+            const { data } = await apiClient.get(
+                "/auth/settings/login-history"
+            );
+
+            setLoginHistory(data.data?.loginHistory ?? []);
+        } catch (error) {
+            showToast(getMessage(error, "Failed to load login history."), "error");
+        } finally {
+            setLoginHistoryLoading(false);
+        }
+    };
+
+    const fetchActiveDevices = async () => {
+        setLoadingActiveDevice(true);
+
+        try {
+            const { data } = await apiClient.get(
+                "/auth/settings/active-sessions"
+            );
+
+            setActiveDevices(data.data.sessions);
+
+            setActiveModal("devices");
+        } catch (error) {
+            showToast(
+                getMessage(error, "Unable to load devices"),
+                "error"
+            );
+        } finally {
+            setLoadingActiveDevice(false);
+        }
+    };
+
+    const fetchRecentActivities = async () => {
+        if (loadingActivities) return;
+
+        setLoadingActivities(true);
+
+        try {
+            const { data } = await apiClient.get(
+                "/vendor/activity"
+            );
+
+            const activities = data.data || [];
+
+            setRecentActivities(activities.slice(0, 10));
+        } catch (error) {
+            showToast(getMessage(error, "Failed to load recent activities."), "error");
+        } finally {
+            setLoadingActivities(false);
+        }
     };
 
     const handleSuspendStore = async (reason) => {
+        if (loading.suspend) return;
+
+        setLoading((prev) => ({
+            ...prev,
+            suspend: true,
+        }));
         try {
             const { data } = await apiClient.post(
-                "/vendor/profile/suspend/me",
+                "/auth/settings/profile/suspend/me",
                 {
                     reason,
                 }
@@ -120,18 +222,25 @@ export default function Settings() {
             closeModal();
 
         } catch (error) {
-            showToast(
-                error.response?.data?.message ||
-                "Failed to suspend account.",
-                'error'
-            );
+            showToast(getMessage(error, 'Failed to suspend account.'), 'error');
+        } finally {
+            setLoading((prev) => ({
+                ...prev,
+                suspend: false,
+            }));
         }
     };
 
     const handleReactivateStore = async () => {
+        if (loading.reactivate) return;
+
+        setLoading((prev) => ({
+            ...prev,
+            reactivate: true,
+        }));
         try {
             const { data } = await apiClient.post(
-                "/vendor/profile/reactivate/me"
+                "/auth/settings/profile/reactivate/me"
             );
 
             showToast(data.message, 'success');
@@ -149,11 +258,12 @@ export default function Settings() {
             closeModal();
 
         } catch (error) {
-            showToast(
-                error.response?.data?.message ||
-                "Failed to reactivate account.",
-                'error'
-            );
+            showToast(getMessage(error, "Failed to reactivate account."), 'error');
+        } finally {
+            setLoading((prev) => ({
+                ...prev,
+                reactivate: false,
+            }));
         }
     };
 
@@ -168,9 +278,15 @@ export default function Settings() {
     };
 
     const handleDeleteAccount = async (reason) => {
+        if (loading.delete) return;
+
+        setLoading((prev) => ({
+            ...prev,
+            delete: true,
+        }));
         try {
             const { data } = await apiClient.post(
-                "/vendor/profile/delete/me",
+                "/auth/settings/profile/delete/me",
                 {
                     reason,
                 }
@@ -184,11 +300,71 @@ export default function Settings() {
 
             navigate("/login", { replace: true });
         } catch (error) {
+            showToast(getMessage(error, 'Failed to delete account.'), "error");
+        } finally {
+            setLoading((prev) => ({
+                ...prev,
+                delete: false,
+            }));
+        }
+    };
+
+    const handleChangeNotificationPreference = async (value) => {
+        if (notificationLoading || value === notificationPreference) return;
+
+        setNotificationLoading(true);
+
+        try {
+            const { data } = await apiClient.put(
+                "/auth/settings/notification-preference",
+                {
+                    notificationPreference: value,
+                }
+            );
+
+            setNotificationPreference(value);
+
+            dispatch(
+                setUser({
+                    ...user,
+                    notificationPreference: value,
+                })
+            );
+
+            showToast(data.message, "success");
+        } catch (error) {
             showToast(
-                error.response?.data?.message ||
-                "Failed to delete account.",
+                getMessage(error, "Failed to update notification preference."),
                 "error"
             );
+        } finally {
+            setNotificationLoading(false);
+        }
+    };
+
+    const handlePromotionalMessagesChange = async (value) => {
+        if (promotionalLoading) return;
+
+        setPromotionalLoading(true);
+
+        try {
+            const { data } = await apiClient.put(
+                "/auth/settings/promotional-messages",
+                {
+                    promotionalMessages: value,
+                }
+            );
+
+            setPromotionalMessages(data.data.promotionalMessages);
+
+            showToast(getMessage(data), "success");
+        } catch (error) {
+            showToast(
+                getMessage(error, "Failed to update promotional messages."),
+                "error"
+            );
+        } finally {
+            setPromotionalLoading(false);
         }
     };
 
@@ -220,7 +396,7 @@ export default function Settings() {
                     onChangePhone={() => setActiveModal("phone")}
                     onChangeEmail={() => setActiveModal("email")}
                     onTwoFactor={() => setActiveModal("twoFactor")}
-                    onLogoutAllDevices={() => setActiveModal("logoutAll")}
+                    onLogoutAllDevices={openLogoutModal}
                 />
 
                 <AccountModals
@@ -232,22 +408,37 @@ export default function Settings() {
                     onEmailSubmit={handleEmailSubmit}
                     onToggleTwoFactor={handleToggleTwoFactor}
                     onLogoutAllDevices={handleLogoutAllDevices}
+                    activeSessions={activeSessions}
+                    loadingSessions={loadingSessions}
+                    loadingLogout={loadingLogout}
+                    currentSessionId={user?.sessionId}
                 />
 
                 {/* Notifications Section */}
                 <NotificationSection
                     notificationPreference={notificationPreference}
                     promotionalMessages={promotionalMessages}
-                    onNotificationPreferenceChange={setNotificationPreference}
-                    onPromotionalMessagesChange={setPromotionalMessages}
+                    onNotificationPreferenceChange={handleChangeNotificationPreference}
+                    onPromotionalMessagesChange={handlePromotionalMessagesChange}
+                    notificationLoading={notificationLoading}
+                    promotionalLoading={promotionalLoading}
                 />
 
                 {/* Security Section */}
 
                 <SecuritySection
-                    onActiveDevices={() => setActiveModal("devices")}
-                    onLoginHistory={() => setActiveModal("loginHistory")}
-                    onRecentActivities={() => setActiveModal("activities")}
+                    onActiveDevices={() => {
+                        setActiveModal("devices");
+                        fetchActiveDevices();
+                    }}
+                    onLoginHistory={() => {
+                        setActiveModal("loginHistory");
+                        fetchLoginHistory();
+                    }}
+                    onRecentActivities={() => {
+                        setActiveModal("activities");
+                        fetchRecentActivities();
+                    }}
                 />
 
                 <SecurityModals
@@ -256,6 +447,9 @@ export default function Settings() {
                     activeDevices={activeDevices}
                     loginHistory={loginHistory}
                     recentActivities={recentActivities}
+                    loginHistoryLoading={loginHistoryLoading}
+                    loadingActiveDevice={loadingActiveDevice}
+                    loadingActivities={loadingActivities}
                 />
 
                 {/* Danger Zone */}
@@ -276,6 +470,7 @@ export default function Settings() {
                     onReactivateStore={handleReactivateStore}
                     onReportSecurityIssue={handleReportSecurityIssue}
                     onDeleteAccount={handleDeleteAccount}
+                    loading={loading}
                 />
 
                 {/* Security Modals */}

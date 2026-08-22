@@ -36,6 +36,10 @@ const AccountModals = ({
     onEmailSubmit,
     onToggleTwoFactor,
     onLogoutAllDevices,
+    activeSessions = [],
+    loadingSessions = false,
+    loadingLogout = false,
+    currentSessionId,
 }) => {
 
     const [showPassword, setShowPassword] = useState(false)
@@ -220,22 +224,66 @@ const AccountModals = ({
                 title="Logout From All Devices"
                 description="This will immediately sign your account out from every device except your current session."
             >
-                <div className="space-y-4 pt-2">
-                    <button
-                        onClick={async () => {
-                            await onLogoutAllDevices();
-                            onClose();
-                        }}
-                        className="w-full py-2 bg-red-600 text-white font-medium rounded-md hover:bg-red-700 transition"
-                    >
-                        Yes, Log out everywhere
-                    </button>
-                    <button
-                        onClick={onClose}
-                        className="w-full py-2 border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-50 transition"
-                    >
-                        Cancel
-                    </button>
+                <div className="space-y-4">
+                    {loadingSessions ? (
+                        <div className="py-8 text-center">
+                            Loading devices...
+                        </div>
+                    ) : activeSessions.length ? (
+                        <>
+                            <div className="space-y-3 max-h-80 overflow-y-auto">
+                                {activeSessions.map((session) => (
+                                    <div
+                                        key={session.sessionId}
+                                        className="rounded-lg border p-4"
+                                    >
+                                        <div className="flex justify-between">
+                                            <div>
+                                                <p className="font-semibold">
+                                                    {session.deviceInfo?.browser} • {session.deviceInfo?.os}
+                                                </p>
+
+                                                <p className="text-sm text-gray-500">
+                                                    {session.location?.city},{" "}
+                                                    {session.location?.country}
+                                                </p>
+
+                                                <p className="text-xs text-gray-400">
+                                                    {new Date(session.loginAt).toLocaleString()}
+                                                </p>
+                                            </div>
+
+                                            {session.sessionId === currentSessionId && (
+                                                <span className="text-xs font-semibold text-green-600">
+                                                    Current Device
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <button
+                                disabled={loadingSessions || loadingLogout}
+                                onClick={async () => {
+                                    await onLogoutAllDevices();
+                                }}
+                                className="w-full rounded-md bg-red-600 py-2 text-white hover:bg-red-700"
+                            >
+                                Logout All Other Devices
+                            </button>
+
+                            <button
+                                onClick={onClose}
+                                className="w-full rounded-md border py-2"
+                            >
+                                Cancel
+                            </button>
+                        </>
+                    ) : (
+                        <div className="py-8 text-center">
+                            No active devices found.
+                        </div>
+                    )}
                 </div>
             </Modal>
         </>

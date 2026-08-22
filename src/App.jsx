@@ -111,6 +111,7 @@ function App() {
             <Route path="/vendor/login" element={<VendorLogin />} />
             <Route path="/founder/login" element={<FounderLogin />} />
             <Route path="/security/unauthorized-email-change" element={<UnauthorizedEmailChange />} />
+            {/* <Route path="/settings" element={<VendorSettings />} /> */}
           </Route>
 
           <Route element={<PublicLayout />}>
@@ -137,6 +138,16 @@ function App() {
             />
             <Route
               path="/buyer/dashboard"
+              element={
+                <ProtectedRoute requiredRole="buyer">
+                  <BuyerDashboardGuard>
+                    <BuyerDashboard />
+                  </BuyerDashboardGuard>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/buyer/"
               element={
                 <ProtectedRoute requiredRole="buyer">
                   <BuyerDashboardGuard>

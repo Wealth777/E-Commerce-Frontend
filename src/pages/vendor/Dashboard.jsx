@@ -187,7 +187,7 @@ const VendorDashboard = () => {
               Welcome back,
             </p>
             <h2 className="text-2xl md:text-4xl font-bold text-white mb-2">
-              {user?.store?.storeName || 'Vendor'}!
+              {user?.business?.storeName || 'Vendor'}!
             </h2>
             <p className="text-black text-sm md:text-base max-w-xl leading-relaxed">
               Manage your store, track orders, and grow your business all in one place.

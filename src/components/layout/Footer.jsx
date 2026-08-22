@@ -11,6 +11,7 @@ import {
   FiShoppingBag,
   FiCopy
 } from 'react-icons/fi';
+import Logo from '/Campus_trade_logo_green_2.png'
 
 const Footer = () => {
   const [copiedIndex, setCopiedIndex] = React.useState(null);
@@ -61,7 +62,7 @@ const Footer = () => {
           {/* Brand and description - Takes 2 cols on Large screens */}
           <div className="sm:col-span-2 lg:col-span-2">
             <div className="flex items-center mb-4">
-              <FiShoppingBag className="h-8 w-8 text-green-500 mr-3 flex-shrink-0" />
+              <img src={Logo} alt='CampusTrade' className="h-10 w-12 text-green-500 mr-3 flex-shrink-0" />
               <div>
                 <h2 className="text-2xl font-bold text-white tracking-tight">CampusTrade</h2>
                 <p className="text-xs text-gray-400 uppercase tracking-widest">Independent Marketplace</p>

@@ -15,6 +15,7 @@ const DangerZoneModal = ({
     onReactivateStore,
     onReportSecurityIssue,
     onDeleteAccount,
+    loading,
 }) => {
     const [suspendReason, setSuspendReason] = useState("");
     const [deleteReason, setDeleteReason] = useState("");
@@ -68,6 +69,7 @@ const DangerZoneModal = ({
                     <div className="flex justify-end gap-3">
                         <button
                             type="button"
+                            disabled={loading.suspend}
                             onClick={() => {
                                 setSuspendReason("");
                                 onClose();
@@ -79,14 +81,14 @@ const DangerZoneModal = ({
 
                         <button
                             type="button"
-                            disabled={!suspendReason.trim()}
+                            disabled={!suspendReason.trim() || loading.suspend}
                             onClick={() => {
                                 onSuspendStore(suspendReason.trim());
                                 setSuspendReason("");
                             }}
                             className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            Suspend Store
+                            {loading.suspend ? "Suspending..." : "Suspend Store"}
                         </button>
                     </div>
                 </div>
@@ -110,6 +112,7 @@ const DangerZoneModal = ({
                     <div className="flex justify-end gap-3">
                         <button
                             onClick={onClose}
+                            disabled={loading.reactivate}
                             className="rounded-lg border px-4 py-2"
                         >
                             Cancel
@@ -117,9 +120,10 @@ const DangerZoneModal = ({
 
                         <button
                             onClick={onReactivateStore}
+                            disabled={loading.reactivate}
                             className="rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700"
                         >
-                            Reactivate Store
+                            {loading.reactivate ? "Reactivating..." : "Reactivate Store"}
                         </button>
                     </div>
                 </div>
@@ -217,6 +221,7 @@ const DangerZoneModal = ({
                         <button
                             type="button"
                             onClick={onClose}
+                            disabled={loading.delete}
                             className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800"
                         >
                             Cancel
@@ -224,7 +229,7 @@ const DangerZoneModal = ({
 
                         <button
                             type="button"
-                            disabled={!deleteReason.trim()}
+                            disabled={!deleteReason.trim() || loading.delete}
                             onClick={() => {
                                 onDeleteAccount(deleteReason.trim());
                                 setDeleteReason("");
@@ -232,7 +237,7 @@ const DangerZoneModal = ({
                             className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             <Trash2 size={16} />
-                            Delete Account
+                            {loading.delete ? "Deleting..." : "Delete Account"}
                         </button>
                     </div>
                 </div>

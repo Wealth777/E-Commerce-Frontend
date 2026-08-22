@@ -62,26 +62,30 @@ const getSubCategoryName = (product) => {
   return '';
 };
 
-const normalizeProduct = (product, vendorInfo = null) => ({
-  ...product,
-  _id: product._id || product.id,
-  id: product.id || product._id,
-  categoryId: getCategoryId(product),
-  categoryName: getCategoryName(product),
-  subCategoryName: getSubCategoryName(product),
-  vendor:
-    product.vendor && typeof product.vendor === 'object'
+const normalizeProduct = (product, vendorInfo = null) => {
+  const vendor =
+    product?.vendor && typeof product.vendor === 'object'
       ? product.vendor
-      : vendorInfo,
-  vendorName:
-    product.vendor?.storeName ||
-    product.vendor?.businessName ||
-    product.vendor?.fullName ||
-    vendorInfo?.storeName ||
-    vendorInfo?.businessName ||
-    vendorInfo?.fullName ||
-    'Unknown vendor',
-});
+      : vendorInfo;
+
+  return {
+    ...product,
+
+    _id: product._id || product.id,
+    id: product.id || product._id,
+
+    categoryId: getCategoryId(product),
+    categoryName: getCategoryName(product),
+    subCategoryName: getSubCategoryName(product),
+
+    vendor,
+
+    vendorName:
+      vendor?.business?.storeName ||
+      vendor?.fullName ||
+      'Unknown vendor',
+  };
+};
 
 const buildCategories = (products) => {
   const map = new Map();
@@ -107,6 +111,7 @@ const VendorDetails = () => {
   const { isAuthenticated, role } = useSelector((state) => state.auth);
 
   const [vendorInfo, setVendorInfo] = useState(null);
+  const [allProducts, setAllProducts] = useState([]);
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -132,13 +137,18 @@ const VendorDetails = () => {
         `/vendor/vendor/details/${vendorId}`
       );
 
-
       const payload = getPayload(response, {});
-      const vendor = payload.vendorInfo || payload.vendor || payload;
 
-      console.log('VENDOR DETAILS:', vendor);
+      const vendor =
+        payload.vendorInfo ||
+        payload.vendor ||
+        null;
 
-      const vendorProducts = (payload.products || []).map((product) =>
+      const rawProducts = Array.isArray(payload.products)
+        ? payload.products
+        : [];
+
+      const vendorProducts = rawProducts.map((product) =>
         normalizeProduct(product, vendor)
       );
 
@@ -155,32 +165,123 @@ const VendorDetails = () => {
     }
   }, [vendorId, showToast]);
 
-  const fetchVendorProducts = useCallback(async () => {
+  // const fetchProductsByCategory = useCallback(async () => {
+  //   if (!selectedCategory) {
+  //     setProducts(allProducts);
+  //     return;
+  //   }
+
+  //   try {
+  //     setProductsLoading(true);
+
+  //     const response = await apiClient.get(
+  //       `/vendor/vendor/products/${vendorId}/category/${encodeURIComponent(
+  //         selectedCategory
+  //       )}`
+  //     );
+
+  //     const payload = getPayload(response, {});
+
+  //     const rawProducts = Array.isArray(payload.products)
+  //       ? payload.products
+  //       : [];
+
+  //     const vendorProducts = rawProducts.map((product) =>
+  //       normalizeProduct(product, vendorInfo)
+  //     );
+
+  //     setProducts(vendorProducts);
+  //   } catch (error) {
+  //     showToast(
+  //       getMessage(error, 'Failed to load products'),
+  //       'error'
+  //     );
+  //   } finally {
+  //     setProductsLoading(false);
+  //   }
+  // }, [
+  //   vendorId,
+  //   selectedCategory,
+  //   allProducts,
+  //   vendorInfo,
+  //   showToast,
+  // ]);
+
+  // const fetchVendorProducts = useCallback(async () => {
+  //   try {
+  //     setProductsLoading(true);
+
+  //     let endpoint = `/vendor/vendor/details/${vendorId}`;
+
+  //     if (selectedCategory) {
+  //       endpoint = `/vendor/vendor/products/${vendorId}/category/${encodeURIComponent(
+  //         selectedCategory
+  //       )}`;
+  //     }
+
+  //     const response = await apiClient.get(endpoint);
+  //     const payload = getPayload(response, {});
+
+  //     const rawProducts =
+  //       payload.products ||
+  //       (Array.isArray(payload) ? payload : []);
+
+  //     const currentVendor =
+  //       payload.vendor ||
+  //       payload.vendorInfo ||
+  //       vendorInfo;
+
+  //     const vendorProducts = rawProducts.map((product) =>
+  //       normalizeProduct(product, currentVendor)
+  //     );
+
+  //     setProducts(vendorProducts);
+
+  //     if (currentVendor) {
+  //       setVendorInfo(currentVendor);
+  //     }
+
+  //     if (!selectedCategory) {
+  //       setCategories(buildCategories(vendorProducts));
+  //     }
+
+  //     console.log(vendorInfo)
+  //   } catch (error) {
+  //     showToast(
+  //       getMessage(error, 'Failed to load products'),
+  //       'error'
+  //     );
+  //   } finally {
+  //     setProductsLoading(false);
+  //   }
+  // }, [vendorId, selectedCategory, showToast, vendorInfo]);
+
+  const fetchProductsByCategory = useCallback(async () => {
+    if (!selectedCategory) {
+      setProducts(allProducts);
+      return;
+    }
+
     try {
       setProductsLoading(true);
 
-      let endpoint = `/vendor/vendor/details/${vendorId}`;
-
-      if (selectedCategory) {
-        endpoint = `/vendor/vendor/products/${vendorId}/category/${encodeURIComponent(
+      const response = await apiClient.get(
+        `/vendor/vendor/products/${vendorId}/category/${encodeURIComponent(
           selectedCategory
-        )}`;
-      }
+        )}`
+      );
 
-      const response = await apiClient.get(endpoint);
       const payload = getPayload(response, {});
 
-      const rawProducts =
-        payload.products ||
-        (Array.isArray(payload) ? payload : []);
+      const rawProducts = Array.isArray(payload.products)
+        ? payload.products
+        : [];
 
-      const vendorProducts = rawProducts.map(normalizeProduct);
+      const vendorProducts = rawProducts.map((product) =>
+        normalizeProduct(product, vendorInfo)
+      );
 
       setProducts(vendorProducts);
-
-      if (!selectedCategory) {
-        setCategories(buildCategories(vendorProducts));
-      }
     } catch (error) {
       showToast(
         getMessage(error, 'Failed to load products'),
@@ -189,7 +290,12 @@ const VendorDetails = () => {
     } finally {
       setProductsLoading(false);
     }
-  }, [vendorId, selectedCategory, showToast]);
+  }, [
+    vendorId,
+    selectedCategory,
+    allProducts,
+    showToast,
+  ]);
 
   const applyFilters = useCallback(() => {
     let filtered = [...products];
@@ -237,10 +343,14 @@ const VendorDetails = () => {
   }, [fetchVendorDetails]);
 
   useEffect(() => {
-    if (vendorInfo) {
-      fetchVendorProducts();
-    }
-  }, [selectedCategory, fetchVendorProducts, vendorInfo]);
+    fetchProductsByCategory();
+  }, [fetchProductsByCategory]);
+
+  // useEffect(() => {
+  //   if (vendorInfo) {
+  //     fetchVendorProducts();
+  //   }
+  // }, [selectedCategory, fetchVendorProducts, vendorInfo]);
 
   useEffect(() => {
     applyFilters();
@@ -413,10 +523,10 @@ const VendorDetails = () => {
     <div className={`min-h-screen ${bgColor} pb-20`}>
       <div className="relative">
         <div className="h-48 md:h-72 max-w-7xl mx-auto relative bg-gray-200 dark:bg-gray-800">
-          {vendorInfo.bannerImage ? (
+          {vendorInfo.business?.banner ? (
             <img
-              src={vendorInfo.bannerImage}
-              alt="Banner"
+              src={vendorInfo.business.banner}
+              alt={vendorInfo.business.storeName || 'Vendor banner'}
               className="w-full h-full object-cover"
             />
           ) : (
@@ -442,12 +552,16 @@ const VendorDetails = () => {
             <div className="flex flex-col md:flex-row items-center md:items-end gap-6 text-center md:text-left">
               <div className="relative -mt-16 md:-mt-20">
                 <img
-                  src={vendorInfo.profilePhoto || '/default-avatar.png'}
-                  alt={vendorInfo.storeName || 'Vendor'}
+                  src={
+                    vendorInfo.student?.profilePhoto ||
+                    vendorInfo.business?.logo ||
+                    '/default-avatar.png'
+                  }
+                  alt={vendorInfo.business?.storeName || 'Vendor'}
                   className="w-32 h-32 md:w-40 md:h-40 rounded-3xl object-cover border-8 border-white dark:border-gray-800 shadow-lg"
                 />
 
-                {vendorInfo.isVerified && (
+                {vendorInfo.verification?.isVerified && (
                   <div className="absolute -bottom-2 -right-2 bg-blue-500 text-white p-2 rounded-full border-4 border-white dark:border-gray-800">
                     <FaCheckCircle className="h-5 w-5" />
                   </div>
@@ -457,7 +571,7 @@ const VendorDetails = () => {
               <div className="flex-1">
                 <div className="flex flex-col md:flex-row md:items-center gap-2 mb-2">
                   <h1 className="text-3xl font-bold tracking-tight">
-                    {vendorInfo.storeName || 'Vendor Store'}
+                    {vendorInfo.business?.storeName || 'Vendor Store'}
                   </h1>
 
                   <div className="flex items-center justify-center gap-1 text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 px-3 py-1 rounded-full w-fit mx-auto md:mx-0">
@@ -474,7 +588,7 @@ const VendorDetails = () => {
                 <div className="flex flex-wrap justify-center md:justify-start gap-4 text-sm font-medium">
                   <div className="flex items-center gap-1.5 text-gray-500">
                     <FaMapMarkerAlt className="text-green-600" />
-                    {vendorInfo.state || 'State'}, {vendorInfo.country || 'Country'}
+                    {vendorInfo.student?.institution || 'Institution not provided'}
                   </div>
 
                   <div className="text-gray-300 hidden md:block">|</div>
@@ -489,13 +603,13 @@ const VendorDetails = () => {
               </div>
 
               <div className="hidden lg:flex flex-col items-end gap-3">
-                {renderSocialLinks(vendorInfo.socialLinks)}
+                {renderSocialLinks(vendorInfo.business?.socials)}
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mt-8 pt-8 border-t border-gray-100 dark:border-gray-700">
               <a
-                href={`mailto:${vendorInfo.email || ''}`}
+                href={`mailto:${vendorInfo.account?.email || ''}`}
                 className="flex items-center gap-3 p-4 rounded-2xl bg-gray-50 dark:bg-gray-700/50 hover:bg-green-50 transition-colors group"
               >
                 <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-gray-800 shadow-sm group-hover:text-green-600">
@@ -505,13 +619,13 @@ const VendorDetails = () => {
                 <div className="text-left">
                   <p className="text-xs text-gray-400 font-bold uppercase">Email Us</p>
                   <p className="text-sm hover:underline text-blue-400">
-                    {vendorInfo.email || 'No email'}
+                    {vendorInfo.account?.email || 'No email'}
                   </p>
                 </div>
               </a>
 
               <a
-                href={`tel:${vendorInfo.phoneNo || ''}`}
+                href={`tel:${vendorInfo.account?.phoneNo || ''}`}
                 className="flex items-center gap-3 p-4 rounded-2xl bg-gray-50 dark:bg-gray-700/50 hover:bg-green-50 transition-colors group"
               >
                 <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-gray-800 shadow-sm group-hover:text-green-600">
@@ -521,7 +635,7 @@ const VendorDetails = () => {
                 <div className="text-left">
                   <p className="text-xs text-gray-400 font-bold uppercase">Call Now</p>
                   <p className="text-sm">
-                    {vendorInfo.phoneNo || 'No phone'}
+                    {vendorInfo.account?.phoneNo || 'No phone'}
                   </p>
                 </div>
               </a>
@@ -531,7 +645,7 @@ const VendorDetails = () => {
                   About Store
                 </p>
                 <p className="text-sm line-clamp-2">
-                  {vendorInfo.storeDescription || 'No description provided.'}
+                  {vendorInfo.business?.description || 'No description provided.'}
                 </p>
               </div>
 
@@ -540,7 +654,7 @@ const VendorDetails = () => {
                 onClick={handleStartChat}
                 disabled={startChatLoading}
                 className="flex items-center gap-3 p-4 rounded-2xl bg-green-600 text-white hover:bg-green-700 disabled:opacity-70 disabled:cursor-not-allowed transition-colors group text-left"
-                aria-label={`Start chat with ${vendorInfo.storeName || 'vendor'}`}
+                aria-label={`Start chat with ${vendorInfo.business?.storeName || 'vendor'}`}
               >
                 <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/15">
                   <FaCommentDots />
@@ -570,7 +684,7 @@ const VendorDetails = () => {
                     Products ({filteredProducts.length})
                   </h2>
                   <p className={`text-sm ${textSecondary} mt-1`}>
-                    Browse all products from {vendorInfo.storeName || 'this store'}
+                    Browse all products from {vendorInfo.business?.storeName || 'this store'}
                   </p>
                 </div>
 

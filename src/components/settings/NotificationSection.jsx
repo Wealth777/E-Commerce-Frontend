@@ -31,10 +31,12 @@ const notificationOptions = [
 ];
 
 const NotificationSection = ({
-    notificationPreference = "email",
-    promotionalMessages = false,
+    notificationPreference,
+    promotionalMessages,
     onNotificationPreferenceChange,
     onPromotionalMessagesChange,
+    notificationLoading = false,
+    promotionalLoading = false,
 }) => {
     return (
         <Card
@@ -71,13 +73,10 @@ const NotificationSection = ({
                                 type="radio"
                                 name="notificationPreference"
                                 value={option.value}
-                                checked={
-                                    notificationPreference === option.value
-                                }
-                                onChange={() =>
-                                    onNotificationPreferenceChange(option.value)
-                                }
-                                className="mt-1 h-5 w-5 accent-green-600 cursor-pointer"
+                                checked={notificationPreference === option.value}
+                                disabled={notificationLoading}
+                                onChange={() => onNotificationPreferenceChange(option.value)}
+                                className="mt-1 h-5 w-5 accent-green-600 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                             />
                         </label>
                     );
@@ -102,6 +101,7 @@ const NotificationSection = ({
 
                     <Toggle
                         checked={promotionalMessages}
+                        disabled={promotionalLoading}
                         onChange={onPromotionalMessagesChange}
                     />
                 </div>

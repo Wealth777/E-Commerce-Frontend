@@ -14,6 +14,10 @@ import {
 import { useTheme } from '../../context/ThemeContext';
 import { logout } from '../../store/authSlice';
 import NotificationBell from '../notifications/NotificationBell';
+import { getMessage } from '../../utils/apiResponse';
+import { useToast } from '../../context/ToastContext';
+import apiClient from '../../api/apiClient';
+import Logo from '/Campus_trade_logo_green_2.png'
 
 const Navbar = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -25,19 +29,30 @@ const Navbar = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const { isDarkMode, toggleTheme } = useTheme();
+    const { showToast } = useToast();
 
-    const handleLogout = () => {
-        localStorage.setItem('cart', JSON.stringify(items));
-        dispatch(logout());
-        setIsMenuOpen(false);
-        setIsProfileMenuOpen(false);
+    const handleLogout = async () => {
+        try {
+            const res = await apiClient.post(`/auth/logout`);
 
-        if (role === 'vendor') {
-            navigate('/vendor/login', { replace: true });
-        } else if (role === 'founder') {
-            navigate('/founder/login', { replace: true });
-        } else {
-            navigate('/login', { replace: true });
+            showToast(getMessage(res, "Logout successful"), 'success');
+        } catch (error) {
+            showToast(getMessage(error, 'Logout Failed'), 'error');
+        } finally {
+            localStorage.setItem("cart", JSON.stringify(items));
+
+            dispatch(logout());
+
+            setIsMenuOpen(false);
+            setIsProfileMenuOpen(false);
+
+            if (role === "vendor") {
+                navigate("/vendor/login", { replace: true });
+            } else if (role === "founder") {
+                navigate("/founder/login", { replace: true });
+            } else {
+                navigate("/login", { replace: true });
+            }
         }
     };
 
@@ -47,7 +62,7 @@ const Navbar = () => {
         e.preventDefault();
         if (searchQuery.trim()) {
             navigate(`/products?search=${encodeURIComponent(searchQuery)}`);
-            setIsMenuOpen(false); // Close mobile menu on search
+            setIsMenuOpen(false);
         }
     };
 
@@ -101,7 +116,7 @@ const Navbar = () => {
                     {/* Logo and brand */}
                     <div className="flex items-center flex-shrink-0">
                         <Link to="/" className="flex items-center space-x-2">
-                            <FiShoppingBag className="h-7 w-7 md:h-8 md:w-8 text-green-600" />
+                            <img src={Logo} alt="CampusTrade" className="h-10 w-10 md:h-9 md:w-12" />
                             <div className="flex flex-col">
                                 <span className="text-lg md:text-xl font-heading font-bold text-gray-900 dark:text-white leading-tight">
                                     CampusTrade

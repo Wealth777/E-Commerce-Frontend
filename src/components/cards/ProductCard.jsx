@@ -91,10 +91,7 @@ const ProductCard = ({ product }) => {
       : product.subCategory || '';
 
   const vendorName =
-    product?.vendor?.storeName ||
-    product?.vendor?.businessName ||
-    product?.vendor?.fullName ||
-    product?.vendorName ||
+    product?.vendor?.business?.storeName ||
     'Unknown vendor';
 
   const vendorId =
