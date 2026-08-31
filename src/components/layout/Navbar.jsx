@@ -101,7 +101,8 @@ const Navbar = () => {
                     { name: 'Ratings & Reviews', path: '/buyer/ratings-reviews' },
                     { name: 'Reports', path: '/buyer/reports' },
                     { name: 'My Wishlist', path: '/buyer/wishlist' },
-                    { name: 'My Profile', path: '/buyer/profile' }
+                    { name: 'My Profile', path: '/buyer/profile' },
+                    { name: 'Settings', path: '/buyer/settings' },
                 ];
             default:
                 return [];
@@ -191,15 +192,15 @@ const Navbar = () => {
                                             <FiUser className="h-5 w-5 text-green-700 dark:text-green-300" />
                                         </div>
                                         <span className="text-sm font-medium text-gray-700 dark:text-gray-200 max-w-[100px] truncate">
-                                            {user?.identity?.fullName?.split(' ')[0] || 'Account'}
+                                            {user?.fullName?.split(' ')[0] || 'Account'}
                                         </span>
                                     </button>
 
                                     {isProfileMenuOpen && (
                                         <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-xl py-1 z-50 border border-gray-200 dark:border-gray-700">
                                             <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-                                                <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{user?.identity?.fullName}</p>
-                                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.account?.email}</p>
+                                                <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{user?.fullName}</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
                                             </div>
                                             {getRoleBasedLinks().map((link) => (
                                                 <Link

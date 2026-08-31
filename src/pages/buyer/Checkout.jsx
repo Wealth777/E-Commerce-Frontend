@@ -1,458 +1,4205 @@
-import React, { useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+// import React, { useEffect, useMemo, useState } from 'react';
+// import { useDispatch, useSelector } from 'react-redux';
+// import { useNavigate } from 'react-router-dom';
+// import { Formik, Form, Field, ErrorMessage } from 'formik';
+// import * as Yup from 'yup';
+
+// import { useTheme } from '../../context/ThemeContext';
+// import apiClient from '../../api/apiClient';
+// import { getMessage, getPayload } from '../../utils/apiResponse';
+// import { clearCart } from '../../store/cartSlice';
+// import { useToast } from '../../context/ToastContext';
+
+// import {
+//   Truck,
+//   CreditCard,
+//   MessageSquare,
+//   ShoppingBag,
+//   ChevronRight,
+//   ArrowLeft,
+//   CheckCircle2,
+//   Loader2,
+//   Wallet,
+//   HandCoins,
+//   MapPin,
+//   User,
+//   Edit2,
+//   Save,
+//   X,
+//   GraduationCap,
+//   Home,
+//   Upload,
+//   AlertCircle,
+//   Package,
+// } from 'lucide-react';
+
+// const Checkout = () => {
+//   const navigate = useNavigate();
+//   const dispatch = useDispatch();
+//   const { isDark } = useTheme();
+//   const { showToast } = useToast();
+
+//   const cartItems = useSelector(
+//     (state) => state.cart?.items || []
+//   );
+
+//   const [userProfile, setUserProfile] = useState(null);
+//   const [profileLoading, setProfileLoading] = useState(true);
+//   const [profileError, setProfileError] = useState(false);
+
+//   const [isEditing, setIsEditing] = useState(false);
+
+//   const [editForm, setEditForm] = useState({
+//     state: '',
+//     residence: '',
+//     address: '',
+//   });
+
+//   const [paymentProofs, setPaymentProofs] = useState({});
+
+//   /*
+//    * ------------------------------------------------------------
+//    * THEME
+//    * ------------------------------------------------------------
+//    */
+
+//   const bgColor = isDark
+//     ? 'bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950'
+//     : 'bg-gradient-to-br from-slate-50 via-white to-zinc-100';
+
+//   const cardBg = isDark
+//     ? 'bg-gray-800/80 border-gray-700/50 backdrop-blur-sm'
+//     : 'bg-white/80 border-gray-200 backdrop-blur-sm';
+
+//   const textColor = isDark
+//     ? 'text-white'
+//     : 'text-gray-900';
+
+//   const secondaryText = isDark
+//     ? 'text-gray-400'
+//     : 'text-gray-600';
+
+//   const inputBg = isDark
+//     ? 'bg-gray-700/50 text-white border-gray-600'
+//     : 'bg-gray-50 text-gray-900 border-gray-300';
+
+//   /*
+//    * ------------------------------------------------------------
+//    * SAFE VALUE HELPERS
+//    * ------------------------------------------------------------
+//    */
+
+//   const safeNumber = (value, fallback = 0) => {
+//     const number = Number(value);
+
+//     if (!Number.isFinite(number)) {
+//       return fallback;
+//     }
+
+//     return number;
+//   };
+
+//   const safeString = (value, fallback = '') => {
+//     if (
+//       value === null ||
+//       value === undefined
+//     ) {
+//       return fallback;
+//     }
+
+//     return String(value);
+//   };
+
+//   const getObjectName = (value, fallback = '') => {
+//     if (value === null || value === undefined) {
+//       return fallback;
+//     }
+
+//     if (typeof value === 'string' || typeof value === 'number') {
+//       return String(value);
+//     }
+
+//     if (typeof value === 'object') {
+//       return (
+//         value.name ||
+//         value.stateName ||
+//         value.institutionName ||
+//         value.label ||
+//         value.title ||
+//         value.value ||
+//         value.fullName ||
+//         ''
+//       );
+//     }
+
+//     return fallback;
+//   };
+
+//   const formatMoney = (value) => {
+//     return safeNumber(value).toLocaleString();
+//   };
+
+//   /*
+//    * ------------------------------------------------------------
+//    * FETCH BUYER PROFILE
+//    * ------------------------------------------------------------
+//    *
+//    * IMPORTANT:
+//    * The checkout page must still render when profile fetching
+//    * fails. A profile failure should never create a blank page.
+//    */
+
+//   useEffect(() => {
+//     let mounted = true;
+
+//     const fetchUserProfile = async () => {
+//       setProfileLoading(true);
+//       setProfileError(false);
+
+//       try {
+//         const res = await apiClient.get(
+//           '/buyer/profile/me'
+//         );
+
+//         const payload = getPayload(res, {});
+
+//         /*
+//          * Some API responses return:
+//          *
+//          * { data: {...} }
+//          *
+//          * while others might return:
+//          *
+//          * {...}
+//          *
+//          * getPayload should normally handle this.
+//          *
+//          * We still protect the component against null/
+//          * undefined responses.
+//          */
+
+//         const data =
+//           payload && typeof payload === 'object'
+//             ? payload
+//             : {};
+
+//         if (!mounted) {
+//           return;
+//         }
+
+//         setUserProfile(data);
+
+//         /*
+//          * Support both your old structure and the newer
+//          * nested location structure.
+//          */
+
+//         const location =
+//           data.location &&
+//             typeof data.location === 'object'
+//             ? data.location
+//             : {};
+
+//         const student =
+//           data.student &&
+//             typeof data.student === 'object'
+//             ? data.student
+//             : {};
+
+//         // setEditForm({
+//         //   state: safeString(
+//         //     location.state ||
+//         //     data.state ||
+//         //     student.state ||
+//         //     ''
+//         //   ),
+
+//         //   residence: safeString(
+//         //     location.residence ||
+//         //     data.residence ||
+//         //     student.residence ||
+//         //     ''
+//         //   ),
+
+//         //   address: safeString(
+//         //     location.address ||
+//         //     data.address ||
+//         //     student.address ||
+//         //     ''
+//         //   ),
+//         // });
+
+//         setEditForm({
+//           state: getObjectName(
+//             location.state ||
+//             data.state ||
+//             student.state ||
+//             ''
+//           ),
+
+//           residence: getObjectName(
+//             location.residence ||
+//             data.residence ||
+//             student.residence ||
+//             ''
+//           ),
+
+//           address: getObjectName(
+//             location.address ||
+//             data.address ||
+//             student.address ||
+//             ''
+//           ),
+//         });
+//       } catch (error) {
+//         console.error(
+//           'Checkout profile fetch error:',
+//           error
+//         );
+
+//         if (!mounted) {
+//           return;
+//         }
+
+//         /*
+//          * Do NOT throw here.
+//          *
+//          * The checkout page must continue rendering.
+//          */
+
+//         setProfileError(true);
+//         setUserProfile(null);
+
+//         setEditForm({
+//           state: '',
+//           residence: '',
+//           address: '',
+//         });
+
+//         showToast(
+//           getMessage(
+//             error,
+//             'Unable to load your delivery details. You can enter them manually.'
+//           ),
+//           'error'
+//         );
+//       } finally {
+//         if (mounted) {
+//           setProfileLoading(false);
+//         }
+//       }
+//     };
+
+//     fetchUserProfile();
+
+//     return () => {
+//       mounted = false;
+//     };
+//   }, [showToast]);
+
+//   /*
+//    * ------------------------------------------------------------
+//    * NORMALIZE CART
+//    * ------------------------------------------------------------
+//    *
+//    * Backend expects:
+//    *
+//    * {
+//    *   id,
+//    *   quantity
+//    * }
+//    *
+//    * Your Redux cart might contain either:
+//    *
+//    * id
+//    *
+//    * or
+//    *
+//    * productId
+//    *
+//    * depending on where the item came from.
+//    */
+
+//   const normalizedCartItems = useMemo(() => {
+//     if (!Array.isArray(cartItems)) {
+//       return [];
+//     }
+
+//     return cartItems
+//       .filter((item) => item && typeof item === 'object')
+//       .map((item) => {
+//         const price = safeNumber(item.price, 0);
+//         const quantity = Math.max(
+//           1,
+//           Math.floor(
+//             safeNumber(item.quantity, 1)
+//           )
+//         );
+
+//         return {
+//           ...item,
+
+//           id:
+//             item.id ||
+//             item.productId ||
+//             item._id ||
+//             '',
+
+//           quantity,
+
+//           price,
+
+//           name:
+//             item.name ||
+//             'Product',
+
+//           image:
+//             item.image ||
+//             item.images?.[0] ||
+//             '',
+
+//           vendorId:
+//             item.vendorId ||
+//             item.vendor?._id ||
+//             item.vendor?.id ||
+//             '',
+
+//           vendorName:
+//             item.vendorName ||
+//             item.vendor?.business?.storeName ||
+//             item.vendor?.fullName ||
+//             'Vendor',
+
+//           vendorBankName:
+//             item.vendorBankName ||
+//             item.vendor?.bankDetails?.bankName ||
+//             '',
+
+//           vendorAccountName:
+//             item.vendorAccountName ||
+//             item.vendor?.bankDetails?.accountName ||
+//             '',
+
+//           vendorAccountNumber:
+//             item.vendorAccountNumber ||
+//             item.vendor?.bankDetails?.accountNumber ||
+//             '',
+//         };
+//       });
+//   }, [cartItems]);
+
+//   /*
+//    * ------------------------------------------------------------
+//    * GROUP CART BY VENDOR
+//    * ------------------------------------------------------------
+//    */
+
+//   const groupedCart = useMemo(() => {
+//     return normalizedCartItems.reduce(
+//       (acc, item) => {
+//         const vendorId =
+//           item.vendorId || 'unknown';
+
+//         if (!acc[vendorId]) {
+//           acc[vendorId] = {
+//             vendorId,
+
+//             vendorName:
+//               item.vendorName ||
+//               'Unknown Vendor',
+
+//             vendorBankName:
+//               item.vendorBankName || '',
+
+//             vendorAccountName:
+//               item.vendorAccountName || '',
+
+//             vendorAccountNumber:
+//               item.vendorAccountNumber || '',
+
+//             items: [],
+//           };
+//         }
+
+//         acc[vendorId].items.push(item);
+
+//         return acc;
+//       },
+//       {}
+//     );
+//   }, [normalizedCartItems]);
+
+//   const vendorGroups = useMemo(
+//     () => Object.values(groupedCart),
+//     [groupedCart]
+//   );
+
+//   /*
+//    * ------------------------------------------------------------
+//    * SUBTOTAL
+//    * ------------------------------------------------------------
+//    */
+
+//   const subtotal = useMemo(() => {
+//     return normalizedCartItems.reduce(
+//       (sum, item) => {
+//         return (
+//           sum +
+//           safeNumber(item.price) *
+//           safeNumber(item.quantity)
+//         );
+//       },
+//       0
+//     );
+//   }, [normalizedCartItems]);
+
+//   const vendorCount = vendorGroups.length;
+
+//   /*
+//    * ------------------------------------------------------------
+//    * EMPTY CART
+//    * ------------------------------------------------------------
+//    */
+
+//   if (
+//     !Array.isArray(cartItems) ||
+//     normalizedCartItems.length === 0
+//   ) {
+//     return (
+//       <div
+//         className={`min-h-screen ${bgColor} flex items-center justify-center px-4`}
+//       >
+//         <div
+//           className={`${cardBg} border rounded-2xl shadow-xl p-8 max-w-md w-full text-center`}
+//         >
+//           <div className="w-16 h-16 mx-auto mb-5 rounded-full bg-green-100 flex items-center justify-center">
+//             <ShoppingBag className="w-8 h-8 text-green-600" />
+//           </div>
+
+//           <h2
+//             className={`text-2xl font-bold ${textColor} mb-2`}
+//           >
+//             Your cart is empty
+//           </h2>
+
+//           <p
+//             className={`${secondaryText} mb-6`}
+//           >
+//             Add products to your cart before proceeding to checkout.
+//           </p>
+
+//           <button
+//             type="button"
+//             onClick={() => navigate('/buyer/cart')}
+//             className="w-full px-5 py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-semibold transition-colors"
+//           >
+//             Back to Cart
+//           </button>
+//         </div>
+//       </div>
+//     );
+//   }
+
+//   /*
+//    * ------------------------------------------------------------
+//    * VALIDATION
+//    * ------------------------------------------------------------
+//    */
+
+//   const validationSchema = Yup.object({
+//     delivery: Yup.string()
+//       .oneOf(
+//         ['standard', 'express'],
+//         'Invalid delivery method'
+//       )
+//       .required('Select delivery option'),
+
+//     paymentMethod: Yup.string()
+//       .oneOf(
+//         ['pay_now', 'pod'],
+//         'Invalid payment method'
+//       )
+//       .required('Select payment method'),
+
+//     note: Yup.string().max(
+//       500,
+//       'Special instructions cannot exceed 500 characters'
+//     ),
+//   });
+
+//   /*
+//    * ------------------------------------------------------------
+//    * PAYMENT PROOF
+//    * ------------------------------------------------------------
+//    */
+
+//   const handleFileUpload = (
+//     vendorId,
+//     file
+//   ) => {
+//     if (!vendorId || !file) {
+//       return;
+//     }
+
+//     setPaymentProofs((prev) => ({
+//       ...prev,
+//       [vendorId]: file,
+//     }));
+//   };
+
+//   const removePaymentProof = (vendorId) => {
+//     setPaymentProofs((prev) => {
+//       const next = {
+//         ...prev,
+//       };
+
+//       delete next[vendorId];
+
+//       return next;
+//     });
+//   };
+
+//   /*
+//    * ------------------------------------------------------------
+//    * DELIVERY DETAILS
+//    * ------------------------------------------------------------
+//    */
+
+//   const getStudent = () => {
+//     if (
+//       userProfile?.student &&
+//       typeof userProfile.student === 'object'
+//     ) {
+//       return userProfile.student;
+//     }
+
+//     return {};
+//   };
+
+//   const getLocation = () => {
+//     if (
+//       userProfile?.location &&
+//       typeof userProfile.location === 'object'
+//     ) {
+//       return userProfile.location;
+//     }
+
+//     return {};
+//   };
+
+//   const student = getStudent();
+//   const location = getLocation();
+
+//   const institution = getObjectName(
+//     student.institution ||
+//     userProfile?.institution ||
+//     ''
+//   );
+
+//   /*
+//    * ------------------------------------------------------------
+//    * HANDLE SUBMIT
+//    * ------------------------------------------------------------
+//    */
+
+//   const handleSubmit = async (
+//     values,
+//     { setSubmitting }
+//   ) => {
+//     if (normalizedCartItems.length === 0) {
+//       showToast(
+//         'Your cart is empty.',
+//         'error'
+//       );
+
+//       setSubmitting(false);
+//       return;
+//     }
+
+//     /*
+//      * Verify every cart item has a product ID.
+//      */
+
+//     const invalidItem = normalizedCartItems.find(
+//       (item) => !item.id
+//     );
+
+//     if (invalidItem) {
+//       showToast(
+//         'One or more products in your cart are invalid. Please refresh your cart.',
+//         'error'
+//       );
+
+//       setSubmitting(false);
+//       return;
+//     }
+
+//     const deliveryFee =
+//       values.delivery === 'express'
+//         ? 1000
+//         : 0;
+
+//     const orderTotal =
+//       subtotal + deliveryFee;
+
+//     /*
+//      * Backend only consumes:
+//      *
+//      * state
+//      * address
+//      *
+//      * Residence is kept in the UI, but is included in the
+//      * address when an address has not been provided.
+//      */
+
+//     const finalState = safeString(
+//       editForm.state ||
+//       location.state ||
+//       userProfile?.state ||
+//       student.state ||
+//       ''
+//     ).trim();
+
+//     const finalResidence = safeString(
+//       editForm.residence ||
+//       location.residence ||
+//       userProfile?.residence ||
+//       student.residence ||
+//       ''
+//     ).trim();
+
+//     const finalAddress = safeString(
+//       editForm.address ||
+//       location.address ||
+//       userProfile?.address ||
+//       student.address ||
+//       ''
+//     ).trim();
+
+//     /*
+//      * The backend requires the delivery address field.
+//      *
+//      * If the user has residence but no specific address,
+//      * use residence as the address.
+//      */
+
+//     const backendAddress =
+//       finalAddress || finalResidence;
+
+//     if (!finalState) {
+//       showToast(
+//         'Please provide your delivery state.',
+//         'error'
+//       );
+
+//       setSubmitting(false);
+//       return;
+//     }
+
+//     if (!backendAddress) {
+//       showToast(
+//         'Please provide your delivery address.',
+//         'error'
+//       );
+
+//       setSubmitting(false);
+//       return;
+//     }
+
+//     /*
+//      * ----------------------------------------------------------
+//      * BUILD FORM DATA
+//      * ----------------------------------------------------------
+//      */
+
+//     const formData = new FormData();
+
+//     /*
+//      * Send only the fields expected by the backend.
+//      */
+
+//     const backendItems =
+//       normalizedCartItems.map((item) => ({
+//         id: item.id,
+//         name: item.name,
+//         price: item.price,
+//         quantity: item.quantity,
+//         image: item.image,
+//         vendorId: item.vendorId,
+//         vendorName: item.vendorName,
+//       }));
+
+//     formData.append(
+//       'items',
+//       JSON.stringify(backendItems)
+//     );
+
+//     formData.append(
+//       'orderTotal',
+//       String(orderTotal)
+//     );
+
+//     formData.append(
+//       'deliveryFee',
+//       String(deliveryFee)
+//     );
+
+//     formData.append(
+//       'delivery',
+//       values.delivery
+//     );
+
+//     formData.append(
+//       'paymentMethod',
+//       values.paymentMethod
+//     );
+
+//     formData.append(
+//       'note',
+//       values.note || ''
+//     );
+
+//     formData.append(
+//       'state',
+//       finalState
+//     );
+
+//     formData.append(
+//       'address',
+//       backendAddress
+//     );
+
+//     /*
+//      * Payment proofs.
+//      *
+//      * Backend looks for:
+//      *
+//      * proof_VENDOR_ID
+//      */
+
+//     if (
+//       values.paymentMethod === 'pay_now'
+//     ) {
+//       Object.entries(paymentProofs).forEach(
+//         ([vendorId, file]) => {
+//           if (
+//             vendorId &&
+//             file instanceof File
+//           ) {
+//             formData.append(
+//               `proof_${vendorId}`,
+//               file
+//             );
+//           }
+//         }
+//       );
+//     }
+
+//     try {
+//       const response = await apiClient.post(
+//         '/buyer/checkout',
+//         formData,
+//         {
+//           headers: {
+//             'Content-Type':
+//               'multipart/form-data',
+//           },
+//         }
+//       );
+
+//       /*
+//        * Keep the backend response available for debugging
+//        * and future order confirmation UI.
+//        */
+
+//       console.log(
+//         'Checkout response:',
+//         response?.data
+//       );
+
+//       /*
+//        * Clear Redux cart after successful order.
+//        */
+
+//       dispatch(clearCart());
+
+//       localStorage.removeItem('cart');
+
+//       showToast(
+//         'Order placed successfully!',
+//         'success'
+//       );
+
+//       navigate('/buyer/orders');
+//     } catch (error) {
+//       console.error(
+//         'Checkout error:',
+//         error
+//       );
+
+//       showToast(
+//         getMessage(
+//           error,
+//           'Failed to place order'
+//         ),
+//         'error'
+//       );
+//     } finally {
+//       setSubmitting(false);
+//     }
+//   };
+
+//   /*
+//    * ------------------------------------------------------------
+//    * RENDER
+//    * ------------------------------------------------------------
+//    */
+
+//   return (
+//     <div
+//       className={`min-h-screen ${bgColor} pb-20`}
+//     >
+//       <div className="max-w-7xl mx-auto px-4 pt-8">
+
+//         {/* Header */}
+//         <div className="mb-8">
+
+//           <button
+//             type="button"
+//             onClick={() => navigate(-1)}
+//             className={`flex items-center gap-2 mb-3 ${secondaryText} hover:text-green-500 rounded-full px-3 transition-colors group`}
+//           >
+//             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+//             Back to Cart
+//           </button>
+
+//           <h1
+//             className={`text-3xl font-bold ${textColor}`}
+//           >
+//             Checkout
+//           </h1>
+
+//           <p
+//             className={`${secondaryText} mt-2`}
+//           >
+//             {vendorCount} vendor
+//             {vendorCount === 1 ? '' : 's'} in cart
+//             {' • '}
+//             Secure Transaction
+//           </p>
+//         </div>
+
+//         <Formik
+//           initialValues={{
+//             delivery: 'standard',
+//             paymentMethod: 'pay_now',
+//             note: '',
+//           }}
+//           validationSchema={
+//             validationSchema
+//           }
+//           onSubmit={handleSubmit}
+//         >
+//           {({
+//             isSubmitting,
+//             values,
+//             setFieldValue,
+//           }) => {
+
+//             const deliveryFee =
+//               values.delivery === 'express'
+//                 ? 1000
+//                 : 0;
+
+//             const orderTotal =
+//               subtotal + deliveryFee;
+
+//             return (
+//               <Form className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+//                 {/* =================================================
+//                     LEFT COLUMN
+//                 ================================================== */}
+
+//                 <div className="lg:col-span-8 space-y-6">
+
+//                   {/* =================================================
+//                       PAYMENT METHOD
+//                   ================================================== */}
+
+//                   <div
+//                     className={`${cardBg} border p-6 rounded-2xl shadow-lg`}
+//                   >
+//                     <div className="flex items-center justify-between mb-6">
+
+//                       <h3
+//                         className={`text-xl font-bold ${textColor} flex items-center gap-3`}
+//                       >
+//                         <div className="p-2 bg-gradient-to-r from-red-500 to-red-600 rounded-lg">
+//                           <Wallet className="w-5 h-5 text-white" />
+//                         </div>
+
+//                         Payment Method
+//                       </h3>
+
+//                     </div>
+
+//                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+//                       {/* Pay Now */}
+//                       <button
+//                         type="button"
+//                         onClick={() =>
+//                           setFieldValue(
+//                             'paymentMethod',
+//                             'pay_now'
+//                           )
+//                         }
+//                         className={`p-5 rounded-xl border-2 transition-all flex flex-col items-center gap-3 ${values.paymentMethod ===
+//                           'pay_now'
+//                           ? 'border-red-500 bg-red-50/10'
+//                           : isDark
+//                             ? 'border-gray-700'
+//                             : 'border-gray-200'
+//                           }`}
+//                       >
+//                         <CreditCard
+//                           className={
+//                             values.paymentMethod ===
+//                               'pay_now'
+//                               ? 'text-red-500'
+//                               : 'text-gray-400'
+//                           }
+//                         />
+
+//                         <span
+//                           className={`font-semibold ${textColor}`}
+//                         >
+//                           Pay Now
+//                         </span>
+
+//                         <span
+//                           className={`text-xs ${secondaryText}`}
+//                         >
+//                           Transfer and upload payment proof
+//                         </span>
+//                       </button>
+
+//                       {/* Pay on Delivery */}
+//                       <button
+//                         type="button"
+//                         onClick={() =>
+//                           setFieldValue(
+//                             'paymentMethod',
+//                             'pod'
+//                           )
+//                         }
+//                         className={`p-5 rounded-xl border-2 transition-all flex flex-col items-center gap-3 ${values.paymentMethod ===
+//                           'pod'
+//                           ? 'border-emerald-500 bg-emerald-50/10'
+//                           : isDark
+//                             ? 'border-gray-700'
+//                             : 'border-gray-200'
+//                           }`}
+//                       >
+//                         <HandCoins
+//                           className={
+//                             values.paymentMethod ===
+//                               'pod'
+//                               ? 'text-emerald-500'
+//                               : 'text-gray-400'
+//                           }
+//                         />
+
+//                         <span
+//                           className={`font-semibold ${textColor}`}
+//                         >
+//                           Pay on Delivery
+//                         </span>
+
+//                         <span
+//                           className={`text-xs ${secondaryText}`}
+//                         >
+//                           Pay when your order arrives
+//                         </span>
+//                       </button>
+
+//                     </div>
+//                   </div>
+
+//                   {/* =================================================
+//                       DELIVERY METHOD
+//                   ================================================== */}
+
+//                   <div
+//                     className={`${cardBg} border p-6 rounded-2xl shadow-lg`}
+//                   >
+//                     <h3
+//                       className={`text-xl font-bold ${textColor} flex items-center gap-3 mb-6`}
+//                     >
+//                       <Truck className="w-5 h-5 text-blue-500" />
+
+//                       Delivery Method
+//                     </h3>
+
+//                     <div className="space-y-4">
+
+//                       {[
+//                         'standard',
+//                         'express',
+//                       ].map((type) => {
+
+//                         const selected =
+//                           values.delivery ===
+//                           type;
+
+//                         return (
+//                           <label
+//                             key={type}
+//                             className={`flex items-center justify-between p-5 rounded-xl border-2 cursor-pointer transition-all ${selected
+//                               ? 'border-blue-500 bg-blue-50/10'
+//                               : isDark
+//                                 ? 'border-gray-700'
+//                                 : 'border-gray-200'
+//                               }`}
+//                           >
+//                             <div className="flex items-center gap-4">
+
+//                               <Field
+//                                 type="radio"
+//                                 name="delivery"
+//                                 value={type}
+//                                 className="w-5 h-5"
+//                               />
+
+//                               <div>
+//                                 <p
+//                                   className={`font-semibold ${textColor}`}
+//                                 >
+//                                   {type ===
+//                                     'standard'
+//                                     ? 'Standard'
+//                                     : 'Express'}{' '}
+//                                   Delivery
+//                                 </p>
+
+//                                 <p
+//                                   className={`text-sm ${secondaryText}`}
+//                                 >
+//                                   {type ===
+//                                     'standard'
+//                                     ? '3-5 Days'
+//                                     : '24-48 Hours'}
+//                                 </p>
+//                               </div>
+//                             </div>
+
+//                             <span
+//                               className={`font-bold ${type ===
+//                                 'standard'
+//                                 ? 'text-green-500'
+//                                 : textColor
+//                                 }`}
+//                             >
+//                               {type ===
+//                                 'standard'
+//                                 ? 'FREE'
+//                                 : '₦1,000'}
+//                             </span>
+
+//                           </label>
+//                         );
+//                       })}
+
+//                     </div>
+
+//                     <ErrorMessage
+//                       name="delivery"
+//                       component="p"
+//                       className="text-sm text-red-500 mt-3"
+//                     />
+//                   </div>
+
+//                   {/* =================================================
+//                       BUYER DETAILS
+//                   ================================================== */}
+
+//                   <div
+//                     className={`${cardBg} border p-6 rounded-2xl shadow-lg`}
+//                   >
+//                     <div className="flex items-center justify-between mb-6">
+
+//                       <h3
+//                         className={`text-xl font-bold ${textColor} flex items-center gap-3`}
+//                       >
+//                         <User className="w-5 h-5 text-emerald-500" />
+
+//                         Buyer Details
+//                       </h3>
+
+//                       <button
+//                         type="button"
+//                         onClick={() =>
+//                           setIsEditing(
+//                             (prev) => !prev
+//                           )
+//                         }
+//                         className="flex items-center gap-2 text-sm font-medium text-blue-500 hover:text-blue-600 transition-colors"
+//                       >
+//                         {isEditing ? (
+//                           <>
+//                             <X className="w-4 h-4" />
+//                             Cancel
+//                           </>
+//                         ) : (
+//                           <>
+//                             <Edit2 className="w-4 h-4" />
+//                             Edit Details
+//                           </>
+//                         )}
+//                       </button>
+
+//                     </div>
+
+//                     {/* Profile loading */}
+//                     {profileLoading ? (
+//                       <div className="flex flex-col items-center justify-center py-10">
+
+//                         <Loader2 className="w-7 h-7 animate-spin text-emerald-500 mb-3" />
+
+//                         <p
+//                           className={`text-sm ${secondaryText}`}
+//                         >
+//                           Loading delivery details...
+//                         </p>
+
+//                       </div>
+//                     ) : (
+//                       <>
+
+//                         {/* Profile fetch failed */}
+//                         {profileError && (
+//                           <div className="mb-5 p-4 rounded-xl border border-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-700">
+
+//                             <div className="flex gap-3">
+
+//                               <AlertCircle className="w-5 h-5 text-yellow-600 shrink-0" />
+
+//                               <div>
+
+//                                 <p className="font-semibold text-yellow-800 dark:text-yellow-300">
+//                                   Delivery details could not be loaded
+//                                 </p>
+
+//                                 <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-1">
+//                                   Enter your delivery information below before placing your order.
+//                                 </p>
+
+//                               </div>
+
+//                             </div>
+
+//                           </div>
+//                         )}
+
+//                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+//                           {/* Institution */}
+//                           <div
+//                             className={`p-4 rounded-xl ${inputBg}`}
+//                           >
+//                             <div className="flex items-center gap-2 mb-1">
+
+//                               <GraduationCap className="w-4 h-4 text-blue-500" />
+
+//                               <p className="text-xs uppercase text-gray-500 font-bold">
+//                                 Institution
+//                               </p>
+
+//                             </div>
+
+//                             <p
+//                               className={`font-semibold ${textColor}`}
+//                             >
+//                               {safeString(
+//                                 institution,
+//                                 '---'
+//                               ) || '---'}
+//                             </p>
+//                           </div>
+
+//                           {/* State */}
+//                           <div
+//                             className={`p-4 rounded-xl ${inputBg}`}
+//                           >
+
+//                             {isEditing ? (
+//                               <>
+//                                 <label className="text-xs uppercase text-gray-500 font-bold">
+//                                   State
+//                                 </label>
+
+//                                 <input
+//                                   type="text"
+//                                   value={
+//                                     editForm.state
+//                                   }
+//                                   onChange={(e) =>
+//                                     setEditForm(
+//                                       (prev) => ({
+//                                         ...prev,
+//                                         state:
+//                                           e.target.value,
+//                                       })
+//                                     )
+//                                   }
+//                                   placeholder="Enter state"
+//                                   className={`w-full p-3 rounded-lg border mt-1 outline-none focus:ring-2 focus:ring-blue-500 ${inputBg}`}
+//                                 />
+//                               </>
+//                             ) : (
+//                               <>
+//                                 <p className="text-xs uppercase text-gray-500 font-bold mb-1">
+//                                   State
+//                                 </p>
+
+//                                 <p
+//                                   className={`font-semibold ${textColor}`}
+//                                 >
+//                                   {editForm.state ||
+//                                     '---'}
+//                                 </p>
+//                               </>
+//                             )}
+
+//                           </div>
+
+//                           {/* Residence */}
+//                           <div
+//                             className={`p-4 rounded-xl ${inputBg}`}
+//                           >
+
+//                             {isEditing ? (
+//                               <>
+//                                 <label className="text-xs uppercase text-gray-500 font-bold">
+//                                   Residence
+//                                 </label>
+
+//                                 <input
+//                                   type="text"
+//                                   value={
+//                                     editForm.residence
+//                                   }
+//                                   onChange={(e) =>
+//                                     setEditForm(
+//                                       (prev) => ({
+//                                         ...prev,
+//                                         residence:
+//                                           e.target.value,
+//                                       })
+//                                     )
+//                                   }
+//                                   placeholder="Enter residence"
+//                                   className={`w-full p-3 rounded-lg border mt-1 outline-none focus:ring-2 focus:ring-blue-500 ${inputBg}`}
+//                                 />
+//                               </>
+//                             ) : (
+//                               <>
+//                                 <div className="flex items-center gap-2 mb-1">
+
+//                                   <Home className="w-4 h-4 text-purple-500" />
+
+//                                   <p className="text-xs uppercase text-gray-500 font-bold">
+//                                     Residence
+//                                   </p>
+
+//                                 </div>
+
+//                                 <p
+//                                   className={`font-semibold ${textColor}`}
+//                                 >
+//                                   {editForm.residence ||
+//                                     '---'}
+//                                 </p>
+//                               </>
+//                             )}
+
+//                           </div>
+
+//                           {/* Address */}
+//                           <div
+//                             className={`p-4 rounded-xl ${inputBg}`}
+//                           >
+
+//                             {isEditing ? (
+//                               <>
+//                                 <label className="text-xs uppercase text-gray-500 font-bold">
+//                                   Delivery Address
+//                                 </label>
+
+//                                 <input
+//                                   type="text"
+//                                   value={
+//                                     editForm.address
+//                                   }
+//                                   onChange={(e) =>
+//                                     setEditForm(
+//                                       (prev) => ({
+//                                         ...prev,
+//                                         address:
+//                                           e.target.value,
+//                                       })
+//                                     )
+//                                   }
+//                                   placeholder="Enter delivery address"
+//                                   className={`w-full p-3 rounded-lg border mt-1 outline-none focus:ring-2 focus:ring-blue-500 ${inputBg}`}
+//                                 />
+//                               </>
+//                             ) : (
+//                               <>
+//                                 <div className="flex items-center gap-2 mb-1">
+
+//                                   <MapPin className="w-4 h-4 text-red-500" />
+
+//                                   <p className="text-xs uppercase text-gray-500 font-bold">
+//                                     Delivery Address
+//                                   </p>
+
+//                                 </div>
+
+//                                 <p
+//                                   className={`font-semibold ${textColor}`}
+//                                 >
+//                                   {editForm.address ||
+//                                     '---'}
+//                                 </p>
+//                               </>
+//                             )}
+
+//                           </div>
+
+//                           {/* Save */}
+//                           {isEditing && (
+//                             <button
+//                               type="button"
+//                               onClick={() => {
+
+//                                 const state =
+//                                   editForm.state.trim();
+
+//                                 const residence =
+//                                   editForm.residence.trim();
+
+//                                 const address =
+//                                   editForm.address.trim();
+
+//                                 if (!state) {
+//                                   showToast(
+//                                     'Please enter your state.',
+//                                     'error'
+//                                   );
+//                                   return;
+//                                 }
+
+//                                 if (
+//                                   !address &&
+//                                   !residence
+//                                 ) {
+//                                   showToast(
+//                                     'Please enter your delivery address or residence.',
+//                                     'error'
+//                                   );
+//                                   return;
+//                                 }
+
+//                                 setIsEditing(
+//                                   false
+//                                 );
+
+//                                 showToast(
+//                                   'Delivery details updated for this order.',
+//                                   'success'
+//                                 );
+//                               }}
+//                               className="md:col-span-2 bg-blue-600 text-white p-3 rounded-lg flex items-center justify-center gap-2 hover:bg-blue-700 transition-colors"
+//                             >
+//                               <Save className="w-4 h-4" />
+
+//                               Save Details
+//                             </button>
+//                           )}
+
+//                         </div>
+
+//                       </>
+//                     )}
+//                   </div>
+
+//                   {/* =================================================
+//                       VENDOR PAYMENT PROOFS
+//                   ================================================== */}
+
+//                   {values.paymentMethod ===
+//                     'pay_now' &&
+//                     vendorGroups.map(
+//                       (vendor) => {
+
+//                         const vendorSubtotal =
+//                           vendor.items.reduce(
+//                             (sum, item) =>
+//                               sum +
+//                               safeNumber(
+//                                 item.price
+//                               ) *
+//                               safeNumber(
+//                                 item.quantity
+//                               ),
+//                             0
+//                           );
+
+//                         const selectedFile =
+//                           paymentProofs[
+//                           vendor.vendorId
+//                           ];
+
+//                         return (
+//                           <div
+//                             key={
+//                               vendor.vendorId
+//                             }
+//                             className={`${cardBg} border p-6 rounded-2xl shadow-lg border-emerald-200/50`}
+//                           >
+
+//                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+
+//                               <h3
+//                                 className={`font-bold text-lg ${textColor}`}
+//                               >
+//                                 Payment to:{' '}
+//                                 <span className="text-red-500">
+//                                   {
+//                                     vendor.vendorName
+//                                   }
+//                                 </span>
+//                               </h3>
+
+//                               <span className="text-emerald-600 font-bold">
+//                                 ₦
+//                                 {formatMoney(
+//                                   vendorSubtotal
+//                                 )}
+//                               </span>
+
+//                             </div>
+
+//                             <div
+//                               className={`text-sm space-y-1 mb-4 ${secondaryText}`}
+//                             >
+
+//                               <p>
+//                                 Bank:{' '}
+//                                 <span
+//                                   className={
+//                                     textColor
+//                                   }
+//                                 >
+//                                   {vendor.vendorBankName ||
+//                                     '---'}
+//                                 </span>
+//                               </p>
+
+//                               <p>
+//                                 A/C Name:{' '}
+//                                 <span
+//                                   className={
+//                                     textColor
+//                                   }
+//                                 >
+//                                   {vendor.vendorAccountName ||
+//                                     '---'}
+//                                 </span>
+//                               </p>
+
+//                               <p>
+//                                 A/C Number:{' '}
+//                                 <span
+//                                   className={
+//                                     textColor
+//                                   }
+//                                 >
+//                                   {vendor.vendorAccountNumber ||
+//                                     '---'}
+//                                 </span>
+//                               </p>
+
+//                             </div>
+
+//                             <label
+//                               className={`flex items-center gap-3 p-4 border-2 border-dashed rounded-xl cursor-pointer transition-all ${isDark
+//                                 ? 'border-gray-600 hover:bg-gray-700/50'
+//                                 : 'border-gray-300 hover:bg-gray-50'
+//                                 }`}
+//                             >
+
+//                               <div className="p-2 bg-gray-100 rounded-full shrink-0">
+//                                 <Upload className="w-5 h-5 text-gray-600" />
+//                               </div>
+
+//                               <div className="flex-1 min-w-0">
+
+//                                 <p
+//                                   className={`text-sm font-semibold ${textColor}`}
+//                                 >
+//                                   {selectedFile
+//                                     ? 'Payment receipt selected'
+//                                     : 'Upload Receipt'}
+//                                 </p>
+
+//                                 <p className="text-xs text-gray-500 truncate">
+//                                   {selectedFile
+//                                     ? selectedFile.name
+//                                     : 'Click to select an image or PDF'}
+//                                 </p>
+
+//                               </div>
+
+//                               {!selectedFile && (
+//                                 <input
+//                                   type="file"
+//                                   accept="image/*,.pdf"
+//                                   className="hidden"
+//                                   onChange={(e) =>
+//                                     handleFileUpload(
+//                                       vendor.vendorId,
+//                                       e.target.files?.[0]
+//                                     )
+//                                   }
+//                                 />
+//                               )}
+
+//                               {selectedFile && (
+//                                 <button
+//                                   type="button"
+//                                   onClick={(e) => {
+//                                     e.preventDefault();
+//                                     removePaymentProof(
+//                                       vendor.vendorId
+//                                     );
+//                                   }}
+//                                   className="p-2 rounded-lg text-red-500 hover:bg-red-50 shrink-0"
+//                                 >
+//                                   <X className="w-5 h-5" />
+//                                 </button>
+//                               )}
+
+//                             </label>
+
+//                           </div>
+//                         );
+//                       }
+//                     )}
+
+//                   {/* =================================================
+//                       PAY ON DELIVERY INFORMATION
+//                   ================================================== */}
+
+//                   {values.paymentMethod ===
+//                     'pod' && (
+//                       <div
+//                         className={`${cardBg} border p-6 rounded-2xl shadow-lg`}
+//                       >
+
+//                         <div className="flex gap-4">
+
+//                           <div className="p-3 bg-emerald-100 rounded-xl h-fit">
+//                             <HandCoins className="w-6 h-6 text-emerald-600" />
+//                           </div>
+
+//                           <div>
+
+//                             <h3
+//                               className={`font-bold ${textColor}`}
+//                             >
+//                               Pay on Delivery
+//                             </h3>
+
+//                             <p
+//                               className={`text-sm mt-1 ${secondaryText}`}
+//                             >
+//                               You will pay for your order when the
+//                               delivery arrives.
+//                             </p>
+
+//                           </div>
+
+//                         </div>
+
+//                       </div>
+//                     )}
+
+//                   {/* =================================================
+//                       SPECIAL INSTRUCTIONS
+//                   ================================================== */}
+
+//                   <div
+//                     className={`${cardBg} border p-6 rounded-2xl shadow-lg`}
+//                   >
+
+//                     <h3
+//                       className={`text-xl font-bold ${textColor} flex items-center gap-3 mb-4`}
+//                     >
+//                       <MessageSquare className="w-5 h-5 text-purple-500" />
+
+//                       Special Instructions
+//                     </h3>
+
+//                     <Field
+//                       as="textarea"
+//                       name="note"
+//                       rows={3}
+//                       className={`w-full p-4 rounded-xl border outline-none focus:ring-2 focus:ring-purple-500 ${inputBg}`}
+//                       placeholder="Add any notes for the vendor or delivery..."
+//                     />
+
+//                     <ErrorMessage
+//                       name="note"
+//                       component="p"
+//                       className="text-sm text-red-500 mt-2"
+//                     />
+
+//                   </div>
+
+//                 </div>
+
+//                 {/* =================================================
+//                     RIGHT COLUMN
+//                 ================================================== */}
+
+//                 <div className="lg:col-span-4">
+
+//                   <div className="sticky top-8 space-y-4">
+
+//                     {/* =================================================
+//                         ORDER SUMMARY
+//                     ================================================== */}
+
+//                     <div
+//                       className={`${cardBg} border rounded-2xl shadow-xl overflow-hidden`}
+//                     >
+
+//                       <div className="p-6 border-b border-gray-100 dark:border-gray-700">
+
+//                         <h3
+//                           className={`text-xl font-bold ${textColor} flex items-center gap-3`}
+//                         >
+//                           <div className="p-2 bg-gradient-to-r from-red-500 to-red-600 rounded-lg">
+//                             <ShoppingBag className="w-5 h-5 text-white" />
+//                           </div>
+
+//                           Order Summary
+//                         </h3>
+
+//                       </div>
+
+//                       <div className="p-6 space-y-4 max-h-[400px] overflow-y-auto">
+
+//                         <p
+//                           className={`text-sm ${secondaryText} mb-4`}
+//                         >
+//                           You are paying{' '}
+//                           {vendorCount}{' '}
+//                           vendor
+//                           {vendorCount === 1
+//                             ? ''
+//                             : 's'}
+//                         </p>
+
+//                         {vendorGroups.map(
+//                           (vendorGroup) => {
+
+//                             const vendorSubtotal =
+//                               vendorGroup.items.reduce(
+//                                 (
+//                                   sum,
+//                                   item
+//                                 ) =>
+//                                   sum +
+//                                   safeNumber(
+//                                     item.price
+//                                   ) *
+//                                   safeNumber(
+//                                     item.quantity
+//                                   ),
+//                                 0
+//                               );
+
+//                             return (
+//                               <div
+//                                 key={
+//                                   vendorGroup.vendorId
+//                                 }
+//                                 className="mb-6"
+//                               >
+
+//                                 <div className="flex items-center justify-between gap-2 mb-2">
+
+//                                   <h4 className="font-bold text-red-500">
+//                                     {
+//                                       vendorGroup.vendorName
+//                                     }
+//                                   </h4>
+
+//                                   <span
+//                                     className={`text-sm font-semibold ${secondaryText}`}
+//                                   >
+//                                     ₦
+//                                     {formatMoney(
+//                                       vendorSubtotal
+//                                     )}
+//                                   </span>
+
+//                                 </div>
+
+//                                 {vendorGroup.items.map(
+//                                   (
+//                                     item,
+//                                     index
+//                                   ) => {
+
+//                                     const itemKey =
+//                                       item.id ||
+//                                       `${vendorGroup.vendorId}-${index}`;
+
+//                                     return (
+//                                       <div
+//                                         key={
+//                                           itemKey
+//                                         }
+//                                         className="flex gap-4 p-3 rounded-lg"
+//                                       >
+
+//                                         <div className="h-16 w-16 overflow-hidden rounded-xl border shrink-0 bg-gray-100">
+
+//                                           {item.image ? (
+//                                             <img
+//                                               src={
+//                                                 item.image
+//                                               }
+//                                               alt={
+//                                                 item.name
+//                                               }
+//                                               className="h-full w-full object-cover"
+//                                               onError={(
+//                                                 e
+//                                               ) => {
+//                                                 e.currentTarget.style.display =
+//                                                   'none';
+//                                               }}
+//                                             />
+//                                           ) : (
+//                                             <div className="h-full w-full flex items-center justify-center">
+//                                               <Package className="w-6 h-6 text-gray-400" />
+//                                             </div>
+//                                           )}
+
+//                                         </div>
+
+//                                         <div className="flex-1 min-w-0">
+
+//                                           <p
+//                                             className={`text-sm font-semibold ${textColor} truncate`}
+//                                           >
+//                                             {
+//                                               item.name
+//                                             }
+//                                           </p>
+
+//                                           <p
+//                                             className={`text-xs ${secondaryText}`}
+//                                           >
+//                                             Qty:{' '}
+//                                             {
+//                                               item.quantity
+//                                             }
+//                                           </p>
+
+//                                           <p
+//                                             className={`text-sm font-semibold ${textColor}`}
+//                                           >
+//                                             ₦
+//                                             {formatMoney(
+//                                               safeNumber(
+//                                                 item.price
+//                                               ) *
+//                                               safeNumber(
+//                                                 item.quantity
+//                                               )
+//                                             )}
+//                                           </p>
+
+//                                         </div>
+
+//                                       </div>
+//                                     );
+//                                   }
+//                                 )}
+
+//                               </div>
+//                             );
+//                           }
+//                         )}
+
+//                       </div>
+
+//                       {/* =================================================
+//                           TOTALS
+//                       ================================================== */}
+
+//                       <div
+//                         className={`p-6 space-y-3 ${isDark
+//                           ? 'bg-gradient-to-b from-gray-800/50 to-gray-700/30'
+//                           : 'bg-gradient-to-b from-gray-50 to-gray-100/50'
+//                           }`}
+//                       >
+
+//                         <div className="flex justify-between items-center">
+
+//                           <span
+//                             className={
+//                               secondaryText
+//                             }
+//                           >
+//                             Subtotal
+//                           </span>
+
+//                           <span
+//                             className={`font-semibold ${textColor}`}
+//                           >
+//                             ₦
+//                             {formatMoney(
+//                               subtotal
+//                             )}
+//                           </span>
+
+//                         </div>
+
+//                         <div className="flex justify-between items-center">
+
+//                           <span
+//                             className={
+//                               secondaryText
+//                             }
+//                           >
+//                             Delivery Fee
+//                           </span>
+
+//                           <span
+//                             className={`font-semibold ${deliveryFee === 0
+//                               ? 'text-green-500'
+//                               : textColor
+//                               }`}
+//                           >
+//                             {deliveryFee === 0
+//                               ? 'FREE'
+//                               : `₦${formatMoney(
+//                                 deliveryFee
+//                               )}`}
+//                           </span>
+
+//                         </div>
+
+//                         <div
+//                           className={`pt-4 border-t ${isDark
+//                             ? 'border-gray-600'
+//                             : 'border-gray-200'
+//                             }`}
+//                         >
+
+//                           <div className="flex justify-between items-center gap-4">
+
+//                             <span
+//                               className={`text-lg font-bold ${textColor}`}
+//                             >
+//                               Total Amount
+//                             </span>
+
+//                             <span className="text-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text font-bold tracking-tight text-transparent whitespace-nowrap">
+//                               ₦
+//                               {formatMoney(
+//                                 orderTotal
+//                               )}
+//                             </span>
+
+//                           </div>
+
+//                           <p className="text-xs text-gray-500 mt-2">
+
+//                             {values.paymentMethod ===
+//                               'pay_now'
+//                               ? 'Including delivery fee'
+//                               : 'Pay when your order arrives'}
+
+//                           </p>
+
+//                         </div>
+
+//                       </div>
+
+//                     </div>
+
+//                     {/* =================================================
+//                         SUBMIT BUTTON
+//                     ================================================== */}
+
+//                     <button
+//                       type="submit"
+//                       disabled={
+//                         isSubmitting ||
+//                         normalizedCartItems.length ===
+//                         0
+//                       }
+//                       className="w-full px-6 py-4 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-2xl shadow-xl shadow-green-500/30 hover:shadow-2xl hover:shadow-green-500/40 transition-all flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+//                     >
+
+//                       {isSubmitting ? (
+//                         <>
+//                           <Loader2 className="w-5 h-5 animate-spin" />
+
+//                           Processing...
+//                         </>
+//                       ) : (
+//                         <>
+//                           {values.paymentMethod ===
+//                             'pay_now'
+//                             ? 'Complete Payment'
+//                             : 'Place Order'}
+
+//                           <ChevronRight className="w-5 h-5" />
+//                         </>
+//                       )}
+
+//                     </button>
+
+//                     {/* =================================================
+//                         SECURITY BADGE
+//                     ================================================== */}
+
+//                     <div
+//                       className={`p-4 rounded-xl border ${isDark
+//                         ? 'bg-gray-800 border-gray-700'
+//                         : 'bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200'
+//                         }`}
+//                     >
+
+//                       <div className="flex items-center justify-center gap-3">
+
+//                         <CheckCircle2 className="w-5 h-5 text-green-500" />
+
+//                         <div className="text-center">
+
+//                           <p
+//                             className={`text-sm font-medium ${textColor}`}
+//                           >
+//                             Secure Checkout
+//                           </p>
+
+//                           <p className="text-xs text-gray-500">
+//                             Your information is protected
+//                           </p>
+
+//                         </div>
+
+//                       </div>
+
+//                     </div>
+
+//                   </div>
+
+//                 </div>
+
+//               </Form>
+//             );
+//           }}
+//         </Formik>
+
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default Checkout;
+
+import React, { useEffect, useMemo, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { Formik, Form, Field } from 'formik';
+import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
+
 import { useTheme } from '../../context/ThemeContext';
 import apiClient from '../../api/apiClient';
 import { getMessage, getPayload } from '../../utils/apiResponse';
 import { clearCart } from '../../store/cartSlice';
-
-import {
-  Truck, CreditCard, MessageSquare, ShoppingBag,
-  ChevronRight, ArrowLeft, CheckCircle2, Loader2, Wallet, HandCoins,
-  MapPin, User, Edit2, Save, X
-} from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 
+import {
+Truck,
+CreditCard,
+MessageSquare,
+ShoppingBag,
+ChevronRight,
+ArrowLeft,
+CheckCircle2,
+Loader2,
+Wallet,
+HandCoins,
+MapPin,
+User,
+Edit2,
+Save,
+X,
+GraduationCap,
+Home,
+Upload,
+AlertCircle,
+Package,
+} from 'lucide-react';
+
 const Checkout = () => {
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const { isDark } = useTheme();
-  const { showToast } = useToast();
+const navigate = useNavigate();
+const dispatch = useDispatch();
+const { isDark } = useTheme();
+const { showToast } = useToast();
 
-  const cartItems = useSelector((state) => state.cart.items || []);
-  const [userProfile, setUserProfile] = useState(null);
-  const [profileLoading, setProfileLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ state: '', address: '' });
-  const [paymentProofs, setPaymentProofs] = useState({});
+const cartItems = useSelector(
+(state) => state.cart?.items || []
+);
 
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      try {
-        const res = await apiClient.get('/buyer/profile/me');
+const [userProfile, setUserProfile] = useState(null);
+const [profileLoading, setProfileLoading] = useState(true);
+const [profileError, setProfileError] = useState(false);
 
-        const data = getPayload(res, {});
-        setUserProfile(data);
-        // Set initial edit form values from profile
-        setEditForm({
-          state: data.location?.state || '',
-          address: data.location?.address || ''
-        });
-      } catch (error) {
-        showToast(getMessage(error, 'Failed to load user profile'), 'error');
-      } finally {
-        setProfileLoading(false);
-      }
+const [isEditing, setIsEditing] = useState(false);
+
+const [editForm, setEditForm] = useState({
+state: '',
+residence: '',
+address: '',
+});
+
+const [paymentProofs, setPaymentProofs] = useState({});
+
+/*
+
+* ---
+* THEME
+* ---
+
+*/
+
+const bgColor = isDark
+? 'bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950'
+: 'bg-gradient-to-br from-slate-50 via-white to-zinc-100';
+
+const cardBg = isDark
+? 'bg-gray-800/80 border-gray-700/50 backdrop-blur-sm'
+: 'bg-white/80 border-gray-200 backdrop-blur-sm';
+
+const textColor = isDark
+? 'text-white'
+: 'text-gray-900';
+
+const secondaryText = isDark
+? 'text-gray-400'
+: 'text-gray-600';
+
+const inputBg = isDark
+? 'bg-gray-700/50 text-white border-gray-600'
+: 'bg-gray-50 text-gray-900 border-gray-300';
+
+/*
+
+* ---
+* SAFE VALUE HELPERS
+* ---
+
+*/
+
+const safeNumber = (value, fallback = 0) => {
+const number = Number(value);
+
+ 
+if (!Number.isFinite(number)) {
+  return fallback;
+}
+
+return number;
+ 
+
+};
+
+const safeString = (value, fallback = '') => {
+if (
+value === null ||
+value === undefined
+) {
+return fallback;
+}
+
+ 
+if (
+  typeof value === 'object'
+) {
+  return fallback;
+}
+
+return String(value);
+ 
+
+};
+
+/*
+
+* Convert API objects into readable text.
+*
+* Supports values such as:
+*
+* "Lagos"
+*
+* {
+* name: "Lagos"
+* }
+*
+* {
+* stateName: "Lagos"
+* }
+*
+* {
+* institutionName: "University of Ilesa"
+* }
+*
+* {
+* label: "Lagos"
+* }
+  */
+
+const getObjectName = (
+value,
+fallback = ''
+) => {
+if (
+value === null ||
+value === undefined
+) {
+return fallback;
+}
+
+ 
+if (
+  typeof value === 'string' ||
+  typeof value === 'number'
+) {
+  return String(value);
+}
+
+if (
+  typeof value === 'object'
+) {
+  return (
+    safeString(value.name) ||
+    safeString(value.stateName) ||
+    safeString(value.institutionName) ||
+    safeString(value.schoolName) ||
+    safeString(value.label) ||
+    safeString(value.title) ||
+    safeString(value.value) ||
+    safeString(value.fullName) ||
+    safeString(value.displayName) ||
+    fallback
+  );
+}
+
+return fallback;
+ 
+
+};
+
+const formatMoney = (value) => {
+return safeNumber(value).toLocaleString();
+};
+
+/*
+
+* ---
+* FETCH BUYER PROFILE
+* ---
+
+*/
+
+useEffect(() => {
+let mounted = true;
+
+ 
+const fetchUserProfile = async () => {
+  setProfileLoading(true);
+  setProfileError(false);
+
+  try {
+    const res = await apiClient.get(
+      '/buyer/profile/me'
+    );
+
+    const payload = getPayload(res, {});
+
+    const data =
+      payload &&
+      typeof payload === 'object'
+        ? payload
+        : {};
+
+    if (!mounted) {
+      return;
+    }
+
+    console.log(
+      'Checkout buyer profile:',
+      data
+    );
+
+    setUserProfile(data);
+
+    /*
+     * --------------------------------------------------------
+     * LOCATION
+     * --------------------------------------------------------
+     */
+
+    const location =
+      data.location &&
+      typeof data.location === 'object'
+        ? data.location
+        : {};
+
+    /*
+     * --------------------------------------------------------
+     * STUDENT
+     * --------------------------------------------------------
+     */
+
+    const student =
+      data.student &&
+      typeof data.student === 'object'
+        ? data.student
+        : {};
+
+    /*
+     * --------------------------------------------------------
+     * NORMALIZE DELIVERY DETAILS
+     * --------------------------------------------------------
+     */
+
+    const stateValue = getObjectName(
+      location.state ||
+      data.state ||
+      student.state ||
+      ''
+    );
+
+    const residenceValue = getObjectName(
+      location.residence ||
+      data.residence ||
+      student.residence ||
+      ''
+    );
+
+    const addressValue = getObjectName(
+      location.address ||
+      data.address ||
+      student.address ||
+      ''
+    );
+
+    setEditForm({
+      state: stateValue,
+      residence: residenceValue,
+      address: addressValue,
+    });
+  } catch (error) {
+    console.error(
+      'Checkout profile fetch error:',
+      error
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    setProfileError(true);
+    setUserProfile(null);
+
+    setEditForm({
+      state: '',
+      residence: '',
+      address: '',
+    });
+
+    showToast(
+      getMessage(
+        error,
+        'Unable to load your delivery details. You can enter them manually.'
+      ),
+      'error'
+    );
+  } finally {
+    if (mounted) {
+      setProfileLoading(false);
+    }
+  }
+};
+
+fetchUserProfile();
+
+return () => {
+  mounted = false;
+};
+ 
+
+}, [showToast]);
+
+/*
+
+* ---
+* NORMALIZE CART
+* ---
+
+*/
+
+const normalizedCartItems = useMemo(() => {
+if (!Array.isArray(cartItems)) {
+return [];
+}
+
+ 
+return cartItems
+  .filter(
+    (item) =>
+      item &&
+      typeof item === 'object'
+  )
+  .map((item) => {
+    const price = safeNumber(
+      item.price,
+      0
+    );
+
+    const quantity = Math.max(
+      1,
+      Math.floor(
+        safeNumber(
+          item.quantity,
+          1
+        )
+      )
+    );
+
+    return {
+      ...item,
+
+      id:
+        item.id ||
+        item.productId ||
+        item._id ||
+        '',
+
+      quantity,
+
+      price,
+
+      name:
+        item.name ||
+        'Product',
+
+      image:
+        item.image ||
+        item.images?.[0] ||
+        '',
+
+      vendorId:
+        item.vendorId ||
+        item.vendor?._id ||
+        item.vendor?.id ||
+        '',
+
+      vendorName:
+        item.vendorName ||
+        item.vendor?.business?.storeName ||
+        item.vendor?.fullName ||
+        'Vendor',
+
+      vendorBankName:
+        item.vendorBankName ||
+        item.vendor?.bankDetails?.bankName ||
+        '',
+
+      vendorAccountName:
+        item.vendorAccountName ||
+        item.vendor?.bankDetails?.accountName ||
+        '',
+
+      vendorAccountNumber:
+        item.vendorAccountNumber ||
+        item.vendor?.bankDetails?.accountNumber ||
+        '',
     };
-
-    fetchUserProfile();
-  }, []);
-
-  const validationSchema = Yup.object({
-    delivery: Yup.string().required('Select delivery option'),
-    paymentMethod: Yup.string().required('Select payment method'),
-    note: Yup.string().max(500, 'Too long'),
   });
 
-  const handleFileUpload = (vendorId, file) => {
-    setPaymentProofs((prev) => ({
-      ...prev,
-      [vendorId]: file,
-    }));
-  };
 
-  const groupByVendor = (items = []) => {
-    return items.reduce((acc, item) => {
-      const vendorId = item.vendorId || "unknown";
-      if (!acc[vendorId]) {
-        acc[vendorId] = {
-          vendorId,
-          vendorName: item.vendorName || "Unknown Vendor",
-          vendorBankName: item.vendorBankName || null,
-          vendorAccountName: item.vendorAccountName || null,
-          vendorAccountNumber: item.vendorAccountNumber || null,
-          items: [],
-        };
+}, [cartItems]);
+
+/*
+
+* ---
+* GROUP CART BY VENDOR
+* ---
+
+*/
+
+const groupedCart = useMemo(() => {
+return normalizedCartItems.reduce(
+(acc, item) => {
+const vendorId =
+item.vendorId ||
+'unknown';
+
+ 
+    if (!acc[vendorId]) {
+      acc[vendorId] = {
+        vendorId,
+
+        vendorName:
+          item.vendorName ||
+          'Unknown Vendor',
+
+        vendorBankName:
+          item.vendorBankName ||
+          '',
+
+        vendorAccountName:
+          item.vendorAccountName ||
+          '',
+
+        vendorAccountNumber:
+          item.vendorAccountNumber ||
+          '',
+
+        items: [],
+      };
+    }
+
+    acc[vendorId].items.push(item);
+
+    return acc;
+  },
+  {}
+);
+ 
+
+}, [normalizedCartItems]);
+
+const vendorGroups = useMemo(
+() =>
+Object.values(
+groupedCart
+),
+[groupedCart]
+);
+
+/*
+
+* ---
+* SUBTOTAL
+* ---
+
+*/
+
+const subtotal = useMemo(() => {
+return normalizedCartItems.reduce(
+(sum, item) => {
+return (
+sum +
+safeNumber(item.price) *
+safeNumber(item.quantity)
+);
+},
+0
+);
+}, [normalizedCartItems]);
+
+const vendorCount =
+vendorGroups.length;
+
+/*
+
+* ---
+* EMPTY CART
+* ---
+
+*/
+
+if (
+!Array.isArray(cartItems) ||
+normalizedCartItems.length === 0
+) {
+return (
+<div
+className={`min-h-screen ${bgColor} flex items-center justify-center px-4`}
+>
+<div
+className={`${cardBg} border rounded-2xl shadow-xl p-8 max-w-md w-full text-center`}
+> <div className="w-16 h-16 mx-auto mb-5 rounded-full bg-green-100 flex items-center justify-center"> <ShoppingBag className="w-8 h-8 text-green-600" /> </div>
+
+ 
+      <h2
+        className={`text-2xl font-bold ${textColor} mb-2`}
+      >
+        Your cart is empty
+      </h2>
+
+      <p
+        className={`${secondaryText} mb-6`}
+      >
+        Add products to your cart before proceeding to checkout.
+      </p>
+
+      <button
+        type="button"
+        onClick={() =>
+          navigate('/buyer/cart')
+        }
+        className="w-full px-5 py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-semibold transition-colors"
+      >
+        Back to Cart
+      </button>
+    </div>
+  </div>
+);
+ 
+
+}
+
+/*
+
+* ---
+* VALIDATION
+* ---
+
+*/
+
+const validationSchema =
+Yup.object({
+delivery: Yup.string()
+.oneOf(
+['standard', 'express'],
+'Invalid delivery method'
+)
+.required(
+'Select delivery option'
+),
+
+
+  paymentMethod: Yup.string()
+    .oneOf(
+      ['pay_now', 'pod'],
+      'Invalid payment method'
+    )
+    .required(
+      'Select payment method'
+    ),
+
+  note: Yup.string().max(
+    500,
+    'Special instructions cannot exceed 500 characters'
+  ),
+});
+ 
+
+/*
+
+* ---
+* PAYMENT PROOF
+* ---
+
+*/
+
+const handleFileUpload = (
+vendorId,
+file
+) => {
+if (!vendorId || !file) {
+return;
+}
+
+ 
+setPaymentProofs((prev) => ({
+  ...prev,
+  [vendorId]: file,
+}));
+ 
+
+};
+
+const removePaymentProof = (
+vendorId
+) => {
+setPaymentProofs((prev) => {
+const next = {
+...prev,
+};
+
+ 
+  delete next[vendorId];
+
+  return next;
+});
+ 
+
+};
+
+/*
+
+* ---
+* DELIVERY DETAILS
+* ---
+
+*/
+
+const getStudent = () => {
+if (
+userProfile?.student &&
+typeof userProfile.student ===
+'object'
+) {
+return userProfile.student;
+}
+
+ 
+return {};
+ 
+
+};
+
+const getLocation = () => {
+if (
+userProfile?.location &&
+typeof userProfile.location ===
+'object'
+) {
+return userProfile.location;
+}
+
+ 
+return {};
+ 
+
+};
+
+const student = getStudent();
+const location = getLocation();
+
+/*
+
+* Normalize institution too.
+  */
+
+const institution =
+getObjectName(
+student.institution ||
+userProfile?.institution ||
+''
+);
+
+/*
+
+* ---
+* HANDLE SUBMIT
+* ---
+
+*/
+
+const handleSubmit = async (
+values,
+{ setSubmitting }
+) => {
+if (
+normalizedCartItems.length === 0
+) {
+showToast(
+'Your cart is empty.',
+'error'
+);
+
+ 
+  setSubmitting(false);
+  return;
+}
+
+const invalidItem =
+  normalizedCartItems.find(
+    (item) => !item.id
+  );
+
+if (invalidItem) {
+  showToast(
+    'One or more products in your cart are invalid. Please refresh your cart.',
+    'error'
+  );
+
+  setSubmitting(false);
+  return;
+}
+
+const deliveryFee =
+  values.delivery === 'express'
+    ? 1000
+    : 0;
+
+const orderTotal =
+  subtotal + deliveryFee;
+
+/*
+ * ----------------------------------------------------------
+ * NORMALIZE DELIVERY VALUES BEFORE SUBMITTING
+ * ----------------------------------------------------------
+ */
+
+const finalState =
+  getObjectName(
+    editForm.state ||
+    location.state ||
+    userProfile?.state ||
+    student.state ||
+    ''
+  ).trim();
+
+const finalResidence =
+  getObjectName(
+    editForm.residence ||
+    location.residence ||
+    userProfile?.residence ||
+    student.residence ||
+    ''
+  ).trim();
+
+const finalAddress =
+  getObjectName(
+    editForm.address ||
+    location.address ||
+    userProfile?.address ||
+    student.address ||
+    ''
+  ).trim();
+
+/*
+ * Backend requires state.
+ */
+
+if (!finalState) {
+  showToast(
+    'Please provide your delivery state.',
+    'error'
+  );
+
+  setSubmitting(false);
+  return;
+}
+
+/*
+ * Backend requires address.
+ *
+ * If address is empty, residence is used.
+ */
+
+const backendAddress =
+  finalAddress ||
+  finalResidence;
+
+if (!backendAddress) {
+  showToast(
+    'Please provide your delivery address.',
+    'error'
+  );
+
+  setSubmitting(false);
+  return;
+}
+
+/*
+ * ----------------------------------------------------------
+ * BUILD FORM DATA
+ * ----------------------------------------------------------
+ */
+
+const formData =
+  new FormData();
+
+const backendItems =
+  normalizedCartItems.map(
+    (item) => ({
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+      image: item.image,
+      vendorId: item.vendorId,
+      vendorName:
+        item.vendorName,
+    })
+  );
+
+formData.append(
+  'items',
+  JSON.stringify(
+    backendItems
+  )
+);
+
+formData.append(
+  'orderTotal',
+  String(orderTotal)
+);
+
+formData.append(
+  'deliveryFee',
+  String(deliveryFee)
+);
+
+formData.append(
+  'delivery',
+  values.delivery
+);
+
+formData.append(
+  'paymentMethod',
+  values.paymentMethod
+);
+
+formData.append(
+  'note',
+  values.note || ''
+);
+
+formData.append(
+  'state',
+  finalState
+);
+
+formData.append(
+  'address',
+  backendAddress
+);
+
+/*
+ * Payment proofs.
+ */
+
+if (
+  values.paymentMethod ===
+  'pay_now'
+) {
+  Object.entries(
+    paymentProofs
+  ).forEach(
+    ([vendorId, file]) => {
+      if (
+        vendorId &&
+        file instanceof File
+      ) {
+        formData.append(
+          `proof_${vendorId}`,
+          file
+        );
       }
-      acc[vendorId].items.push(item);
-      return acc;
-    }, {});
-  };
-
-  const groupedCart = Object.values(groupByVendor(cartItems));
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const TAX_PER_VENDOR = 10;
-  const vendorCount = groupedCart.length;
-
-  const handleSubmit = async (values, { setSubmitting }) => {
-    const deliveryFee = values.delivery === 'express' ? 1000 : 0;
-    const totalTax = TAX_PER_VENDOR * vendorCount;
-    const orderTotal = subtotal + deliveryFee + totalTax;
-
-    const finalState = editForm.state || userProfile?.location?.state;
-    const finalAddress = editForm.address || userProfile?.location?.address;
-
-    const formData = new FormData();
-    formData.append('items', JSON.stringify(cartItems));
-    formData.append('subtotal', subtotal);
-    formData.append('deliveryFee', deliveryFee);
-    formData.append('totalTax', totalTax);
-    formData.append('orderTotal', orderTotal);
-    formData.append('delivery', values.delivery);
-    formData.append('paymentMethod', values.paymentMethod);
-    formData.append('note', values.note);
-    formData.append('state', finalState);
-    formData.append('address', finalAddress);
-
-    if (values.paymentMethod === 'pay_now') {
-      Object.keys(paymentProofs).forEach((vendorId) => {
-        formData.append(`proof_${vendorId}`, paymentProofs[vendorId]);
-      });
     }
+  );
+}
 
-    try {
-      await apiClient.post('/buyer/checkout', formData);
+try {
+  const response =
+    await apiClient.post(
+      '/buyer/checkout',
+      formData,
+      {
+        headers: {
+          'Content-Type':
+            'multipart/form-data',
+        },
+      }
+    );
 
-      dispatch(clearCart());
-      localStorage.removeItem('cart');
-      showToast('Order placed successfully!', 'success');
-      navigate('/buyer/orders');
-    } catch (error) {
-      showToast(getMessage(error, 'Failed to place order'), 'error');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  console.log(
+    'Checkout response:',
+    response?.data
+  );
 
-  // Theme classes
-  const bgColor = isDark ? 'bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950' : 'bg-gradient-to-br from-slate-50 via-white to-zinc-100';
-  const cardBg = isDark ? 'bg-gray-800/80 border-gray-700/50 backdrop-blur-sm' : 'bg-white/80 border-gray-200 backdrop-blur-sm';
-  const textColor = isDark ? 'text-white' : 'text-gray-900';
-  const secondaryText = isDark ? 'text-gray-400' : 'text-gray-600';
-  const inputBg = isDark ? 'bg-gray-700/50 text-white border-gray-600' : 'bg-gray-50 text-gray-900 border-gray-300';
+  dispatch(
+    clearCart()
+  );
 
-  return (
-    <div className={`min-h-screen ${bgColor} pb-20`}>
-      <div className="max-w-7xl mx-auto px-4 pt-8">
-        <div className="mb-8">
-          <button onClick={() => navigate(-1)} className={`flex items-center gap-2 mb-2 ${secondaryText} hover:text-red-500 transition-colors group`}>
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-            Back to Cart
-          </button>
-          <h1 className={`text-3xl font-bold ${textColor}`}>Checkout</h1>
-          <p className={`${secondaryText} mt-2`}>{vendorCount} vendor(s) in cart • Secure Transaction</p>
-        </div>
+  localStorage.removeItem(
+    'cart'
+  );
 
-        <Formik
-          initialValues={{ delivery: 'standard', paymentMethod: 'pay_now', note: '' }}
-          validationSchema={validationSchema}
-          onSubmit={handleSubmit}
-        >
-          {({ isSubmitting, values, setFieldValue }) => {
-            const deliveryFee = values.delivery === 'express' ? 1000 : 0;
-            const totalTax = TAX_PER_VENDOR * vendorCount;
-            const orderTotal = subtotal + deliveryFee + totalTax;
+  showToast(
+    'Order placed successfully!',
+    'success'
+  );
 
-            return (
-              <Form className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                <div className="lg:col-span-8 space-y-6">
+  navigate(
+    '/buyer/orders'
+  );
+} catch (error) {
+  console.error(
+    'Checkout error:',
+    error
+  );
 
-                  {/* Payment Method */}
-                  <div className={`${cardBg} border p-6 rounded-2xl shadow-lg`}>
-                    <div className="flex items-center justify-between mb-6">
-                      <h3 className={`text-xl font-bold ${textColor} flex items-center gap-3`}>
-                        <div className="p-2 bg-gradient-to-r from-red-500 to-red-600 rounded-lg">
-                          <Wallet className="w-5 h-5 text-white" />
-                        </div>
-                        Payment Method
-                      </h3>
+  showToast(
+    getMessage(
+      error,
+      'Failed to place order'
+    ),
+    'error'
+  );
+} finally {
+  setSubmitting(false);
+}
+ 
+
+};
+
+/*
+
+* ---
+* RENDER
+* ---
+
+*/
+
+return (
+<div
+className={`min-h-screen ${bgColor} pb-20`}
+> <div className="max-w-7xl mx-auto px-4 pt-8">
+
+ 
+    {/* Header */}
+
+    <div className="mb-8">
+
+      <button
+        type="button"
+        onClick={() =>
+          navigate(-1)
+        }
+        className={`flex items-center gap-2 mb-3 ${secondaryText} hover:text-green-500 rounded-full px-3 transition-colors group`}
+      >
+        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+
+        Back to Cart
+      </button>
+
+      <h1
+        className={`text-3xl font-bold ${textColor}`}
+      >
+        Checkout
+      </h1>
+
+      <p
+        className={`${secondaryText} mt-2`}
+      >
+        {vendorCount} vendor
+        {vendorCount === 1
+          ? ''
+          : 's'} in cart
+        {' • '}
+        Secure Transaction
+      </p>
+
+    </div>
+
+    <Formik
+      initialValues={{
+        delivery:
+          'standard',
+        paymentMethod:
+          'pay_now',
+        note: '',
+      }}
+      validationSchema={
+        validationSchema
+      }
+      onSubmit={
+        handleSubmit
+      }
+    >
+      {({
+        isSubmitting,
+        values,
+        setFieldValue,
+      }) => {
+
+        const deliveryFee =
+          values.delivery ===
+          'express'
+            ? 1000
+            : 0;
+
+        const orderTotal =
+          subtotal +
+          deliveryFee;
+
+        return (
+          <Form className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+            {/* =================================================
+                LEFT COLUMN
+            ================================================== */}
+
+            <div className="lg:col-span-8 space-y-6">
+
+              {/* PAYMENT METHOD */}
+
+              <div
+                className={`${cardBg} border p-6 rounded-2xl shadow-lg`}
+              >
+                <div className="flex items-center justify-between mb-6">
+
+                  <h3
+                    className={`text-xl font-bold ${textColor} flex items-center gap-3`}
+                  >
+                    <div className="p-2 bg-gradient-to-r from-red-500 to-red-600 rounded-lg">
+                      <Wallet className="w-5 h-5 text-white" />
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <button type="button" onClick={() => setFieldValue('paymentMethod', 'pay_now')}
-                        className={`p-5 rounded-xl border-2 transition-all flex flex-col items-center gap-3 ${values.paymentMethod === 'pay_now' ? 'border-red-500 bg-red-50/10' : 'border-gray-200'}`}>
-                        <CreditCard className={values.paymentMethod === 'pay_now' ? 'text-red-500' : 'text-gray-400'} />
-                        <span className={`font-semibold ${textColor}`}>Pay Now</span>
-                      </button>
-                      <button type="button" onClick={() => setFieldValue('paymentMethod', 'pod')}
-                        className={`p-5 rounded-xl border-2 transition-all flex flex-col items-center gap-3 ${values.paymentMethod === 'pod' ? 'border-emerald-500 bg-emerald-50/10' : 'border-gray-200'}`}>
-                        <HandCoins className={values.paymentMethod === 'pod' ? 'text-emerald-500' : 'text-gray-400'} />
-                        <span className={`font-semibold ${textColor}`}>Pay on Delivery</span>
-                      </button>
-                    </div>
-                  </div>
 
-                  {/* Delivery Method */}
-                  <div className={`${cardBg} border p-6 rounded-2xl shadow-lg`}>
-                    <h3 className={`text-xl font-bold ${textColor} flex items-center gap-3 mb-6`}>
-                      <Truck className="w-5 h-5 text-blue-500" /> Delivery Method
-                    </h3>
-                    <div className="space-y-4">
-                      {['standard', 'express'].map((type) => (
-                        <label key={type} className={`flex items-center justify-between p-5 rounded-xl border-2 cursor-pointer ${values.delivery === type ? 'border-blue-500 bg-blue-50/10' : 'border-gray-200'}`}>
-                          <div className="flex items-center gap-4">
-                            <Field type="radio" name="delivery" value={type} className="w-5 h-5" />
-                            <div>
-                              <p className={`font-semibold ${textColor}`}>{type === 'standard' ? 'Standard' : 'Express'} Delivery</p>
-                              <p className="text-sm text-gray-500">{type === 'standard' ? '3-5 Days' : '24-48 Hours'}</p>
-                            </div>
-                          </div>
-                          <span className="font-bold">{type === 'standard' ? 'FREE' : '₦1,000'}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
+                    Payment Method
+                  </h3>
 
-                  {/* Buyer Details with Edit Functionality */}
-                  <div className={`${cardBg} border p-6 rounded-2xl shadow-lg`}>
-                    <div className="flex items-center justify-between mb-6">
-                      <h3 className={`text-xl font-bold ${textColor} flex items-center gap-3`}>
-                        <User className="w-5 h-5 text-emerald-500" /> Buyer Details
-                      </h3>
-                      <button
-                        type="button"
-                        onClick={() => setIsEditing(!isEditing)}
-                        className="flex items-center gap-2 text-sm font-medium text-blue-500 hover:text-blue-600 transition-colors"
-                      >
-                        {isEditing ? <><X className="w-4 h-4" /> Cancel</> : <><Edit2 className="w-4 h-4" /> Edit Profile</>}
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className={`p-4 rounded-xl ${inputBg}`}>
-                        <p className="text-xs uppercase text-gray-500 font-bold mb-1">Username</p>
-                        <p className="font-semibold">{userProfile?.identity?.username || '---'}</p>
-                      </div>
-                      <div className={`p-4 rounded-xl ${inputBg}`}>
-                        <p className="text-xs uppercase text-gray-500 font-bold mb-1">Phone</p>
-                        <p className="font-semibold">{userProfile?.contact?.phoneNo || '---'}</p>
-                      </div>
-
-                      {isEditing ? (
-                        <>
-                          <div className="md:col-span-1">
-                            <label className="text-xs uppercase text-gray-500 font-bold">State</label>
-                            <input
-                              className={`w-full p-3 rounded-lg border mt-1 ${inputBg}`}
-                              value={editForm.state}
-                              onChange={(e) => setEditForm({ ...editForm, state: e.target.value })}
-                            />
-                          </div>
-                          <div className="md:col-span-1">
-                            <label className="text-xs uppercase text-gray-500 font-bold">Address</label>
-                            <input
-                              className={`w-full p-3 rounded-lg border mt-1 ${inputBg}`}
-                              value={editForm.address}
-                              onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => { setIsEditing(false); toast.info("Address updated for this order"); }}
-                            className="md:col-span-2 bg-blue-600 text-white p-2 rounded-lg flex items-center justify-center gap-2"
-                          >
-                            <Save className="w-4 h-4" /> Save Local Changes
-                          </button>
-                        </>
-                      ) : (
-                        <div className={`p-4 rounded-xl md:col-span-2 ${inputBg}`}>
-                          <p className="text-xs uppercase text-gray-500 font-bold mb-1">Shipping Address</p>
-                          <div className="flex items-start gap-2">
-                            <MapPin className="w-4 h-4 mt-1 text-red-500" />
-                            <p className="font-semibold">
-                              {editForm.address || 'No address'}, {editForm.state || 'No state'}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Vendor Payment Proofs */}
-                  {groupedCart.map(vendor => (
-                    <div key={vendor.vendorId} className={`${cardBg} border p-6 rounded-2xl shadow-lg border-emerald-200/50`}>
-                      <h3 className="font-bold text-lg mb-4 flex justify-between">
-                        <span>Payment to: <span className="text-red-500">{vendor.vendorName}</span></span>
-                        <span className="text-emerald-600">₦{(vendor.items.reduce((s, i) => s + i.price * i.quantity, 0) + TAX_PER_VENDOR).toLocaleString()}</span>
-                      </h3>
-
-                      <div className="text-sm space-y-1 mb-4 opacity-80">
-                        <p>Bank: {vendor.vendorBankName}</p>
-                        <p>A/C Name: {vendor.vendorAccountName}</p>
-                        <p>A/C Number: {vendor.vendorAccountNumber}</p>
-                      </div>
-
-                      {values.paymentMethod === 'pay_now' && (
-                        <div className="mt-4">
-                          <label className="flex items-center gap-3 p-4 border-2 border-dashed rounded-xl cursor-pointer hover:bg-gray-50 transition-all">
-                            <div className="p-2 bg-gray-100 rounded-full"><Upload className="w-5 h-5 text-gray-600" /></div>
-                            <div>
-                              <p className="text-sm font-semibold">Upload Receipt</p>
-                              <p className="text-xs text-gray-500">
-                                {paymentProofs[vendor.vendorId] ? paymentProofs[vendor.vendorId].name : 'Click to select file'}
-                              </p>
-                            </div>
-                            <input type="file" className="hidden" onChange={(e) => handleFileUpload(vendor.vendorId, e.target.files?.[0])} />
-                          </label>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-
-                  {/* Special Instructions */}
-                  <div className={`${cardBg} border p-6 rounded-2xl shadow-lg`}>
-                    <h3 className={`text-xl font-bold ${textColor} flex items-center gap-3 mb-4`}>
-                      <MessageSquare className="w-5 h-5 text-purple-500" /> Special Instructions
-                    </h3>
-                    <Field as="textarea" name="note" rows={3} className={`w-full p-4 rounded-xl border outline-none ${inputBg}`} placeholder="Add any notes..." />
-                  </div>
                 </div>
 
-                {/* RIGHT: Order Summary */}
-                <div className="lg:col-span-4">
-                  <div className="sticky top-8 space-y-4">
-                    <div className={`${cardBg} border rounded-2xl shadow-xl overflow-hidden`}>
-                      <div className="p-6 border-b border-gray-100">
-                        <h3 className={`text-xl font-bold ${textColor} flex items-center gap-3`}>
-                          <div className="p-2 bg-gradient-to-r from-red-500 to-red-600 rounded-lg">
-                            <ShoppingBag className="w-5 h-5 text-white" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFieldValue(
+                        'paymentMethod',
+                        'pay_now'
+                      )
+                    }
+                    className={`p-5 rounded-xl border-2 transition-all flex flex-col items-center gap-3 ${
+                      values.paymentMethod ===
+                      'pay_now'
+                        ? 'border-red-500 bg-red-50/10'
+                        : isDark
+                        ? 'border-gray-700'
+                        : 'border-gray-200'
+                    }`}
+                  >
+                    <CreditCard
+                      className={
+                        values.paymentMethod ===
+                        'pay_now'
+                          ? 'text-red-500'
+                          : 'text-gray-400'
+                      }
+                    />
+
+                    <span
+                      className={`font-semibold ${textColor}`}
+                    >
+                      Pay Now
+                    </span>
+
+                    <span
+                      className={`text-xs ${secondaryText}`}
+                    >
+                      Transfer and upload payment proof
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFieldValue(
+                        'paymentMethod',
+                        'pod'
+                      )
+                    }
+                    className={`p-5 rounded-xl border-2 transition-all flex flex-col items-center gap-3 ${
+                      values.paymentMethod ===
+                      'pod'
+                        ? 'border-emerald-500 bg-emerald-50/10'
+                        : isDark
+                        ? 'border-gray-700'
+                        : 'border-gray-200'
+                    }`}
+                  >
+                    <HandCoins
+                      className={
+                        values.paymentMethod ===
+                        'pod'
+                          ? 'text-emerald-500'
+                          : 'text-gray-400'
+                      }
+                    />
+
+                    <span
+                      className={`font-semibold ${textColor}`}
+                    >
+                      Pay on Delivery
+                    </span>
+
+                    <span
+                      className={`text-xs ${secondaryText}`}
+                    >
+                      Pay when your order arrives
+                    </span>
+                  </button>
+
+                </div>
+              </div>
+
+              {/* DELIVERY METHOD */}
+
+              <div
+                className={`${cardBg} border p-6 rounded-2xl shadow-lg`}
+              >
+                <h3
+                  className={`text-xl font-bold ${textColor} flex items-center gap-3 mb-6`}
+                >
+                  <Truck className="w-5 h-5 text-blue-500" />
+
+                  Delivery Method
+                </h3>
+
+                <div className="space-y-4">
+
+                  {[
+                    'standard',
+                    'express',
+                  ].map(
+                    (type) => {
+
+                      const selected =
+                        values.delivery ===
+                        type;
+
+                      return (
+                        <label
+                          key={type}
+                          className={`flex items-center justify-between p-5 rounded-xl border-2 cursor-pointer transition-all ${
+                            selected
+                              ? 'border-blue-500 bg-blue-50/10'
+                              : isDark
+                              ? 'border-gray-700'
+                              : 'border-gray-200'
+                          }`}
+                        >
+                          <div className="flex items-center gap-4">
+
+                            <Field
+                              type="radio"
+                              name="delivery"
+                              value={type}
+                              className="w-5 h-5"
+                            />
+
+                            <div>
+                              <p
+                                className={`font-semibold ${textColor}`}
+                              >
+                                {type ===
+                                'standard'
+                                  ? 'Standard'
+                                  : 'Express'}{' '}
+                                Delivery
+                              </p>
+
+                              <p
+                                className={`text-sm ${secondaryText}`}
+                              >
+                                {type ===
+                                'standard'
+                                  ? '3-5 Days'
+                                  : '24-48 Hours'}
+                              </p>
+                            </div>
                           </div>
-                          Order Summary
-                        </h3>
-                      </div>
 
-                      <div className="p-6 space-y-4 max-h-[300px] overflow-y-auto">
-                        <p className="text-sm text-gray-500 mb-4">
-                          You are paying {vendorCount} vendor(s)
-                        </p>
-
-                        {groupedCart?.length > 0 &&
-                          groupedCart.map((vendorGroup) => {
-                            const vendorSubtotal = vendorGroup.items.reduce(
-                              (sum, item) => sum + item.price * item.quantity,
-                              0
-                            );
-
-                            return (
-                              <div key={vendorGroup.vendorId} className="mb-6">
-                                {/* ✅ Vendor Name */}
-                                <h4 className="font-bold text-red-500 mb-2">
-                                  {vendorGroup.vendorName}
-                                </h4>
-
-                                {/* ✅ Vendor Items */}
-                                {vendorGroup.items.map((item) => (
-                                  <div key={item.id} className="flex gap-4 p-3 rounded-lg">
-                                    <div className="h-16 w-16 overflow-hidden rounded-xl border">
-                                      <img
-                                        src={item.image || 'https://via.placeholder.com/150'}
-                                        alt={item.name}
-                                        className="h-full w-full object-cover"
-                                      />
-                                    </div>
-
-                                    <div className="flex-1">
-                                      <p className="text-sm font-semibold">{item.name}</p>
-                                      <p className="text-xs">Qty: {item.quantity}</p>
-                                      <p className="text-sm font-semibold">
-                                        ₦{(item.price * item.quantity).toLocaleString()}
-                                      </p>
-                                    </div>
-                                  </div>
-                                ))}
-
-                                {/* ✅ Vendor subtotal */}
-                                <div className="flex justify-between mt-2 text-sm font-semibold">
-                                  <span>Subtotal</span>
-                                  <span>₦{vendorSubtotal.toLocaleString()}</span>
-                                </div>
-                              </div>
-                            );
-                          })}
-
-                      </div>
-
-                      <div className={`p-6 space-y-3 ${isDark
-                        ? 'bg-gradient-to-b from-gray-800/50 to-gray-700/30'
-                        : 'bg-gradient-to-b from-gray-50 to-gray-100/50'
-                        }`}>
-                        <div className="flex justify-between items-center">
-                          <span className={`${secondaryText}`}>Subtotal</span>
-                          <span className={`font-semibold ${textColor}`}>₦{subtotal.toLocaleString()}</span>
-                        </div>
-
-                        <div className="flex justify-between items-center">
-                          <span className={`${secondaryText}`}>Delivery Fee</span>
-                          <span className={`font-semibold ${deliveryFee === 0 ? 'text-green-500' : textColor}`}>
-                            {deliveryFee === 0 ? 'FREE' : `₦${deliveryFee.toLocaleString()}`}
+                          <span
+                            className={`font-bold ${
+                              type ===
+                              'standard'
+                                ? 'text-green-500'
+                                : textColor
+                            }`}
+                          >
+                            {type ===
+                            'standard'
+                              ? 'FREE'
+                              : '₦1,000'}
                           </span>
-                        </div>
 
-                        <div className="flex justify-between items-center">
-                          <span className={`${secondaryText}`}>Tax</span>
-                          <span className={`font-semibold ${textColor}`}>₦{totalTax.toLocaleString()}</span>
-                        </div>
+                        </label>
+                      );
+                    }
+                  )}
 
-                        <div className={`pt-4 border-t ${isDark ? 'border-gray-600' : 'border-gray-200'
-                          }`}>                        <div className="flex justify-between items-center">
-                            <span className={`text-lg font-bold ${textColor}`}>Total Amount</span>
-                            <span className="text-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-[22px] font-bold tracking-tight text-transparent">
-                              ₦{orderTotal.toLocaleString()}
-                            </span>
+                </div>
+
+                <ErrorMessage
+                  name="delivery"
+                  component="p"
+                  className="text-sm text-red-500 mt-3"
+                />
+
+              </div>
+
+              {/* BUYER DETAILS */}
+
+              <div
+                className={`${cardBg} border p-6 rounded-2xl shadow-lg`}
+              >
+
+                <div className="flex items-center justify-between mb-6">
+
+                  <h3
+                    className={`text-xl font-bold ${textColor} flex items-center gap-3`}
+                  >
+                    <User className="w-5 h-5 text-emerald-500" />
+
+                    Buyer Details
+                  </h3>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setIsEditing(
+                        (prev) =>
+                          !prev
+                      )
+                    }
+                    className="flex items-center gap-2 text-sm font-medium text-blue-500 hover:text-blue-600 transition-colors"
+                  >
+                    {isEditing ? (
+                      <>
+                        <X className="w-4 h-4" />
+
+                        Cancel
+                      </>
+                    ) : (
+                      <>
+                        <Edit2 className="w-4 h-4" />
+
+                        Edit Details
+                      </>
+                    )}
+                  </button>
+
+                </div>
+
+                {profileLoading ? (
+                  <div className="flex flex-col items-center justify-center py-10">
+
+                    <Loader2 className="w-7 h-7 animate-spin text-emerald-500 mb-3" />
+
+                    <p
+                      className={`text-sm ${secondaryText}`}
+                    >
+                      Loading delivery details...
+                    </p>
+
+                  </div>
+                ) : (
+                  <>
+
+                    {profileError && (
+                      <div className="mb-5 p-4 rounded-xl border border-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-700">
+
+                        <div className="flex gap-3">
+
+                          <AlertCircle className="w-5 h-5 text-yellow-600 shrink-0" />
+
+                          <div>
+
+                            <p className="font-semibold text-yellow-800 dark:text-yellow-300">
+                              Delivery details could not be loaded
+                            </p>
+
+                            <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-1">
+                              Enter your delivery information below before placing your order.
+                            </p>
+
                           </div>
-                          <p className="text-xs text-gray-500 mt-2">
-                            {values.paymentMethod === 'pay_now'
-                              ? 'Including all taxes and fees'
-                              : 'Pay when your order arrives'}
+
+                        </div>
+
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                      {/* Institution */}
+
+                      <div
+                        className={`p-4 rounded-xl ${inputBg}`}
+                      >
+
+                        <div className="flex items-center gap-2 mb-1">
+
+                          <GraduationCap className="w-4 h-4 text-blue-500" />
+
+                          <p className="text-xs uppercase text-gray-500 font-bold">
+                            Institution
                           </p>
 
                         </div>
-                      </div>
-                    </div>
 
-                    {/* Action Button */}
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="w-full px-6 py-4 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-2xl shadow-xl shadow-green-500/30 hover:shadow-2xl hover:shadow-green-500/40 transition-all flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                          Processing...
-                        </>
-                      ) : (
-                        <>
-                          {values.paymentMethod === 'pay_now' ? 'Complete Payment' : 'Place Order'}
-                          <ChevronRight className="w-5 h-5" />
-                        </>
+                        <p
+                          className={`font-semibold ${textColor}`}
+                        >
+                          {institution ||
+                            '---'}
+                        </p>
+
+                      </div>
+
+                      {/* State */}
+
+                      <div
+                        className={`p-4 rounded-xl ${inputBg}`}
+                      >
+
+                        {isEditing ? (
+                          <>
+                            <label className="text-xs uppercase text-gray-500 font-bold">
+                              State
+                            </label>
+
+                            <input
+                              type="text"
+                              value={
+                                editForm.state
+                              }
+                              onChange={(
+                                e
+                              ) =>
+                                setEditForm(
+                                  (
+                                    prev
+                                  ) => ({
+                                    ...prev,
+                                    state:
+                                      e
+                                        .target
+                                        .value,
+                                  })
+                                )
+                              }
+                              placeholder="Enter state"
+                              className={`w-full p-3 rounded-lg border mt-1 outline-none focus:ring-2 focus:ring-blue-500 ${inputBg}`}
+                            />
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-xs uppercase text-gray-500 font-bold mb-1">
+                              State
+                            </p>
+
+                            <p
+                              className={`font-semibold ${textColor}`}
+                            >
+                              {editForm.state ||
+                                '---'}
+                            </p>
+                          </>
+                        )}
+
+                      </div>
+
+                      {/* Residence */}
+
+                      <div
+                        className={`p-4 rounded-xl ${inputBg}`}
+                      >
+
+                        {isEditing ? (
+                          <>
+                            <label className="text-xs uppercase text-gray-500 font-bold">
+                              Residence
+                            </label>
+
+                            <input
+                              type="text"
+                              value={
+                                editForm.residence
+                              }
+                              onChange={(
+                                e
+                              ) =>
+                                setEditForm(
+                                  (
+                                    prev
+                                  ) => ({
+                                    ...prev,
+                                    residence:
+                                      e
+                                        .target
+                                        .value,
+                                  })
+                                )
+                              }
+                              placeholder="Enter residence"
+                              className={`w-full p-3 rounded-lg border mt-1 outline-none focus:ring-2 focus:ring-blue-500 ${inputBg}`}
+                            />
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-2 mb-1">
+
+                              <Home className="w-4 h-4 text-purple-500" />
+
+                              <p className="text-xs uppercase text-gray-500 font-bold">
+                                Residence
+                              </p>
+
+                            </div>
+
+                            <p
+                              className={`font-semibold ${textColor}`}
+                            >
+                              {editForm.residence ||
+                                '---'}
+                            </p>
+                          </>
+                        )}
+
+                      </div>
+
+                      {/* Address */}
+
+                      <div
+                        className={`p-4 rounded-xl ${inputBg}`}
+                      >
+
+                        {isEditing ? (
+                          <>
+                            <label className="text-xs uppercase text-gray-500 font-bold">
+                              Delivery Address
+                            </label>
+
+                            <input
+                              type="text"
+                              value={
+                                editForm.address
+                              }
+                              onChange={(
+                                e
+                              ) =>
+                                setEditForm(
+                                  (
+                                    prev
+                                  ) => ({
+                                    ...prev,
+                                    address:
+                                      e
+                                        .target
+                                        .value,
+                                  })
+                                )
+                              }
+                              placeholder="Enter delivery address"
+                              className={`w-full p-3 rounded-lg border mt-1 outline-none focus:ring-2 focus:ring-blue-500 ${inputBg}`}
+                            />
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-2 mb-1">
+
+                              <MapPin className="w-4 h-4 text-red-500" />
+
+                              <p className="text-xs uppercase text-gray-500 font-bold">
+                                Delivery Address
+                              </p>
+
+                            </div>
+
+                            <p
+                              className={`font-semibold ${textColor}`}
+                            >
+                              {editForm.address ||
+                                '---'}
+                            </p>
+                          </>
+                        )}
+
+                      </div>
+
+                      {/* Save */}
+
+                      {isEditing && (
+                        <button
+                          type="button"
+                          onClick={() => {
+
+                            const state =
+                              editForm.state.trim();
+
+                            const residence =
+                              editForm.residence.trim();
+
+                            const address =
+                              editForm.address.trim();
+
+                            if (!state) {
+                              showToast(
+                                'Please enter your state.',
+                                'error'
+                              );
+
+                              return;
+                            }
+
+                            if (
+                              !address &&
+                              !residence
+                            ) {
+                              showToast(
+                                'Please enter your delivery address or residence.',
+                                'error'
+                              );
+
+                              return;
+                            }
+
+                            setIsEditing(
+                              false
+                            );
+
+                            showToast(
+                              'Delivery details updated for this order.',
+                              'success'
+                            );
+                          }}
+                          className="md:col-span-2 bg-blue-600 text-white p-3 rounded-lg flex items-center justify-center gap-2 hover:bg-blue-700 transition-colors"
+                        >
+                          <Save className="w-4 h-4" />
+
+                          Save Details
+                        </button>
                       )}
-                    </button>
 
-                    {/* Security Badge */}
-                    <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200">
-                      <div className="flex items-center justify-center gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-green-500" />
-                        <div className="text-center">
-                          <p className="text-sm font-medium text-gray-700">Secure Checkout</p>
-                          <p className="text-xs text-gray-500">Your information is protected</p>
-                        </div>
-                      </div>
                     </div>
-                  </div>
-                </div>
-              </Form>
-            );
-          }}
-        </Formik>
-      </div>
-    </div>
-  );
-};
 
-const Upload = ({ className }) => (
-  <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+                  </>
+                )}
+
+              </div>
+
+              {/* VENDOR PAYMENT PROOFS */}
+
+              {values.paymentMethod ===
+                'pay_now' &&
+                vendorGroups.map(
+                  (vendor) => {
+
+                    const vendorSubtotal =
+                      vendor.items.reduce(
+                        (
+                          sum,
+                          item
+                        ) =>
+                          sum +
+                          safeNumber(
+                            item.price
+                          ) *
+                            safeNumber(
+                              item.quantity
+                            ),
+                        0
+                      );
+
+                    const selectedFile =
+                      paymentProofs[
+                        vendor.vendorId
+                      ];
+
+                    return (
+                      <div
+                        key={
+                          vendor.vendorId
+                        }
+                        className={`${cardBg} border p-6 rounded-2xl shadow-lg border-emerald-200/50`}
+                      >
+
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+
+                          <h3
+                            className={`font-bold text-lg ${textColor}`}
+                          >
+                            Payment to:{' '}
+                            <span className="text-red-500">
+                              {
+                                vendor.vendorName
+                              }
+                            </span>
+                          </h3>
+
+                          <span className="text-emerald-600 font-bold">
+                            ₦
+                            {formatMoney(
+                              vendorSubtotal
+                            )}
+                          </span>
+
+                        </div>
+
+                        <div
+                          className={`text-sm space-y-1 mb-4 ${secondaryText}`}
+                        >
+
+                          <p>
+                            Bank:{' '}
+                            <span
+                              className={
+                                textColor
+                              }
+                            >
+                              {vendor.vendorBankName ||
+                                '---'}
+                            </span>
+                          </p>
+
+                          <p>
+                            A/C Name:{' '}
+                            <span
+                              className={
+                                textColor
+                              }
+                            >
+                              {vendor.vendorAccountName ||
+                                '---'}
+                            </span>
+                          </p>
+
+                          <p>
+                            A/C Number:{' '}
+                            <span
+                              className={
+                                textColor
+                              }
+                            >
+                              {vendor.vendorAccountNumber ||
+                                '---'}
+                            </span>
+                          </p>
+
+                        </div>
+
+                        <label
+                          className={`flex items-center gap-3 p-4 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
+                            isDark
+                              ? 'border-gray-600 hover:bg-gray-700/50'
+                              : 'border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+
+                          <div className="p-2 bg-gray-100 rounded-full shrink-0">
+                            <Upload className="w-5 h-5 text-gray-600" />
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+
+                            <p
+                              className={`text-sm font-semibold ${textColor}`}
+                            >
+                              {selectedFile
+                                ? 'Payment receipt selected'
+                                : 'Upload Receipt'}
+                            </p>
+
+                            <p className="text-xs text-gray-500 truncate">
+                              {selectedFile
+                                ? selectedFile.name
+                                : 'Click to select an image or PDF'}
+                            </p>
+
+                          </div>
+
+                          {!selectedFile && (
+                            <input
+                              type="file"
+                              accept="image/*,.pdf"
+                              className="hidden"
+                              onChange={(
+                                e
+                              ) =>
+                                handleFileUpload(
+                                  vendor.vendorId,
+                                  e
+                                    .target
+                                    .files?.[0]
+                                )
+                              }
+                            />
+                          )}
+
+                          {selectedFile && (
+                            <button
+                              type="button"
+                              onClick={(
+                                e
+                              ) => {
+                                e.preventDefault();
+
+                                removePaymentProof(
+                                  vendor.vendorId
+                                );
+                              }}
+                              className="p-2 rounded-lg text-red-500 hover:bg-red-50 shrink-0"
+                            >
+                              <X className="w-5 h-5" />
+                            </button>
+                          )}
+
+                        </label>
+
+                      </div>
+                    );
+                  }
+                )}
+
+              {/* PAY ON DELIVERY */}
+
+              {values.paymentMethod ===
+                'pod' && (
+                <div
+                  className={`${cardBg} border p-6 rounded-2xl shadow-lg`}
+                >
+
+                  <div className="flex gap-4">
+
+                    <div className="p-3 bg-emerald-100 rounded-xl h-fit">
+                      <HandCoins className="w-6 h-6 text-emerald-600" />
+                    </div>
+
+                    <div>
+
+                      <h3
+                        className={`font-bold ${textColor}`}
+                      >
+                        Pay on Delivery
+                      </h3>
+
+                      <p
+                        className={`text-sm mt-1 ${secondaryText}`}
+                      >
+                        You will pay for your order when the delivery arrives.
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                </div>
+              )}
+
+              {/* SPECIAL INSTRUCTIONS */}
+
+              <div
+                className={`${cardBg} border p-6 rounded-2xl shadow-lg`}
+              >
+
+                <h3
+                  className={`text-xl font-bold ${textColor} flex items-center gap-3 mb-4`}
+                >
+                  <MessageSquare className="w-5 h-5 text-purple-500" />
+
+                  Special Instructions
+                </h3>
+
+                <Field
+                  as="textarea"
+                  name="note"
+                  rows={3}
+                  className={`w-full p-4 rounded-xl border outline-none focus:ring-2 focus:ring-purple-500 ${inputBg}`}
+                  placeholder="Add any notes for the vendor or delivery..."
+                />
+
+                <ErrorMessage
+                  name="note"
+                  component="p"
+                  className="text-sm text-red-500 mt-2"
+                />
+
+              </div>
+
+            </div>
+
+            {/* =================================================
+                RIGHT COLUMN
+            ================================================== */}
+
+            <div className="lg:col-span-4">
+
+              <div className="sticky top-8 space-y-4">
+
+                {/* ORDER SUMMARY */}
+
+                <div
+                  className={`${cardBg} border rounded-2xl shadow-xl overflow-hidden`}
+                >
+
+                  <div className="p-6 border-b border-gray-100 dark:border-gray-700">
+
+                    <h3
+                      className={`text-xl font-bold ${textColor} flex items-center gap-3`}
+                    >
+                      <div className="p-2 bg-gradient-to-r from-red-500 to-red-600 rounded-lg">
+                        <ShoppingBag className="w-5 h-5 text-white" />
+                      </div>
+
+                      Order Summary
+                    </h3>
+
+                  </div>
+
+                  <div className="p-6 space-y-4 max-h-[400px] overflow-y-auto">
+
+                    <p
+                      className={`text-sm ${secondaryText} mb-4`}
+                    >
+                      You are paying{' '}
+                      {vendorCount}{' '}
+                      vendor
+                      {vendorCount ===
+                      1
+                        ? ''
+                        : 's'}
+                    </p>
+
+                    {vendorGroups.map(
+                      (
+                        vendorGroup
+                      ) => {
+
+                        const vendorSubtotal =
+                          vendorGroup.items.reduce(
+                            (
+                              sum,
+                              item
+                            ) =>
+                              sum +
+                              safeNumber(
+                                item.price
+                              ) *
+                                safeNumber(
+                                  item.quantity
+                                ),
+                            0
+                          );
+
+                        return (
+                          <div
+                            key={
+                              vendorGroup.vendorId
+                            }
+                            className="mb-6"
+                          >
+
+                            <div className="flex items-center justify-between gap-2 mb-2">
+
+                              <h4 className="font-bold text-red-500">
+                                {
+                                  vendorGroup.vendorName
+                                }
+                              </h4>
+
+                              <span
+                                className={`text-sm font-semibold ${secondaryText}`}
+                              >
+                                ₦
+                                {formatMoney(
+                                  vendorSubtotal
+                                )}
+                              </span>
+
+                            </div>
+
+                            {vendorGroup.items.map(
+                              (
+                                item,
+                                index
+                              ) => {
+
+                                const itemKey =
+                                  item.id ||
+                                  `${vendorGroup.vendorId}-${index}`;
+
+                                return (
+                                  <div
+                                    key={
+                                      itemKey
+                                    }
+                                    className="flex gap-4 p-3 rounded-lg"
+                                  >
+
+                                    <div className="h-16 w-16 overflow-hidden rounded-xl border shrink-0 bg-gray-100">
+
+                                      {item.image ? (
+                                        <img
+                                          src={
+                                            item.image
+                                          }
+                                          alt={
+                                            item.name
+                                          }
+                                          className="h-full w-full object-cover"
+                                          onError={(
+                                            e
+                                          ) => {
+                                            e.currentTarget.style.display =
+                                              'none';
+                                          }}
+                                        />
+                                      ) : (
+                                        <div className="h-full w-full flex items-center justify-center">
+                                          <Package className="w-6 h-6 text-gray-400" />
+                                        </div>
+                                      )}
+
+                                    </div>
+
+                                    <div className="flex-1 min-w-0">
+
+                                      <p
+                                        className={`text-sm font-semibold ${textColor} truncate`}
+                                      >
+                                        {
+                                          item.name
+                                        }
+                                      </p>
+
+                                      <p
+                                        className={`text-xs ${secondaryText}`}
+                                      >
+                                        Qty:{' '}
+                                        {
+                                          item.quantity
+                                        }
+                                      </p>
+
+                                      <p
+                                        className={`text-sm font-semibold ${textColor}`}
+                                      >
+                                        ₦
+                                        {formatMoney(
+                                          safeNumber(
+                                            item.price
+                                          ) *
+                                            safeNumber(
+                                              item.quantity
+                                            )
+                                        )}
+                                      </p>
+
+                                    </div>
+
+                                  </div>
+                                );
+                              }
+                            )}
+
+                          </div>
+                        );
+                      }
+                    )}
+
+                  </div>
+
+                  {/* TOTALS */}
+
+                  <div
+                    className={`p-6 space-y-3 ${
+                      isDark
+                        ? 'bg-gradient-to-b from-gray-800/50 to-gray-700/30'
+                        : 'bg-gradient-to-b from-gray-50 to-gray-100/50'
+                    }`}
+                  >
+
+                    <div className="flex justify-between items-center">
+
+                      <span
+                        className={
+                          secondaryText
+                        }
+                      >
+                        Subtotal
+                      </span>
+
+                      <span
+                        className={`font-semibold ${textColor}`}
+                      >
+                        ₦
+                        {formatMoney(
+                          subtotal
+                        )}
+                      </span>
+
+                    </div>
+
+                    <div className="flex justify-between items-center">
+
+                      <span
+                        className={
+                          secondaryText
+                        }
+                      >
+                        Delivery Fee
+                      </span>
+
+                      <span
+                        className={`font-semibold ${
+                          deliveryFee ===
+                          0
+                            ? 'text-green-500'
+                            : textColor
+                        }`}
+                      >
+                        {deliveryFee ===
+                        0
+                          ? 'FREE'
+                          : `₦${formatMoney(
+                              deliveryFee
+                            )}`}
+                      </span>
+
+                    </div>
+
+                    <div
+                      className={`pt-4 border-t ${
+                        isDark
+                          ? 'border-gray-600'
+                          : 'border-gray-200'
+                      }`}
+                    >
+
+                      <div className="flex justify-between items-center gap-4">
+
+                        <span
+                          className={`text-lg font-bold ${textColor}`}
+                        >
+                          Total Amount
+                        </span>
+
+                        <span className="text-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text font-bold tracking-tight text-transparent whitespace-nowrap">
+                          ₦
+                          {formatMoney(
+                            orderTotal
+                          )}
+                        </span>
+
+                      </div>
+
+                      <p className="text-xs text-gray-500 mt-2">
+
+                        {values.paymentMethod ===
+                        'pay_now'
+                          ? 'Including delivery fee'
+                          : 'Pay when your order arrives'}
+
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+                {/* SUBMIT BUTTON */}
+
+                <button
+                  type="submit"
+                  disabled={
+                    isSubmitting ||
+                    normalizedCartItems.length ===
+                      0
+                  }
+                  className="w-full px-6 py-4 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-2xl shadow-xl shadow-green-500/30 hover:shadow-2xl hover:shadow-green-500/40 transition-all flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      {values.paymentMethod ===
+                      'pay_now'
+                        ? 'Complete Payment'
+                        : 'Place Order'}
+
+                      <ChevronRight className="w-5 h-5" />
+                    </>
+                  )}
+
+                </button>
+
+                {/* SECURITY BADGE */}
+
+                <div
+                  className={`p-4 rounded-xl border ${
+                    isDark
+                      ? 'bg-gray-800 border-gray-700'
+                      : 'bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200'
+                  }`}
+                >
+
+                  <div className="flex items-center justify-center gap-3">
+
+                    <CheckCircle2 className="w-5 h-5 text-green-500" />
+
+                    <div className="text-center">
+
+                      <p
+                        className={`text-sm font-medium ${textColor}`}
+                      >
+                        Secure Checkout
+                      </p>
+
+                      <p className="text-xs text-gray-500">
+                        Your information is protected
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </Form>
+        );
+      }}
+    </Formik>
+
+  </div>
+</div>
+
 );
+};
 
 export default Checkout;

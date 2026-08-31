@@ -8,62 +8,93 @@ const Hero = () => {
   return (
     <div className="relative bg-gradient-to-r from-green-600 to-green-800 dark:from-green-800 dark:to-green-900 text-white overflow-hidden rounded">
       <div className="absolute inset-0 bg-black opacity-10"></div>
-      
+
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           {/* Left side - Content */}
-          <div>
-            <div className="flex items-center mb-6">
-              <img src={Logo} alt='CampusTrade' className="h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24 mr-4 object-contain" />
-              <div>
-                <h1 className="text-4xl md:text-5xl font-bold mb-2">
+          {/* Left side - Content */}
+          <div className="min-w-0">
+            {/* Logo + Brand */}
+            <div className="flex flex-col sm:flex-row sm:items-center mb-6">
+              <div className="flex justify-center sm:block flex-shrink-0 mb-4 sm:mb-0 sm:mr-4">
+                <img
+                  src={Logo}
+                  alt="CampusTrade"
+                  className="
+        h-20 w-20
+        sm:h-20 sm:w-20
+        lg:h-24 lg:w-24
+        object-contain
+      "
+                />
+              </div>
+
+              <div className="min-w-0 text-center sm:text-left">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-2">
                   CampusTrade
                 </h1>
-                <p className="text-lg text-green-100">
-                  E-commerce Platform for univerties use
+
+                <p className="text-base sm:text-lg text-green-100">
+                  E-commerce Platform for universities
                 </p>
               </div>
             </div>
-            
-            <p className="text-xl mb-8 text-green-50">
-              Buy, sell, and trade campus essentials with fellow students and university stores. 
-              Everything you need for your academic journey in one place.
+
+            <p className="text-lg sm:text-xl mb-8 text-green-50 leading-relaxed">
+              Buy, sell, and trade campus essentials with fellow students and
+              university stores. Everything you need for your academic journey
+              in one place.
             </p>
-            
+
             <div className="flex flex-col sm:flex-row gap-4">
               <Link
                 to="/products"
-                className="inline-flex items-center justify-center px-8 py-3 text-lg font-medium rounded-lg bg-yellow-500 text-black hover:bg-yellow-600 transition-colors"
+                className="w-full sm:w-auto inline-flex items-center justify-center px-6 sm:px-8 py-3 text-base sm:text-lg font-medium rounded-lg bg-yellow-500 text-black hover:bg-yellow-600 transition-colors"
               >
                 <FiShoppingBag className="mr-2 h-5 w-5" />
                 Start Shopping
               </Link>
+
               <Link
                 to="/vendor/register"
-                className="inline-flex items-center justify-center px-8 py-3 text-lg font-medium rounded-lg bg-transparent border-2 border-white text-white hover:bg-white/10 transition-colors"
+                className="w-full sm:w-auto inline-flex items-center justify-center px-6 sm:px-8 py-3 text-base sm:text-lg font-medium rounded-lg bg-transparent border-2 border-white text-white hover:bg-white/10 transition-colors"
               >
                 <FiBookOpen className="mr-2 h-5 w-5" />
                 Become a Seller
               </Link>
             </div>
-            
+
             {/* Quick stats */}
-            <div className="mt-12 grid grid-cols-3 gap-4">
+            <div className="mt-10 sm:mt-12 grid grid-cols-3 gap-2 sm:gap-4">
               <div className="text-center">
-                <div className="text-2xl font-bold">500+</div>
-                <div className="text-sm text-green-200">Products</div>
+                <div className="text-xl sm:text-2xl font-bold">
+                  500+
+                </div>
+                <div className="text-xs sm:text-sm text-green-200">
+                  Products
+                </div>
               </div>
+
               <div className="text-center">
-                <div className="text-2xl font-bold">2,000+</div>
-                <div className="text-sm text-green-200">Students</div>
+                <div className="text-xl sm:text-2xl font-bold">
+                  2,000+
+                </div>
+                <div className="text-xs sm:text-sm text-green-200">
+                  Students
+                </div>
               </div>
+
               <div className="text-center">
-                <div className="text-2xl font-bold">98%</div>
-                <div className="text-sm text-green-200">Satisfaction</div>
+                <div className="text-xl sm:text-2xl font-bold">
+                  98%
+                </div>
+                <div className="text-xs sm:text-sm text-green-200">
+                  Satisfaction
+                </div>
               </div>
             </div>
           </div>
-          
+
           {/* Right side - Illustration */}
           <div className="relative">
             <div className="relative bg-white/10 backdrop-blur-sm rounded-2xl p-8">
@@ -85,7 +116,7 @@ const Hero = () => {
                   <div className="h-4 bg-white/30 rounded w-3/4"></div>
                 </div>
               </div>
-              
+
               {/* Delivery badge */}
               <div className="absolute -bottom-4 -right-4 bg-yellow-500 text-black rounded-lg p-4 shadow-lg">
                 <div className="flex items-center">
@@ -100,7 +131,7 @@ const Hero = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Wave separator */}
       <div className="absolute bottom-0 w-full overflow-hidden">
         <svg

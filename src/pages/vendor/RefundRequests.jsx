@@ -12,7 +12,7 @@ import {
   Loader2,
   CreditCard,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Loading from '../../components/layout/Loding';
 import ReviewRefundReturnModal from '../../components/common/ReviewRefundReturnModal';
 
@@ -31,6 +31,7 @@ const VendorRefundRequests = () => {
   const [loading, setLoading] = useState(true);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchRefundRequests();
@@ -134,13 +135,10 @@ const VendorRefundRequests = () => {
     <div className={`min-h-screen ${bgColor} py-10 transition-colors duration-300`}>
       <div className="max-w-6xl mx-auto px-4">
         <div className="mb-8">
-          <Link
-            to="/vendor/dashboard"
-            className={`flex items-center gap-2 text-sm mb-4 ${secondaryText} hover:${textColor}`}
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
-          </Link>
+          <button onClick={() => navigate(-1)} className={`group inline-flex items-center gap-2 text-sm text-gray-400 hover:text-green-500 transition-colors mb-2 rounded-full px-3 py-1.5 ${isDark ? "bg-zinc-900/70 hover:bg-zinc-800 text-zinc-300 ring-1 ring-white/10" : "bg-white/70 hover:bg-white text-zinc-600 ring-1 ring-zinc-900/5"}`}>
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            Back
+          </button>
 
           <div className="bg-gradient-to-r from-green-600 via-green-500 to-yellow-500 rounded-2xl p-8 text-white shadow-xl">
             <div className="flex items-center gap-3 mb-2">
@@ -263,10 +261,10 @@ const VendorRefundRequests = () => {
                       <p className={`text-sm ${secondaryText}`}>
                         {refund?.requestedAt
                           ? new Date(refund.requestedAt).toLocaleDateString('en-US', {
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric',
-                            })
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                          })
                           : 'No date available'}
                       </p>
                     </div>

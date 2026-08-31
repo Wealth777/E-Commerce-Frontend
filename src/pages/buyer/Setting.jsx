@@ -122,10 +122,10 @@ export default function Settings() {
                 "auth/settings/login-all-devices"
             );
 
-            dispatch(logout())
-
             showToast(res.data.message, "success");
-            navigate("/vendor/login", {
+
+            dispatch(logout())
+            navigate("/buyer/login", {
                 replace: true,
             });
         } catch (error) {
@@ -203,7 +203,7 @@ export default function Settings() {
         setLoadingActivities(true);
         try {
             const { data } = await apiClient.get(
-                "/vendor/activity"
+                "/buyer/activity"
             );
 
             const activities = data.data || [];
@@ -353,9 +353,12 @@ export default function Settings() {
         ) {
             return;
         }
+
         const previousValue = notificationPreference;
+
         setNotificationPreference(value);
         setNotificationLoading(true);
+
         try {
             const { data } = await apiClient.put(
                 "/auth/settings/notification-preference",
@@ -368,6 +371,7 @@ export default function Settings() {
                 data.data?.notificationPreference ?? value;
 
             setNotificationPreference(updatedValue);
+
             dispatch(
                 setUser({
                     ...user,
@@ -377,6 +381,7 @@ export default function Settings() {
                     },
                 })
             );
+
             showToast(
                 getMessage(
                     data,
@@ -386,6 +391,7 @@ export default function Settings() {
             );
         } catch (error) {
             setNotificationPreference(previousValue);
+
             showToast(
                 getMessage(
                     error,
@@ -400,9 +406,12 @@ export default function Settings() {
 
     const handlePromotionalMessagesChange = async (value) => {
         if (promotionalLoading) return;
+
         const previousValue = promotionalMessages;
+
         setPromotionalMessages(value);
         setPromotionalLoading(true);
+
         try {
             const { data } = await apiClient.put(
                 "/auth/settings/promotional-messages",
@@ -415,6 +424,7 @@ export default function Settings() {
                 data.data?.promotionalMessages ?? value;
 
             setPromotionalMessages(updatedValue);
+
             dispatch(
                 setUser({
                     ...user,
@@ -424,6 +434,7 @@ export default function Settings() {
                     },
                 })
             );
+
             showToast(
                 getMessage(
                     data,
@@ -459,6 +470,7 @@ export default function Settings() {
             className={`min-h-screen ${bg} p-4 sm:p-6 lg:p-8 transition-all duration-300 antialiased font-sans selection:bg-green-500 selection:text-white`}
         >
             <div className="max-w-5xl mx-auto space-y-8 animate-fade-in">
+
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-gray-700/30">
                     <div>
                         <button
@@ -468,11 +480,16 @@ export default function Settings() {
                                 : "bg-white/70 hover:bg-white text-zinc-600 ring-1 ring-zinc-900/5"
                                 }`}
                         >
-                            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Back
+                            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+
+                            Back
                         </button>
+
                         <h1
                             className={`text-3xl font-extrabold tracking-tight ${text} flex items-center gap-2`}
-                        >Settings</h1>
+                        >
+                            Settings
+                        </h1>
                     </div>
                 </div>
 

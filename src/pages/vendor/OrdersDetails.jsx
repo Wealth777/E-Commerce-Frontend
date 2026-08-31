@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTheme } from "../../context/ThemeContext";
 import apiClient from "../../api/apiClient";
@@ -28,6 +28,7 @@ export default function VendorOrdersDetails() {
   const [actionLoading, setActionLoading] = useState("");
   const [showProofModal, setShowProofModal] = useState(false);
   const [activeProof, setActiveProof] = useState(null);
+  const navigate = useNavigate();
 
   const safeOrderId = order?._id;
 
@@ -203,9 +204,11 @@ export default function VendorOrdersDetails() {
       {/* Header */}
       <div className={`sticky top-0 z-30 ${isDark ? "bg-[#0a0a0f]/80" : "bg-gray-50/80"} backdrop-blur-xl border-b ${cardBorder}`}>
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link to="/vendor/orders" className={`flex items-center gap-2 text-sm font-medium ${textSecondary} hover:${textColor}`}>
-            <ArrowLeft className="w-4 h-4" /> Back to Orders
-          </Link>
+          <button onClick={() => navigate(-1)} className={`group inline-flex items-center gap-2 text-sm text-gray-400 hover:text-green-500 transition-colors mb-2 rounded-full px-3 py-1.5 ${isDark ? "bg-zinc-900/70 hover:bg-zinc-800 text-zinc-300 ring-1 ring-white/10" : "bg-white/70 hover:bg-white text-zinc-600 ring-1 ring-zinc-900/5"}`}>
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            Back
+          </button>
+
           <button onClick={copyOrderId} className={`flex items-center gap-1.5 text-xs font-mono px-3 py-1.5 rounded-lg border ${cardBorder} ${textMuted}`}>
             {copied ? "Copied!" : `#${order._id?.slice(-8).toUpperCase()}`}
             <Copy className="w-3 h-3" />

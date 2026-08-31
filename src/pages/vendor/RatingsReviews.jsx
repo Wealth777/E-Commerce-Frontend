@@ -4,6 +4,8 @@ import { getList, getMessage } from '../../utils/apiResponse';
 import { useToast } from '../../context/ToastContext';
 import { useTheme } from '../../context/ThemeContext';
 import { EmptyState, ErrorState, LoadingState, RatingStars, ReviewCard, ProductRatingDisplay } from '../../components/feedback';
+import { ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const VendorRatingsReviews = () => {
   const { isDark } = useTheme();
@@ -13,6 +15,7 @@ const VendorRatingsReviews = () => {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
   const [filters, setFilters] = useState({ page: 1, limit: 10, search: '', status: '', rating: '', sortBy: 'createdAt', sortOrder: 'desc' });
 
   const loadData = async () => {
@@ -42,6 +45,10 @@ const VendorRatingsReviews = () => {
     <div className={`min-h-screen ${isDark ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'} p-4 md:p-8`}>
       <div className="mx-auto max-w-6xl space-y-6">
         <div>
+          <button onClick={() => navigate(-1)} className={`group inline-flex items-center gap-2 text-sm text-gray-400 hover:text-green-500 transition-colors mb-2 rounded-full px-3 py-1.5 ${isDark ? "bg-zinc-900/70 hover:bg-zinc-800 text-zinc-300 ring-1 ring-white/10" : "bg-white/70 hover:bg-white text-zinc-600 ring-1 ring-zinc-900/5"}`}>
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            Back
+          </button>
           <h1 className="text-2xl font-black">Product Ratings and Reviews</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">View buyer feedback connected to your products.</p>
         </div>
@@ -55,7 +62,7 @@ const VendorRatingsReviews = () => {
               <option value="">All status</option><option value="active">active</option><option value="hidden">hidden</option><option value="flagged">flagged</option>
             </select>
             <select value={filters.rating} onChange={(e) => updateFilter('rating', e.target.value)} className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900">
-              <option value="">All ratings</option>{[5,4,3,2,1].map((r) => <option key={r} value={r}>{r} stars</option>)}
+              <option value="">All ratings</option>{[5, 4, 3, 2, 1].map((r) => <option key={r} value={r}>{r} stars</option>)}
             </select>
           </div>
         </div>

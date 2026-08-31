@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { ArrowLeft, ShoppingBag, Trash2 } from 'lucide-react';
 import apiClient from '../../api/apiClient';
-import { getList, getMessage, getPayload } from '../../utils/apiResponse';
+import { getMessage, getPayload } from '../../utils/apiResponse';
 import { useDispatch, useSelector } from 'react-redux';
 import { useToast } from '../../context/ToastContext';
 import { addToCart } from '../../store/cartActions';
 import Loading from '../../components/layout/Loding';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ProductRatingDisplay } from '../../components/feedback';
 
 const Wishlist = ({ product }) => {
@@ -18,14 +18,13 @@ const Wishlist = ({ product }) => {
   const [viewMode, setViewMode] = useState('grid');
   const [sortBy, setSortBy] = useState('newest');
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const bgColor = isDark ? 'bg-gray-950' : 'bg-gray-50';
   const cardBg = isDark ? 'bg-gray-900' : 'bg-white';
   const textColor = isDark ? 'text-white' : 'text-gray-900';
   const textSecondary = isDark ? 'text-gray-400' : 'text-gray-500';
   const borderColor = isDark ? 'border-gray-800' : 'border-gray-100';
-  const secondaryTextt = isDark ? 'text-gray-400' : 'text-gray-500';
-  const textColorr = isDark ? 'text-white' : 'text-gray-900';
 
   useEffect(() => {
     fetchWishlist();
@@ -145,10 +144,11 @@ const Wishlist = ({ product }) => {
 
   return (
     <div className={`min-h-screen ${bgColor} transition-colors duration-300 pb-10`}>
-      <Link to="/buyer/dashboard" className={`flex max-w-5xl mx-auto items-center gap-2 text-sm mb-4 pt-6 ${secondaryTextt} hover:${textColorr}`}>
-        <ArrowLeft className="w-4 h-4" />
-        Back to Dashboard
-      </Link>
+      <button onClick={() => navigate(-1)} className={`group inline-flex items-center gap-2 text-sm text-gray-400 hover:text-green-500 transition-colors mb-2 rounded-full px-3 py-1.5 ${isDark ? "bg-zinc-900/70 hover:bg-zinc-800 text-zinc-300 ring-1 ring-white/10" : "bg-white/70 hover:bg-white text-zinc-600 ring-1 ring-zinc-900/5"}`}>
+        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+        Back
+      </button>
+
       {/* Header Banner */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="relative overflow-hidden rounded-2xl">

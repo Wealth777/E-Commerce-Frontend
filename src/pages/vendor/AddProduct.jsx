@@ -231,7 +231,7 @@ const AddProduct = () => {
             <div className="flex items-center gap-4">
               <button
                 type="button"
-                onClick={() => navigate('/vendor/products')}
+                onClick={() => navigate(-1)}
                 className={`p-2 rounded-lg ${isDark ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-100 text-gray-600'} transition-colors`}
               >
                 <FaArrowLeft className="w-5 h-5" />

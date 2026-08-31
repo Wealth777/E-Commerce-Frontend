@@ -4,6 +4,7 @@ import { getList, getMessage } from '../../utils/apiResponse';
 import { useToast } from '../../context/ToastContext';
 import { useTheme } from '../../context/ThemeContext';
 import { EmptyState, ErrorState, LoadingState, ReportCard, ReportForm } from '../../components/feedback';
+import { useNavigate } from 'react-router-dom';
 
 const VendorReports = () => {
   const { isDark } = useTheme();
@@ -13,6 +14,7 @@ const VendorReports = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const navigate = useNavigate();
   const [filters, setFilters] = useState({ page: 1, limit: 10, search: '', status: '', priority: '', targetType: '', sortBy: 'createdAt', sortOrder: 'desc' });
 
   const loadReports = async () => {
@@ -52,6 +54,10 @@ const VendorReports = () => {
       <div className="mx-auto max-w-6xl space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
+            <button onClick={() => navigate(-1)} className={`group inline-flex items-center gap-2 text-sm text-gray-400 hover:text-green-500 transition-colors mb-2 rounded-full px-3 py-1.5 ${isDark ? "bg-zinc-900/70 hover:bg-zinc-800 text-zinc-300 ring-1 ring-white/10" : "bg-white/70 hover:bg-white text-zinc-600 ring-1 ring-zinc-900/5"}`}>
+              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+              Back
+            </button>
             <h1 className="text-2xl font-black">Vendor Reports</h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">Create and track reports from your vendor account.</p>
           </div>

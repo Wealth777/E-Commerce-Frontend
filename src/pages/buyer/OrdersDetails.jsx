@@ -340,7 +340,7 @@ export default function OrdersDetails() {
     <div className={`min-h-screen ${bgColor} pb-16`}>
       <div className={`sticky top-0 z-30 ${isDark ? "bg-[#0a0a0f]/80" : "bg-gray-50/80"} backdrop-blur-xl border-b ${cardBorder}`}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <button onClick={() => navigate(-1)} className={`flex items-center gap-2 text-sm font-medium ${textSecondary} hover:${textPrimary} transition-colors group`}>
+          <button onClick={() => navigate(-1)} className={`flex items-center gap-2 text-sm font-medium rounded-full px-3 py-1.5 ${textSecondary} hover:${textPrimary} transition-colors group`}>
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
             Back
           </button>

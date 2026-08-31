@@ -30,7 +30,7 @@ import { useToast } from '../../context/ToastContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useSelector } from 'react-redux';
 import Loading from '../../components/layout/Loding';
-import ProductCard from '../../components/cards/ProductCard';
+import ProductCard from '../../components/cards/VendordeatilsProductCard';
 
 const getCategoryId = (product) => {
   if (!product?.category) return '';
@@ -103,6 +103,167 @@ const buildCategories = (products) => {
   return [...map.values()];
 };
 
+const normalizeVendorInfo = (vendor) => {
+  if (!vendor) return null;
+
+  const rawSocials =
+    vendor.business?.socials ||
+    vendor.business?.socialMedia ||
+    vendor.socials ||
+    {};
+
+  let socials = rawSocials;
+
+  // Handle JSON string
+  if (typeof socials === 'string') {
+    try {
+      socials = JSON.parse(socials);
+    } catch {
+      socials = {};
+    }
+  }
+
+  // Handle Mongoose Map-like objects
+  if (socials instanceof Map) {
+    socials = Object.fromEntries(socials.entries());
+  }
+
+  const normalized = {
+    id:
+      vendor.id ||
+      vendor._id ||
+      vendor.identity?.id ||
+      '',
+
+    serialNumber:
+      vendor.serialNumber ||
+      vendor.identity?.serialNumber ||
+      '',
+
+    fullName:
+      vendor.fullName ||
+      vendor.identity?.fullName ||
+      '',
+
+    account: {
+      email:
+        vendor.email ||
+        vendor.account?.email ||
+        '',
+
+      phoneNo:
+        vendor.phoneNo ||
+        vendor.account?.phoneNo ||
+        '',
+    },
+
+    student: {
+      profilePhoto:
+        vendor.student?.profilePhoto ||
+        vendor.profilePhoto ||
+        '',
+
+      gender:
+        vendor.student?.gender ||
+        '',
+
+      institution:
+        vendor.student?.institution ||
+        '',
+
+      state:
+        vendor.student?.state ||
+        '',
+
+      matricNumber:
+        vendor.student?.matricNumber ||
+        '',
+
+      faculty:
+        vendor.student?.faculty ||
+        '',
+
+      department:
+        vendor.student?.department ||
+        '',
+
+      level:
+        vendor.student?.level ||
+        '',
+
+      residence:
+        vendor.student?.residence ||
+        '',
+
+      address:
+        vendor.student?.address ||
+        '',
+    },
+
+    business: {
+      storeName:
+        vendor.business?.storeName ||
+        '',
+
+      type:
+        vendor.business?.type ||
+        '',
+
+      description:
+        vendor.business?.description ||
+        '',
+
+      logo:
+        vendor.business?.logo ||
+        '',
+
+      banner:
+        vendor.business?.banner ||
+        '',
+
+      socials: {
+        facebook:
+          socials?.facebook ||
+          '',
+
+        instagram:
+          socials?.instagram ||
+          '',
+
+        whatsapp:
+          socials?.whatsapp ||
+          '',
+
+        tiktok:
+          socials?.tiktok ||
+          '',
+
+        twitter:
+          socials?.twitter ||
+          '',
+
+        linkedin:
+          socials?.linkedin ||
+          '',
+      },
+    },
+
+    verification: {
+      isVerified:
+        vendor.verification?.isVerified ??
+        vendor.isVerified ??
+        false,
+    },
+
+    accountStatus:
+      vendor.accountStatus ||
+      vendor.verification?.accountStatus ||
+      '',
+  };
+
+  return normalized;
+};
+
 const VendorDetails = () => {
   const { vendorId } = useParams();
   const navigate = useNavigate();
@@ -123,6 +284,7 @@ const VendorDetails = () => {
   const [sortBy, setSortBy] = useState('newest');
   const [categories, setCategories] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [showFullDescription, setShowFullDescription] = useState(false);
 
   const bgColor = isDark ? 'bg-gray-900 text-white' : 'bg-[#F8FAFC]';
   const cardBg = isDark ? 'bg-gray-800' : 'bg-white';
@@ -139,22 +301,31 @@ const VendorDetails = () => {
 
       const payload = getPayload(response, {});
 
-      const vendor =
-        payload.vendorInfo ||
-        payload.vendor ||
+      const rawVendor =
+        payload?.vendorInfo ||
+        payload?.vendor ||
+        payload?.data?.vendorInfo ||
+        payload?.data?.vendor ||
         null;
 
-      const rawProducts = Array.isArray(payload.products)
-        ? payload.products
-        : [];
+      const vendor = normalizeVendorInfo(rawVendor);
+
+      const rawProducts =
+        Array.isArray(payload?.products)
+          ? payload.products
+          : Array.isArray(payload?.data?.products)
+            ? payload.data.products
+            : [];
 
       const vendorProducts = rawProducts.map((product) =>
         normalizeProduct(product, vendor)
       );
 
       setVendorInfo(vendor);
+      setAllProducts(vendorProducts);
       setProducts(vendorProducts);
       setCategories(buildCategories(vendorProducts));
+
     } catch (error) {
       showToast(
         getMessage(error, 'Failed to load vendor details'),
@@ -164,97 +335,6 @@ const VendorDetails = () => {
       setLoading(false);
     }
   }, [vendorId, showToast]);
-
-  // const fetchProductsByCategory = useCallback(async () => {
-  //   if (!selectedCategory) {
-  //     setProducts(allProducts);
-  //     return;
-  //   }
-
-  //   try {
-  //     setProductsLoading(true);
-
-  //     const response = await apiClient.get(
-  //       `/vendor/vendor/products/${vendorId}/category/${encodeURIComponent(
-  //         selectedCategory
-  //       )}`
-  //     );
-
-  //     const payload = getPayload(response, {});
-
-  //     const rawProducts = Array.isArray(payload.products)
-  //       ? payload.products
-  //       : [];
-
-  //     const vendorProducts = rawProducts.map((product) =>
-  //       normalizeProduct(product, vendorInfo)
-  //     );
-
-  //     setProducts(vendorProducts);
-  //   } catch (error) {
-  //     showToast(
-  //       getMessage(error, 'Failed to load products'),
-  //       'error'
-  //     );
-  //   } finally {
-  //     setProductsLoading(false);
-  //   }
-  // }, [
-  //   vendorId,
-  //   selectedCategory,
-  //   allProducts,
-  //   vendorInfo,
-  //   showToast,
-  // ]);
-
-  // const fetchVendorProducts = useCallback(async () => {
-  //   try {
-  //     setProductsLoading(true);
-
-  //     let endpoint = `/vendor/vendor/details/${vendorId}`;
-
-  //     if (selectedCategory) {
-  //       endpoint = `/vendor/vendor/products/${vendorId}/category/${encodeURIComponent(
-  //         selectedCategory
-  //       )}`;
-  //     }
-
-  //     const response = await apiClient.get(endpoint);
-  //     const payload = getPayload(response, {});
-
-  //     const rawProducts =
-  //       payload.products ||
-  //       (Array.isArray(payload) ? payload : []);
-
-  //     const currentVendor =
-  //       payload.vendor ||
-  //       payload.vendorInfo ||
-  //       vendorInfo;
-
-  //     const vendorProducts = rawProducts.map((product) =>
-  //       normalizeProduct(product, currentVendor)
-  //     );
-
-  //     setProducts(vendorProducts);
-
-  //     if (currentVendor) {
-  //       setVendorInfo(currentVendor);
-  //     }
-
-  //     if (!selectedCategory) {
-  //       setCategories(buildCategories(vendorProducts));
-  //     }
-
-  //     console.log(vendorInfo)
-  //   } catch (error) {
-  //     showToast(
-  //       getMessage(error, 'Failed to load products'),
-  //       'error'
-  //     );
-  //   } finally {
-  //     setProductsLoading(false);
-  //   }
-  // }, [vendorId, selectedCategory, showToast, vendorInfo]);
 
   const fetchProductsByCategory = useCallback(async () => {
     if (!selectedCategory) {
@@ -275,7 +355,9 @@ const VendorDetails = () => {
 
       const rawProducts = Array.isArray(payload.products)
         ? payload.products
-        : [];
+        : Array.isArray(payload.data?.products)
+          ? payload.data.products
+          : [];
 
       const vendorProducts = rawProducts.map((product) =>
         normalizeProduct(product, vendorInfo)
@@ -294,6 +376,7 @@ const VendorDetails = () => {
     vendorId,
     selectedCategory,
     allProducts,
+    vendorInfo,
     showToast,
   ]);
 
@@ -345,12 +428,6 @@ const VendorDetails = () => {
   useEffect(() => {
     fetchProductsByCategory();
   }, [fetchProductsByCategory]);
-
-  // useEffect(() => {
-  //   if (vendorInfo) {
-  //     fetchVendorProducts();
-  //   }
-  // }, [selectedCategory, fetchVendorProducts, vendorInfo]);
 
   useEffect(() => {
     applyFilters();
@@ -523,7 +600,7 @@ const VendorDetails = () => {
     <div className={`min-h-screen ${bgColor} pb-20`}>
       <div className="relative">
         <div className="h-48 md:h-72 max-w-7xl mx-auto relative bg-gray-200 dark:bg-gray-800">
-          {vendorInfo.business?.banner ? (
+          {vendorInfo.business.banner ? (
             <img
               src={vendorInfo.business.banner}
               alt={vendorInfo.business.storeName || 'Vendor banner'}
@@ -553,15 +630,15 @@ const VendorDetails = () => {
               <div className="relative -mt-16 md:-mt-20">
                 <img
                   src={
-                    vendorInfo.student?.profilePhoto ||
-                    vendorInfo.business?.logo ||
+                    vendorInfo.student.profilePhoto ||
+                    vendorInfo.business.logo ||
                     '/default-avatar.png'
                   }
-                  alt={vendorInfo.business?.storeName || 'Vendor'}
+                  alt={vendorInfo.business.storeName || 'Vendor'}
                   className="w-32 h-32 md:w-40 md:h-40 rounded-3xl object-cover border-8 border-white dark:border-gray-800 shadow-lg"
                 />
 
-                {vendorInfo.verification?.isVerified && (
+                {vendorInfo.verification.isVerified && (
                   <div className="absolute -bottom-2 -right-2 bg-blue-500 text-white p-2 rounded-full border-4 border-white dark:border-gray-800">
                     <FaCheckCircle className="h-5 w-5" />
                   </div>
@@ -571,7 +648,7 @@ const VendorDetails = () => {
               <div className="flex-1">
                 <div className="flex flex-col md:flex-row md:items-center gap-2 mb-2">
                   <h1 className="text-3xl font-bold tracking-tight">
-                    {vendorInfo.business?.storeName || 'Vendor Store'}
+                    {vendorInfo.business.storeName || 'Vendor Store'}
                   </h1>
 
                   <div className="flex items-center justify-center gap-1 text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 px-3 py-1 rounded-full w-fit mx-auto md:mx-0">
@@ -588,7 +665,9 @@ const VendorDetails = () => {
                 <div className="flex flex-wrap justify-center md:justify-start gap-4 text-sm font-medium">
                   <div className="flex items-center gap-1.5 text-gray-500">
                     <FaMapMarkerAlt className="text-green-600" />
-                    {vendorInfo.student?.institution || 'Institution not provided'}
+                    {typeof vendorInfo.student.institution === 'object'
+                      ? vendorInfo.student.institution.name
+                      : vendorInfo.student.institution || 'Institution not provided'}
                   </div>
 
                   <div className="text-gray-300 hidden md:block">|</div>
@@ -603,13 +682,14 @@ const VendorDetails = () => {
               </div>
 
               <div className="hidden lg:flex flex-col items-end gap-3">
-                {renderSocialLinks(vendorInfo.business?.socials)}
+                {renderSocialLinks(vendorInfo.business.socials)}
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mt-8 pt-8 border-t border-gray-100 dark:border-gray-700">
               <a
-                href={`mailto:${vendorInfo.account?.email || ''}`}
+                href={`mailto:${vendorInfo.account.email || ''}`}
+                target="_blank"
                 className="flex items-center gap-3 p-4 rounded-2xl bg-gray-50 dark:bg-gray-700/50 hover:bg-green-50 transition-colors group"
               >
                 <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-gray-800 shadow-sm group-hover:text-green-600">
@@ -619,13 +699,14 @@ const VendorDetails = () => {
                 <div className="text-left">
                   <p className="text-xs text-gray-400 font-bold uppercase">Email Us</p>
                   <p className="text-sm hover:underline text-blue-400">
-                    {vendorInfo.account?.email || 'No email'}
+                    {vendorInfo.account.email || 'No email'}
                   </p>
                 </div>
               </a>
 
               <a
-                href={`tel:${vendorInfo.account?.phoneNo || ''}`}
+                href={`tel:${vendorInfo.account.phoneNo || ''}`}
+                target="_blank"
                 className="flex items-center gap-3 p-4 rounded-2xl bg-gray-50 dark:bg-gray-700/50 hover:bg-green-50 transition-colors group"
               >
                 <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-gray-800 shadow-sm group-hover:text-green-600">
@@ -634,19 +715,33 @@ const VendorDetails = () => {
 
                 <div className="text-left">
                   <p className="text-xs text-gray-400 font-bold uppercase">Call Now</p>
-                  <p className="text-sm">
-                    {vendorInfo.account?.phoneNo || 'No phone'}
+                  <p className="text-sm hover:underline hover:text-blue-400">
+                    {vendorInfo.account.phoneNo || 'No phone'}
                   </p>
                 </div>
               </a>
 
-              <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-700/50">
+              <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-700/50 min-w-0">
                 <p className="text-xs text-gray-400 font-bold uppercase mb-1">
                   About Store
                 </p>
-                <p className="text-sm line-clamp-2">
-                  {vendorInfo.business?.description || 'No description provided.'}
-                </p>
+
+                <div className="min-w-0">
+                  <p className="text-sm line-clamp-2 break-words">
+                    {vendorInfo.business.description || 'No description provided.'}
+                  </p>
+
+                  {vendorInfo.business.description &&
+                    vendorInfo.business.description.length > 20 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowFullDescription(true)}
+                        className="mt-2 text-xs font-semibold text-green-600 hover:text-green-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 rounded"
+                      >
+                        Read more
+                      </button>
+                    )}
+                </div>
               </div>
 
               <button
@@ -654,7 +749,7 @@ const VendorDetails = () => {
                 onClick={handleStartChat}
                 disabled={startChatLoading}
                 className="flex items-center gap-3 p-4 rounded-2xl bg-green-600 text-white hover:bg-green-700 disabled:opacity-70 disabled:cursor-not-allowed transition-colors group text-left"
-                aria-label={`Start chat with ${vendorInfo.business?.storeName || 'vendor'}`}
+                aria-label={`Start chat with ${vendorInfo.business.storeName || 'vendor'}`}
               >
                 <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/15">
                   <FaCommentDots />
@@ -670,6 +765,71 @@ const VendorDetails = () => {
                 </div>
               </button>
             </div>
+            {showFullDescription && (
+              <div
+                className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="store-description-title"
+                onClick={() => setShowFullDescription(false)}
+              >
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+
+                <div
+                  className={`relative w-full max-w-2xl max-h-[85vh] sm:max-h-[80vh] rounded-2xl sm:rounded-3xl shadow-2xl border ${isDark
+                      ? 'bg-gray-800 border-gray-700 text-white'
+                      : 'bg-white border-gray-100 text-gray-900'
+                    }`}
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between gap-4 px-5 py-4 sm:px-6 sm:py-5 border-b border-gray-200 dark:border-gray-700">
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
+                        About Store
+                      </p>
+
+                      <h2
+                        id="store-description-title"
+                        className="mt-1 text-lg sm:text-xl font-bold truncate"
+                      >
+                        {vendorInfo.business.storeName || 'Vendor Store'}
+                      </h2>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowFullDescription(false)}
+                      className={`flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xl transition-colors ${isDark
+                          ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      aria-label="Close description"
+                    >
+                      ×
+                    </button>
+                  </div>
+
+                  <div className="overflow-y-auto max-h-[calc(85vh-130px)] sm:max-h-[calc(80vh-140px)] px-5 py-5 sm:px-6 sm:py-6">
+                    <p
+                      className={`text-sm sm:text-base leading-7 whitespace-pre-wrap break-words ${isDark ? 'text-gray-300' : 'text-gray-600'
+                        }`}
+                    >
+                      {vendorInfo.business.description || 'No description provided.'}
+                    </p>
+                  </div>
+
+                  <div className="flex justify-end px-5 py-4 sm:px-6 border-t border-gray-200 dark:border-gray-700">
+                    <button
+                      type="button"
+                      onClick={() => setShowFullDescription(false)}
+                      className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition-colors"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -684,7 +844,7 @@ const VendorDetails = () => {
                     Products ({filteredProducts.length})
                   </h2>
                   <p className={`text-sm ${textSecondary} mt-1`}>
-                    Browse all products from {vendorInfo.business?.storeName || 'this store'}
+                    Browse all products from {vendorInfo.business.storeName || 'this store'}
                   </p>
                 </div>
 

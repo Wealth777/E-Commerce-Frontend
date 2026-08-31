@@ -4,7 +4,7 @@ import { useToast } from '../../context/ToastContext';
 import apiClient from '../../api/apiClient';
 import { getList, getMessage, getPayload } from '../../utils/apiResponse';
 import { FaBox, FaChevronRight, FaRegCalendarAlt, FaWallet, FaShippingFast, FaCheckCircle, FaClock } from 'react-icons/fa';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ShoppingBag } from 'lucide-react';
 import Loading from '../../components/layout/Loding';
 
@@ -13,6 +13,7 @@ const Orders = () => {
   const { showToast } = useToast();
   const [groupedOrders, setGroupedOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchOrders();
@@ -128,10 +129,10 @@ const Orders = () => {
 
   return (
     <div className={`min-h-screen ${bgColor} py-10 transition-colors duration-300`}>
-      <Link to="/buyer/dashboard" className={`flex max-w-5xl mx-auto items-center gap-2 text-sm mb-4 ${secondaryTextt} hover:${textColorr}`}>
-        <ArrowLeft className="w-4 h-4" />
-        Back to Dashboard
-      </Link>
+      <button onClick={() => navigate(-1)} className={`group inline-flex items-center gap-2 text-sm text-gray-400 hover:text-green-500 transition-colors mb-2 rounded-full px-3 py-1.5 ${isDark ? "bg-zinc-900/70 hover:bg-zinc-800 text-zinc-300 ring-1 ring-white/10" : "bg-white/70 hover:bg-white text-zinc-600 ring-1 ring-zinc-900/5"}`}>
+        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+        Back
+      </button>
       <div className="w-full max-w-5xl mx-auto px-4 overflow-hidden">
 
         <div className="mb-10 relative overflow-hidden bg-gradient-to-r from-green-600 via-green-500 to-yellow-500 rounded-2xl p-8 mb-8 text-white">

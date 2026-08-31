@@ -184,7 +184,7 @@ const VendorDashboard = () => {
           </div>
           <div className="relative z-10">
             <p className="text-sm font-medium text-white/90 mb-1">
-              Welcome back,
+              Welcome,
             </p>
             <h2 className="text-2xl md:text-4xl font-bold text-white mb-2">
               {user?.business?.storeName || 'Vendor'}!

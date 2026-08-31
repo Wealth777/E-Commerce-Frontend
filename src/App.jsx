@@ -44,6 +44,7 @@ import BuyerProfile from './pages/buyer/Profile';
 import BuyerWishlist from './pages/buyer/Wishlist';
 import BuyerRatingsReviews from './pages/buyer/RatingsReviews';
 import BuyerReports from './pages/buyer/Reports';
+import BuyerSettings from './pages/buyer/Setting';
 
 // Vendor Pages
 import VendorRegister from './pages/vendor/vendorRegsiter';
@@ -64,6 +65,7 @@ import VendorReports from './pages/vendor/Reports';
 import Notifications from './pages/notifications/Notifications';
 import Messages from './pages/chat/Messages';
 import VendorSettings from './pages/vendor/Settings';
+import VendorRecoverAccout from './pages/vendor/RecoverAccount';
 
 // Founder Pages
 import FounderLogin from './pages/founder/Login';
@@ -101,6 +103,7 @@ function App() {
         <Routes>
           <Route element={<AuthLayout />}>
             <Route path="/login" element={<Login />} />
+            <Route path="/vendor/RecoverAccout" element={<VendorRecoverAccout />} />
             <Route path="/register" element={<Register />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/verify-change-email" element={<VerifyChangeEmail />} />
@@ -254,6 +257,17 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/buyer/settings"
+              element={
+                <ProtectedRoute requiredRole="buyer">
+                  <BuyerDashboardGuard>
+                    <BuyerSettings />
+                  </BuyerDashboardGuard>
+                </ProtectedRoute>
+              }
+            />
+
 
             {/* Vendor's Route */}
             <Route path="/vendor/onboarding" element={<VendorOnboarding />} />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FaEdit, FaTrash, FaPlus, FaTimes, FaSave, FaBox, FaLayerGroup, FaDollarSign, FaTh, FaTable, FaImage, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
 import { useTheme } from '../../context/ThemeContext';
 import apiClient from '../../api/apiClient';
@@ -17,7 +17,8 @@ const Products = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null)
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   const isLayout = localStorage.getItem('Product Layout');
   const [layout, setLayout] = useState(isLayout || 'card');
@@ -166,10 +167,11 @@ const Products = () => {
     <div className={`min-h-screen ${bgColor} pb-12 transition-colors duration-300`}>
       {/* Header Section - Improved Responsive Padding */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-        <Link to="/vendor/dashboard" className={`flex items-center gap-2 text-sm mb-4 ${secondaryText} hover:${textColor}`}>
-          <ArrowLeft className="w-4 h-4" />
-          Back to Dashboard
-        </Link>
+        <button onClick={() => navigate(-1)} className={`group inline-flex items-center gap-2 text-sm text-gray-400 hover:text-green-500 transition-colors mb-2 rounded-full px-3 py-1.5 ${isDark ? "bg-zinc-900/70 hover:bg-zinc-800 text-zinc-300 ring-1 ring-white/10" : "bg-white/70 hover:bg-white text-zinc-600 ring-1 ring-zinc-900/5"}`}>
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          Back
+        </button>
+
         <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-r from-green-600 via-green-500 to-yellow-500 p-6 sm:p-8 mb-8 shadow-xl`}>
           <div className="absolute inset-0 opacity-10">
             <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">

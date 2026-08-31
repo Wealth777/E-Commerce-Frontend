@@ -20,7 +20,7 @@ import apiClient from '../../api/apiClient';
 import { getList, getMessage, getPayload } from '../../utils/apiResponse';
 import { FaSpinner } from 'react-icons/fa6'
 import { useToast } from '../../context/ToastContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const validationSchema = Yup.object({
     bankName: Yup.string().required('Bank name is required'),
@@ -37,6 +37,7 @@ const Payouts = () => {
     const [savedDetails, setSavedDetails] = useState(null);
     const [isEditing, setIsEditing] = useState(true);
     const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
 
     const initialValues = {
         storeName: '',
@@ -96,10 +97,11 @@ const Payouts = () => {
 
     return (
         <div className={`min-h-screen ${bg} py-10 px-4`}>
-            <Link to="/vendor/dashboard" className={`max-w-6xl mx-auto flex items-center gap-2 text-sm mb-4 ${secondaryText} hover:${textColorr}`}>
-                <ArrowLeft className="w-4 h-4" />
-                Back to Dashboard
-            </Link>
+            <button onClick={() => navigate(-1)} className={`group inline-flex items-center gap-2 text-sm text-gray-400 hover:text-green-500 transition-colors mb-2 rounded-full px-3 py-1.5 ${isDark ? "bg-zinc-900/70 hover:bg-zinc-800 text-zinc-300 ring-1 ring-white/10" : "bg-white/70 hover:bg-white text-zinc-600 ring-1 ring-zinc-900/5"}`}>
+                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                Back
+            </button>
+
             <div className="max-w-6xl mx-auto">
                 {/* Header Section */}
                 <div className="text-center mb-10">

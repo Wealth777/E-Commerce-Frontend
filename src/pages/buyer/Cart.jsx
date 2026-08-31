@@ -106,9 +106,10 @@ const Cart = () => {
 
   // const total = Math.max(0, subtotal + tax);
 
-  const totalTax = TAX_PER_VENDOR * vendorCount;
+  // const totalTax = TAX_PER_VENDOR * vendorCount;
 
-  const total = subtotal + totalTax;
+  // const total = subtotal + totalTax;
+  const total = subtotal;
 
   const freeShipProgress = Math.min(100, Math.round((subtotal / 100000) * 100));
 
@@ -158,8 +159,8 @@ const Cart = () => {
         {/* top bar */}
         <div className="mb-8 flex items-center justify-between">
           <button
-            className={`group inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition ${isDark ? "bg-zinc-900/70 hover:bg-zinc-800 text-zinc-300 ring-1 ring-white/10" : "bg-white/70 hover:bg-white text-zinc-600 ring-1 ring-zinc-900/5"}`}
-            onClick={() => navigate('/products')}
+            className={`group inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition`}
+            onClick={() => navigate(-1)}
           >
             <Icon.ArrowLeft className="h-4 w-4 transition group-hover:-translate-x-0.5" />
             Back
@@ -296,7 +297,7 @@ const Cart = () => {
             <div className={`${card} rounded-2xl px-4 py-3 sm:px-5`}>
               <div className="flex flex-wrap items-center gap-4 text-xs">
                 <span className="inline-flex items-center gap-1.5"><Icon.Shield className="h-3.5 w-3.5" /> 256-bit SSL</span>
-                <span className="inline-flex items-center gap-1.5"><Icon.Truck className="h-3.5 w-3.5" /> Trackable tax</span>
+                {/* <span className="inline-flex items-center gap-1.5"><Icon.Truck className="h-3.5 w-3.5" /> Trackable tax</span> */}
                 <span className="inline-flex items-center gap-1.5"><Icon.Tag className="h-3.5 w-3.5" /> Price match guarantee</span>
               </div>
             </div>
@@ -315,7 +316,7 @@ const Cart = () => {
                 <div className="mt-5">
                   <div className={`mt-6 space-y-3 border-t pt-5 text-sm ${divider}`}>
                     <Row label="Subtotal" value={formatNaira(subtotal)} />
-                    <Row label="tax" value={totalTax === 0 ? "Free" : formatNaira(totalTax)} subtle={totalTax === 0} />
+                    {/* <Row label="tax" value={totalTax === 0 ? "Free" : formatNaira(totalTax)} subtle={totalTax === 0} /> */}
                     {/* {discount > 0 && <Row label="Discount" value={`- ${formatNaira(discount)}`} accent />} */}
                   </div>
 

@@ -451,11 +451,30 @@ const ProductDetail = () => {
           {/* Right: Product Details */}
           <div className="space-y-6">
             <div className="flex items-center gap-3 flex-wrap">
-              <div className="flex items-center gap-2 bg-green-50 border border-green-100 rounded-full px-4 py-2">
-                <FaStore className="text-yellow-500" />
-                <span className="text-green-700 text-sm font-semibold">
-                  {product.vendor?.storeName || product.vendor?.fullName || 'Store'}
-                </span>
+              <div className="flex flex-col items-start gap-2">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="flex items-center gap-2 bg-green-50 border border-green-100 rounded-full px-4 py-2">
+                    <FaStore className="text-yellow-500" />
+
+                    <span className="text-green-700 text-sm font-semibold">
+                      {product.vendor?.storeName ||
+                        product.vendor?.fullName ||
+                        'Store'}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigate(
+                      `/vendor/${product.vendor?._id || product.vendor?.id}`
+                    )
+                  }
+                  className="text-sm font-semibold text-green-600 hover:text-green-700 hover:underline transition-colors"
+                >
+                  View Vendor Details
+                </button>
               </div>
             </div>
 

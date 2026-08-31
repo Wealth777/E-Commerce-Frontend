@@ -6,7 +6,7 @@ import {
 import { useTheme } from '../../context/ThemeContext';
 import { useToast } from '../../context/ToastContext';
 import Loading from '../../components/layout/Loding';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, PhoneCall, Sparkles, CheckCircle, ShieldAlert } from 'lucide-react';
 import apiClient from '../../api/apiClient';
 import { getMessage } from '../../utils/apiResponse';
@@ -20,6 +20,7 @@ const Profile = () => {
     const [saving, setSaving] = useState(false);
     const [loading, setLoading] = useState(true);
     const [copied, setCopied] = useState(false);
+    const navigate = useNavigate();
 
     // Dynamic Form Data matching requirements
     const [formData, setFormData] = useState({
@@ -315,9 +316,10 @@ const Profile = () => {
                 {/* Upper Premium Header Action Bar */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-gray-700/30">
                     <div>
-                        <Link to="/vendor/dashboard" className="group inline-flex items-center gap-2 text-sm text-gray-400 hover:text-green-500 transition-colors mb-2">
-                            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Back to Dashboard
-                        </Link>
+                        <button onClick={() => navigate(-1)} className={`group inline-flex items-center gap-2 text-sm text-gray-400 hover:text-green-500 transition-colors mb-2 rounded-full px-3 py-1.5 ${isDark ? "bg-zinc-900/70 hover:bg-zinc-800 text-zinc-300 ring-1 ring-white/10" : "bg-white/70 hover:bg-white text-zinc-600 ring-1 ring-zinc-900/5"}`}>
+                            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                            Back
+                        </button>
                         <h1 className={`text-3xl font-extrabold tracking-tight ${text} flex items-center gap-2`}>
                             Vendor Showcase <span className="font-light text-green-500">Profile</span>
                         </h1>
