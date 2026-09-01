@@ -58,11 +58,11 @@ const Payouts = () => {
             const data = getPayload(res, {});
 
             const prefill = {
-                storeName: data.store?.storeName || '',
+                storeName: data.business?.storeName || '',
                 bankName: data.payout?.bankName || '',
                 accountName: data.payout?.accountName || '',
                 accountNumber: data.payout?.accountNumber || '',
-                phoneNo: data.contact?.phoneNo || '',
+                phoneNo: data.account?.phoneNo || '',
             };
 
             setSavedDetails(prefill);

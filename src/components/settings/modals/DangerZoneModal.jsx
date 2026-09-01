@@ -145,7 +145,7 @@ const DangerZoneModal = ({
                         <div>
                             <p className="text-sm text-red-700 dark:text-red-400">
                                 Report issues such as unauthorized account access,
-                                suspicious login attempts, fake vendors,
+                                suspicious login attempts, fake profile,
                                 fraudulent transactions, or any other security concern.
                             </p>
                         </div>
@@ -190,10 +190,10 @@ const DangerZoneModal = ({
                             </h4>
 
                             <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-red-700 dark:text-red-400">
-                                <li>Your vendor account will be permanently deleted.</li>
+                                <li>Your account will be permanently deleted.</li>
                                 <li>Your store will be removed.</li>
                                 <li>All products will be deleted.</li>
-                                <li>You will lose access to your vendor dashboard.</li>
+                                <li>You will lose access to your dashboard.</li>
                                 <li>This data cannot be recovered.</li>
                             </ul>
                         </div>

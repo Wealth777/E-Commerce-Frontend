@@ -27,7 +27,7 @@ const securityItems = [
         id: "activities",
         title: "Recent Activities",
         description:
-            "See important account activities performed on your vendor account.",
+            "See important account activities performed on your account.",
         icon: Activity,
     },
 ];

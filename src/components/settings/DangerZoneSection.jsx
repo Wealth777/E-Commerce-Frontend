@@ -41,7 +41,7 @@ const DangerZoneSection = ({
             id: "delete",
             title: "Delete Account",
             description:
-                "Permanently delete your vendor account and all associated data. This action cannot be undone.",
+                "Permanently delete your account and all associated data. This action cannot be undone.",
             icon: Trash2,
             destructive: true,
         },

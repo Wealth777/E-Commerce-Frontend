@@ -22,7 +22,7 @@ const settings = [
     {
         id: "phone",
         title: "Change Phone Number",
-        description: "Update the phone number linked to your vendor account.",
+        description: "Update the phone number linked to your account.",
         icon: Phone,
     },
     {
@@ -31,13 +31,13 @@ const settings = [
         description: "Change the email address used to sign in.",
         icon: Mail,
     },
-    {
-        id: "2fa",
-        title: "Two-factor Authentication",
-        description: "Protect your account with an extra layer of security.",
-        icon: ShieldCheck,
-        hasToggle: true,
-    },
+    // {
+    //     id: "2fa",
+    //     title: "Two-factor Authentication",
+    //     description: "Protect your account with an extra layer of security.",
+    //     icon: ShieldCheck,
+    //     hasToggle: true,
+    // },
     {
         id: "logout",
         title: "Logout From All Devices",
@@ -47,18 +47,18 @@ const settings = [
 ];
 
 const AccountSection = ({
-    twoFactorEnabled = false,
+    // twoFactorEnabled = false,
     onChangePassword,
     onChangePhone,
     onChangeEmail,
-    onTwoFactor,
+    // onTwoFactor,
     onLogoutAllDevices,
 }) => {
     const handlers = {
         password: onChangePassword,
         phone: onChangePhone,
         email: onChangeEmail,
-        "2fa": onTwoFactor,
+        // "2fa": onTwoFactor,
         logout: onLogoutAllDevices,
     };
 
@@ -94,7 +94,7 @@ const AccountSection = ({
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-3">
+                            {/* <div className="flex items-center gap-3">
                                 {item.hasToggle && (
                                     <>
                                         <Badge
@@ -117,7 +117,7 @@ const AccountSection = ({
                                     size={18}
                                     className="text-gray-400 transition-transform group-hover:translate-x-1"
                                 />
-                            </div>
+                            </div> */}
                         </button>
                     );
                 })}

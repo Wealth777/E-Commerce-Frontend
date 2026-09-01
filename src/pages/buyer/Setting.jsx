@@ -23,7 +23,7 @@ export default function Settings() {
     const { showToast } = useToast();
 
     const [activeModal, setActiveModal] = useState(null);
-    const [twoFactorEnabled, setTwoFactorEnabled] = useState(true);
+    // const [twoFactorEnabled, setTwoFactorEnabled] = useState(true);
 
     const [loginHistory, setLoginHistory] = useState([]);
     const [recentActivities, setRecentActivities] = useState([]);
@@ -110,10 +110,10 @@ export default function Settings() {
         }
     };
 
-    const handleToggleTwoFactor = async () => {
-        setTwoFactorEnabled((prev) => !prev);
-        closeModal();
-    };
+    // const handleToggleTwoFactor = async () => {
+    //     setTwoFactorEnabled((prev) => !prev);
+    //     closeModal();
+    // };
 
     const handleLogoutAllDevices = async () => {
         setLoadingLogout(true);
@@ -494,7 +494,7 @@ export default function Settings() {
                 </div>
 
                 <AccountSection
-                    twoFactorEnabled={twoFactorEnabled}
+                    // twoFactorEnabled={twoFactorEnabled}
                     onChangePassword={() =>
                         setActiveModal("password")
                     }
@@ -513,11 +513,11 @@ export default function Settings() {
                 <AccountModals
                     activeModal={activeModal}
                     onClose={closeModal}
-                    twoFactorEnabled={twoFactorEnabled}
+                    // twoFactorEnabled={twoFactorEnabled}
                     onPasswordSubmit={handlePasswordSubmit}
                     onPhoneSubmit={handlePhoneSubmit}
                     onEmailSubmit={handleEmailSubmit}
-                    onToggleTwoFactor={handleToggleTwoFactor}
+                    // onToggleTwoFactor={handleToggleTwoFactor}
                     onLogoutAllDevices={handleLogoutAllDevices}
                     activeSessions={activeSessions}
                     loadingSessions={loadingSessions}
