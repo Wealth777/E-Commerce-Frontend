@@ -10,6 +10,7 @@ import { useTheme } from '../../context/ThemeContext';
 import apiClient from '../../api/apiClient';
 import { getList, getMessage } from '../../utils/apiResponse';
 import { useToast } from '../../context/ToastContext';
+import { Link } from 'react-router-dom';
 
 function getProductId(product) {
   return product?._id || product?.id;
@@ -43,12 +44,7 @@ function normalizeProduct(product) {
       '',
     price: Number(product?.price || 0),
     originalPrice: Number(product?.originalPrice || product?.compareAtPrice || 0),
-    vendor:
-      product?.vendor?.businessName ||
-      product?.vendor?.storeName ||
-      product?.vendor?.name ||
-      product?.vendorName ||
-      'Campus vendor',
+    vendor: product?.vendor || null,
     categoryId: getCategoryId(product),
     categoryName: getCategoryName(product),
     ratingSummary: product?.ratingSummary || {
@@ -385,16 +381,6 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4 lg:grid-cols-8">
-            {/* {categories.slice(0, 8).map((category) => (
-              <button
-                key={category.id}
-                type="button"
-                onClick={() => handleViewAll(category.name)}
-                className="text-left"
-              >
-                <CategoryCard category={category} />
-              </button>
-            ))} */}
             {categoriesWithCount.map((category) => (
               <button
                 key={category.id}
@@ -404,10 +390,6 @@ export default function Home() {
               >
                 <CategoryCard category={category} />
               </button>
-              // <CategoryCard
-              //   key={category._id}
-              //   category={category}
-              // />
             ))}
           </div>
         </section>
@@ -559,14 +541,15 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="mt-16 overflow-hidden rounded-[32px] bg-slate-900 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)]">
+        {/* <section className="mt-16 overflow-hidden rounded-[32px] bg-slate-900 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)]"> */}
+        <section className="mt-16 overflow-hidden rounded-[32px] bg-gradient-to-r from-green-600 to-green-800 shadow-[0_30px_50px_-25px_rgba(0,128,0,0.5)]">
           <div className="grid items-center gap-8 p-8 sm:grid-cols-[1.1fr_0.9fr] sm:p-12">
             <div>
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-[11px] font-[650] uppercase tracking-[0.12em] text-white/80 ring-1 ring-white/15">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1.5 text-[11px] font-[650] uppercase tracking-[0.12em] text-white ring-1 ring-white/15">
                 For vendors
               </div>
 
-              <h2 className="font-[Outfit] text-[28px] font-[700] leading-[1.1] tracking-[-0.025em] text-white sm:text-[34px]">
+              <h2 className="font-[Outfit] text-[28px] font-[700] leading-[1.1] tracking-[-0.025em] text-yellow-400 sm:text-[34px]">
                 Start Your Verification Process
               </h2>
 
@@ -575,32 +558,33 @@ export default function Home() {
               </p>
 
               <div className="mt-7 flex flex-wrap gap-3">
-                <a
-                  href="/vendor/register"
+                <Link
+                  to="/vendor/register"
                   className="group inline-flex items-center gap-2 rounded-full bg-white px-[22px] py-[13px] text-[14px] font-[650] tracking-[-0.01em] text-slate-900 transition hover:bg-slate-100 active:scale-[0.98]"
                 >
                   Become a vendor
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25">
                     <path d="M5 12h14M12 5l7 7-7 7" />
                   </svg>
-                </a>
+                </Link>
 
-                <a
-                  href="/vendor-guidelines"
+                <Link
+                  to="/vendor-guidelines"
                   className="inline-flex items-center gap-2 rounded-full border border-white/20 px-[22px] py-[13px] text-[14px] font-[550] text-white/90 transition hover:border-white/35 hover:bg-white/5"
                 >
                   View guidelines
-                </a>
+                </Link>
               </div>
             </div>
 
             <div className="relative aspect-[4/3] sm:aspect-auto sm:h-[240px]">
-              <div className="absolute inset-0 rounded-[24px] bg-gradient-to-br from-violet-500/20 via-fuchsia-500/20 to-indigo-500/20 blur-2xl" />
+              {/* <div className="absolute inset-0 rounded-[24px] bg-gradient-to-br from-violet-500/20 via-fuchsia-500/20 to-indigo-500/20 blur-2xl" /> */}
 
               <img
                 src="https://images.unsplash.com/photo-1553877522-43269d4ea984?w=800&auto=format&fit=crop&q=60"
                 alt=""
-                className="relative h-full w-full rounded-[24px] object-cover shadow-[0_20px_60px_-10px_rgba(0,0,0,0.5)] ring-1 ring-white/10"
+                className="relative h-full w-full rounded-[24px] object-cover ring-1 ring-white/10"
+                // className="relative h-full w-full rounded-[24px] object-cover shadow-[0_20px_60px_-10px_rgba(0,0,0,0.5)] ring-1 ring-white/10"
               />
             </div>
           </div>

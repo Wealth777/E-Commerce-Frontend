@@ -1,30 +1,30 @@
-import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import { useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useState } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTheme } from "../../context/ThemeContext";
 import apiClient from "../../api/apiClient";
 import { getMessage, getPayload } from "../../utils/apiResponse";
 import { useToast } from "../../context/ToastContext";
+
 import {
   ArrowLeft,
   Package,
   CheckCircle2,
   Clock,
   Truck,
-  MapPin,
-  CreditCard,
   Receipt,
-  FileText,
-  ChevronRight,
   Copy,
   CircleDot,
-  Circle,
-  AlertCircle,
   FileCheck,
   RotateCcw,
 } from "lucide-react";
-import { useSelector } from "react-redux";
+
+import { useDispatch, useSelector } from "react-redux";
+import {
+  addOrder,
+  setSelectedOrder,
+} from "../../store/orderSlice";
+
 import Loading from "../../components/layout/Loding";
 import RefundReturnModal from "../../components/common/RefundReturnModal";
 
@@ -38,87 +38,156 @@ const containerVariants = {
 
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.4,
+      ease: "easeOut",
+    },
+  },
 };
 
 export default function OrdersDetails() {
   const { user } = useSelector((state) => state.auth);
+
+  const { orders, selectedOrder } = useSelector(
+    (state) => state.orders
+  );
+
+  const dispatch = useDispatch();
+
   const { orderId } = useParams();
-  const { isDark } = useTheme();
-  const { showToast } = useToast();
   const navigate = useNavigate();
 
-  const [order, setOrder] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { isDark } = useTheme();
+  const { showToast } = useToast();
+
+  const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [actionLoading, setActionLoading] = useState("");
   const [showProofModal, setShowProofModal] = useState(false);
   const [activeProof, setActiveProof] = useState(null);
   const [showRefundReturnModal, setShowRefundReturnModal] = useState(false);
-  const [modalRequestType, setModalRequestType] = useState('refund');
+  const [modalRequestType, setModalRequestType] = useState("refund");
 
-  useEffect(() => {
-    fetchOrder();
-  }, [orderId]);
+  const order =
+    selectedOrder?._id?.toString() === orderId?.toString()
+      ? selectedOrder
+      : orders.find(
+        (item) => item?._id?.toString() === orderId?.toString()
+      ) || null;
 
-  const fetchOrder = async () => {
+  const fetchOrder = useCallback(async () => {
+    if (!orderId) return;
+
     try {
       setLoading(true);
-      const res = await apiClient.get(`/buyer/orders/${orderId}`);
-      setOrder(getPayload(res, null));
+
+      const res = await apiClient.get(
+        `/buyer/orders/${orderId}`
+      );
+
+      const fetchedOrder = getPayload(res, null);
+
+      if (!fetchedOrder) {
+        showToast("Order not found", "error");
+        return;
+      }
+
+      dispatch(addOrder(fetchedOrder));
+      dispatch(setSelectedOrder(fetchedOrder));
     } catch (err) {
-      showToast(getMessage(err, "Failed to load order details"), 'error');
+      showToast(
+        getMessage(err, "Failed to load order details"),
+        "error"
+      );
     } finally {
       setLoading(false);
     }
-  };
+  }, [dispatch, orderId, showToast]);
+
+  useEffect(() => {
+    if (!orderId) return;
+
+    const existingOrder = orders.find(
+      (item) => item?._id?.toString() === orderId?.toString()
+    );
+
+    if (existingOrder) {
+      dispatch(setSelectedOrder(existingOrder));
+      return;
+    }
+
+    fetchOrder();
+  }, [orderId, orders, dispatch, fetchOrder]);
+
 
   const confirmDelivery = async () => {
+    if (!order?._id) return;
+
     try {
       setActionLoading("deliver");
 
-      await apiClient.post("/buyer/orders/action/confirmdelivered", {
-        orderId: order._id,
-      });
+      await apiClient.post(
+        "/buyer/orders/action/confirmdelivered",
+        {
+          orderId: order._id,
+        }
+      );
 
-      showToast("Order marked as delivered", 'success');
-      fetchOrder();
+      showToast("Order marked as delivered", "success");
+
+      await fetchOrder();
     } catch (err) {
-      showToast(getMessage(err, "Action failed"), 'error');
+      showToast(
+        getMessage(err, "Action failed"),
+        "error"
+      );
     } finally {
       setActionLoading("");
     }
   };
 
+
   const cancelOrder = async () => {
+    if (!order?._id) return;
+
     try {
       setActionLoading("cancel");
 
-      await apiClient.post("/buyer/orders/action/cancelorder", {
-        orderId: order._id,
-      });
+      await apiClient.post(
+        "/buyer/orders/action/cancelorder",
+        {
+          orderId: order._id,
+        }
+      );
 
-      showToast("Order cancelled", 'success');
-      fetchOrder();
+      showToast("Order cancelled", "success");
+
+      await fetchOrder();
     } catch (err) {
-      showToast(getMessage(err, "Action failed"), 'error');
+      showToast(
+        getMessage(err, "Action failed"),
+        "error"
+      );
     } finally {
       setActionLoading("");
     }
   };
 
-  // Helper functions for refund/return
+
   const hasActiveRefund = () => {
     const refund = order?.refundRequest;
 
     return Boolean(
       refund?.requested &&
       [
-        'pending_review',
-        'approved',
-        'processing',
-        'refunded',
-        'completed',
+        "pending_review",
+        "approved",
+        "processing",
+        "refunded",
+        "completed",
       ].includes(refund.status)
     );
   };
@@ -129,12 +198,12 @@ export default function OrdersDetails() {
     return Boolean(
       returnReq?.requested &&
       [
-        'pending_review',
-        'approved',
-        'buyer_shipping',
-        'returned',
-        'inspection',
-        'completed',
+        "pending_review",
+        "approved",
+        "buyer_shipping",
+        "returned",
+        "inspection",
+        "completed",
       ].includes(returnReq.status)
     );
   };
@@ -144,7 +213,7 @@ export default function OrdersDetails() {
 
     if (!returnReq) return false;
 
-    return ['approved', 'returned', 'completed'].includes(
+    return ["approved", "returned", "completed"].includes(
       returnReq.status
     );
   };
@@ -154,15 +223,15 @@ export default function OrdersDetails() {
 
     if (hasActiveRefund()) return false;
 
-    // cancelled order refund
+
     if (
-      order.status === 'cancelled' &&
-      order.cancelledBy?.role === 'buyer'
+      order.status === "cancelled" &&
+      order.cancelledBy?.role === "buyer"
     ) {
       return true;
     }
 
-    // refund after successful return
+
     if (canRefundReturnedOrder()) {
       return true;
     }
@@ -172,57 +241,76 @@ export default function OrdersDetails() {
 
   const canRequestReturn = () => {
     if (!order) return false;
+
     if (order.status !== "delivered") return false;
+
     if (hasActiveReturn()) return false;
 
-    const deliveredAt = order.deliveredAt || order.updatedAt;
+    const deliveredAt =
+      order.deliveredAt || order.updatedAt;
 
-    const deadline = new Date(deliveredAt).getTime() + 72 * 60 * 60 * 1000;
+    if (!deliveredAt) return false;
+
+    const deadline =
+      new Date(deliveredAt).getTime() +
+      72 * 60 * 60 * 1000;
 
     return Date.now() <= deadline;
   };
 
   const getRequestStatusStyle = (status) => {
     switch (status?.toLowerCase()) {
-      case 'completed':
-      case 'refunded':
-        return 'text-emerald-500';
+      case "completed":
+      case "refunded":
+        return "text-emerald-500";
 
-      case 'approved':
-      case 'returned':
-        return 'text-blue-500';
+      case "approved":
+      case "returned":
+        return "text-blue-500";
 
-      case 'processing':
-      case 'inspection':
-        return 'text-violet-500';
+      case "processing":
+      case "inspection":
+        return "text-violet-500";
 
-      case 'rejected':
-        return 'text-red-500';
+      case "rejected":
+        return "text-red-500";
 
       default:
-        return 'text-amber-500';
+        return "text-amber-500";
     }
   };
 
   const openRefundModal = () => {
-    setModalRequestType('refund');
+    setModalRequestType("refund");
     setShowRefundReturnModal(true);
   };
 
   const openReturnModal = () => {
-    setModalRequestType('return');
+    setModalRequestType("return");
     setShowRefundReturnModal(true);
   };
 
-  const copyOrderId = () => {
-    if (order?._id) {
-      navigator.clipboard.writeText(order._id);
+  const copyOrderId = async () => {
+    if (!order?._id) return;
+
+    try {
+      await navigator.clipboard.writeText(
+        order._id.toString()
+      );
+
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+    } catch {
+      showToast("Failed to copy order ID", "error");
     }
   };
 
   const openProof = (file) => {
+    if (!file) return;
+
     setActiveProof(file);
     setShowProofModal(true);
   };
@@ -233,88 +321,159 @@ export default function OrdersDetails() {
   };
 
   const downloadProof = async () => {
+    if (!activeProof || !order?._id) return;
+
     try {
       const res = await fetch(activeProof);
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch receipt");
+      }
+
       const blob = await res.blob();
 
       const url = window.URL.createObjectURL(blob);
 
       const link = document.createElement("a");
+
       link.href = url;
       link.download = `receipt-${order._id}.jpg`;
+
       document.body.appendChild(link);
+
       link.click();
 
       link.remove();
+
       window.URL.revokeObjectURL(url);
-    } catch (err) {
-      showToast("Download failed", 'error');
+    } catch {
+      showToast("Download failed", "error");
     }
   };
 
-  // Fixed: Now accepts status as a parameter
   const getStatusConfig = (status) => {
     const s = status?.toLowerCase() || "pending";
+
     switch (s) {
       case "delivered":
         return {
           icon: <CheckCircle2 className="w-5 h-5" />,
           color: "text-emerald-600",
-          bg: isDark ? "bg-emerald-500/15" : "bg-emerald-50",
-          border: isDark ? "border-emerald-500/30" : "border-emerald-200",
+          bg: isDark
+            ? "bg-emerald-500/15"
+            : "bg-emerald-50",
+          border: isDark
+            ? "border-emerald-500/30"
+            : "border-emerald-200",
           label: "Delivered",
           dot: "bg-emerald-500",
         };
+
       case "shipped":
         return {
           icon: <Truck className="w-5 h-5" />,
           color: "text-green-600",
-          bg: isDark ? "bg-green-500/15" : "bg-green-50",
-          border: isDark ? "border-green-500/30" : "border-green-200",
+          bg: isDark
+            ? "bg-green-500/15"
+            : "bg-green-50",
+          border: isDark
+            ? "border-green-500/30"
+            : "border-green-200",
           label: "Shipped",
           dot: "bg-green-500",
         };
+
       case "processing":
         return {
           icon: <Package className="w-5 h-5" />,
           color: "text-violet-600",
-          bg: isDark ? "bg-violet-500/15" : "bg-violet-50",
-          border: isDark ? "border-violet-500/30" : "border-violet-200",
+          bg: isDark
+            ? "bg-violet-500/15"
+            : "bg-violet-50",
+          border: isDark
+            ? "border-violet-500/30"
+            : "border-violet-200",
           label: "Processing",
           dot: "bg-violet-500",
         };
+
+      case "confirmed":
+        return {
+          icon: <Package className="w-5 h-5" />,
+          color: "text-blue-600",
+          bg: isDark
+            ? "bg-blue-500/15"
+            : "bg-blue-50",
+          border: isDark
+            ? "border-blue-500/30"
+            : "border-blue-200",
+          label: "Confirmed",
+          dot: "bg-blue-500",
+        };
+
       case "cancelled":
         return {
           icon: <CircleDot className="w-5 h-5" />,
           color: "text-red-600",
-          bg: isDark ? "bg-red-500/15" : "bg-red-50",
-          border: isDark ? "border-red-500/30" : "border-red-200",
+          bg: isDark
+            ? "bg-red-500/15"
+            : "bg-red-50",
+          border: isDark
+            ? "border-red-500/30"
+            : "border-red-200",
           label: "Cancelled",
           dot: "bg-red-500",
         };
+
       default:
         return {
           icon: <Clock className="w-5 h-5" />,
           color: "text-amber-600",
-          bg: isDark ? "bg-amber-500/15" : "bg-amber-50",
-          border: isDark ? "border-amber-500/30" : "border-amber-200",
+          bg: isDark
+            ? "bg-amber-500/15"
+            : "bg-amber-50",
+          border: isDark
+            ? "border-amber-500/30"
+            : "border-amber-200",
           label: "Pending",
           dot: "bg-amber-500",
         };
     }
   };
 
-  const bgColor = isDark ? "bg-[#0a0a0f]" : "bg-gray-50";
-  const cardBg = isDark ? "bg-[#13131a]" : "bg-white";
-  const cardBorder = isDark ? "border-white/[0.06]" : "border-gray-200";
-  const textPrimary = isDark ? "text-gray-100" : "text-gray-900";
-  const textSecondary = isDark ? "text-gray-400" : "text-gray-500";
-  const textMuted = isDark ? "text-gray-500" : "text-gray-400";
-  const divider = isDark ? "bg-white/[0.06]" : "bg-gray-100";
+  const bgColor = isDark
+    ? "bg-[#0a0a0f]"
+    : "bg-gray-50";
 
-  if (loading) {
+  const cardBg = isDark
+    ? "bg-[#13131a]"
+    : "bg-white";
+
+  const cardBorder = isDark
+    ? "border-white/[0.06]"
+    : "border-gray-200";
+
+  const textPrimary = isDark
+    ? "text-gray-100"
+    : "text-gray-900";
+
+  const textSecondary = isDark
+    ? "text-gray-400"
+    : "text-gray-500";
+
+  const textMuted = isDark
+    ? "text-gray-500"
+    : "text-gray-400";
+
+  const divider = isDark
+    ? "bg-white/[0.06]"
+    : "bg-gray-100";
+
+  if (loading && !order) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${bgColor}`}>
+      <div
+        className={`min-h-screen flex items-center justify-center ${bgColor}`}
+      >
         <Loading text="Loading order details..." />
       </div>
     );
@@ -322,63 +481,146 @@ export default function OrdersDetails() {
 
   if (!order) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${bgColor}`}>
+      <div
+        className={`min-h-screen flex items-center justify-center ${bgColor}`}
+      >
         <div className="text-center space-y-3">
-          <Package className={`w-12 h-12 mx-auto ${textMuted}`} />
-          <p className={`text-lg font-medium ${textPrimary}`}>Order not found</p>
-          <Link to="/buyer/orders" className="text-green-500 hover:underline text-sm">Back to Orders</Link>
+          <Package
+            className={`w-12 h-12 mx-auto ${textMuted}`}
+          />
+
+          <p
+            className={`text-lg font-medium ${textPrimary}`}
+          >
+            Order not found
+          </p>
+
+          <Link
+            to="/buyer/orders"
+            className="text-green-500 hover:underline text-sm"
+          >
+            Back to Orders
+          </Link>
         </div>
       </div>
     );
   }
 
-  // Dynamic Logic variables
   const statusConfig = getStatusConfig(order.status);
-  const orderRef = order._id ? `#${order._id.slice(-8).toUpperCase()}` : "N/A";
+
+  const orderRef = order._id
+    ? `#${order._id
+      .toString()
+      .slice(-8)
+      .toUpperCase()}`
+    : "N/A";
 
   return (
-    <div className={`min-h-screen ${bgColor} pb-16`}>
-      <div className={`sticky top-0 z-30 ${isDark ? "bg-[#0a0a0f]/80" : "bg-gray-50/80"} backdrop-blur-xl border-b ${cardBorder}`}>
+    <div
+      className={`min-h-screen ${bgColor} pb-16`}
+    >
+      <div
+        className={`sticky top-0 z-30 ${isDark
+            ? "bg-[#0a0a0f]/80"
+            : "bg-gray-50/80"
+          } backdrop-blur-xl border-b ${cardBorder}`}
+      >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <button onClick={() => navigate(-1)} className={`flex items-center gap-2 text-sm font-medium rounded-full px-3 py-1.5 ${textSecondary} hover:${textPrimary} transition-colors group`}>
+          <button
+            onClick={() => navigate(-1)}
+            className={`flex items-center gap-2 text-sm font-medium rounded-full px-3 py-1.5 ${textSecondary} transition-colors group`}
+          >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
             Back
           </button>
 
-          <button onClick={copyOrderId} className={`flex items-center gap-1.5 text-xs font-mono px-3 py-1.5 rounded-lg border ${cardBorder} ${textMuted} hover:${textSecondary} transition-colors`}>
+          <button
+            onClick={copyOrderId}
+            className={`flex items-center gap-1.5 text-xs font-mono px-3 py-1.5 rounded-lg border ${cardBorder} ${textMuted} transition-colors`}
+          >
             {copied ? "Copied!" : orderRef}
             <Copy className="w-3 h-3" />
           </button>
         </div>
       </div>
 
-      <motion.div className="max-w-6xl mx-auto px-4 sm:px-6 pt-8" variants={containerVariants} initial="hidden" animate="visible">
-        <motion.div variants={itemVariants} className="mb-8">
-          <h1 className={`text-2xl sm:text-3xl font-bold ${textPrimary} tracking-tight`}>Order Details</h1>
-          <p className={`mt-1 text-sm ${textSecondary}`}>
-            Placed on {new Date(order.createdAt).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+      <motion.div
+        className="max-w-6xl mx-auto px-4 sm:px-6 pt-8"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <motion.div
+          variants={itemVariants}
+          className="mb-8"
+        >
+          <h1
+            className={`text-2xl sm:text-3xl font-bold ${textPrimary} tracking-tight`}
+          >
+            Order Details
+          </h1>
+
+          <p
+            className={`mt-1 text-sm ${textSecondary}`}
+          >
+            Placed on{" "}
+            {order.createdAt
+              ? new Date(
+                order.createdAt
+              ).toLocaleDateString("en-US", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })
+              : "N/A"}
           </p>
         </motion.div>
 
         {/* Order Action */}
-        <motion.div variants={itemVariants} className="mb-8">
-          <h4 className={`text-1xl sm:text-1xl font-bold ${textPrimary} tracking-tight`}>Order Action</h4>
+        <motion.div
+          variants={itemVariants}
+          className="mb-8"
+        >
+          <h4
+            className={`text-xl font-bold ${textPrimary} tracking-tight`}
+          >
+            Order Action
+          </h4>
+
           <div className="flex flex-wrap gap-3 mt-4">
             <button
               onClick={confirmDelivery}
-              disabled={order.status !== "shipped" || actionLoading === "deliver"}
-              className={`px-4 py-2 rounded-lg text-sm text-white bg-green-600 ${order.status !== "shipped" ? "opacity-40 cursor-not-allowed" : ""}`}>
-              {actionLoading === "deliver" ? "Updating..." : "Confirm Delivered"}
+              disabled={
+                order.status !== "shipped" ||
+                actionLoading === "deliver"
+              }
+              className={`px-4 py-2 rounded-lg text-sm text-white bg-green-600 ${order.status !== "shipped"
+                  ? "opacity-40 cursor-not-allowed"
+                  : "hover:bg-green-700"
+                }`}
+            >
+              {actionLoading === "deliver"
+                ? "Updating..."
+                : "Confirm Delivered"}
             </button>
 
             <button
               onClick={cancelOrder}
-              disabled={order.status !== "pending" || actionLoading === "cancel"}
-              className={`px-4 py-2 rounded-lg text-sm text-white bg-red-600 ${order.status !== "pending" ? "opacity-40 cursor-not-allowed" : ""}`}>
-              {actionLoading === "cancel" ? "Cancelling..." : "Cancel Order"}
+              disabled={
+                order.status !== "pending" ||
+                actionLoading === "cancel"
+              }
+              className={`px-4 py-2 rounded-lg text-sm text-white bg-red-600 ${order.status !== "pending"
+                  ? "opacity-40 cursor-not-allowed"
+                  : "hover:bg-red-700"
+                }`}
+            >
+              {actionLoading === "cancel"
+                ? "Cancelling..."
+                : "Cancel Order"}
             </button>
 
-            {/* Refund Request Button */}
             {canRequestRefund() && (
               <button
                 onClick={openRefundModal}
@@ -389,7 +631,6 @@ export default function OrdersDetails() {
               </button>
             )}
 
-            {/* Return Request Button */}
             {canRequestReturn() && (
               <button
                 onClick={openReturnModal}
@@ -405,38 +646,102 @@ export default function OrdersDetails() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
 
-            {/* Status Card */}
-            <motion.div variants={itemVariants} className={`${cardBg} border ${cardBorder} rounded-2xl p-6 sm:p-8`}>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className={`w-14 h-14 rounded-2xl ${statusConfig.bg} ${statusConfig.color} border ${statusConfig.border} flex items-center justify-center`}>
-                    {statusConfig.icon}
-                  </div>
-                  <div>
-                    <p className={`text-xs font-semibold uppercase tracking-wider ${textMuted} mb-0.5`}>Current Status</p>
-                    <h2 className={`text-xl font-bold ${textPrimary}`}>{statusConfig.label}</h2>
-                  </div>
+            {/* Status */}
+            <motion.div
+              variants={itemVariants}
+              className={`${cardBg} border ${cardBorder} rounded-2xl p-6 sm:p-8`}
+            >
+              <div className="flex items-center gap-4">
+                <div
+                  className={`w-14 h-14 rounded-2xl ${statusConfig.bg} ${statusConfig.color} border ${statusConfig.border} flex items-center justify-center`}
+                >
+                  {statusConfig.icon}
+                </div>
+
+                <div>
+                  <p
+                    className={`text-xs font-semibold uppercase tracking-wider ${textMuted} mb-0.5`}
+                  >
+                    Current Status
+                  </p>
+
+                  <h2
+                    className={`text-xl font-bold ${textPrimary}`}
+                  >
+                    {statusConfig.label}
+                  </h2>
                 </div>
               </div>
             </motion.div>
 
-            {/* Items Card */}
-            <motion.div variants={itemVariants} className={`${cardBg} border ${cardBorder} rounded-2xl overflow-hidden`}>
-              <div className={`px-6 sm:px-8 py-5 border-b ${cardBorder}`}>
-                <h3 className={`text-sm font-semibold uppercase tracking-wider ${textMuted}`}>Items ({order.items?.length || 0})</h3>
+            {/* Items */}
+            <motion.div
+              variants={itemVariants}
+              className={`${cardBg} border ${cardBorder} rounded-2xl overflow-hidden`}
+            >
+              <div
+                className={`px-6 sm:px-8 py-5 border-b ${cardBorder}`}
+              >
+                <h3
+                  className={`text-sm font-semibold uppercase tracking-wider ${textMuted}`}
+                >
+                  Items ({order.items?.length || 0})
+                </h3>
               </div>
+
               <div className={`divide-y ${cardBorder}`}>
                 {order.items?.map((item, idx) => (
-                  <div key={item.productId || idx} className={`px-6 sm:px-8 py-5 flex gap-4 sm:gap-5 group hover:${isDark ? "bg-white/[0.02]" : "bg-gray-50/50"} transition-colors`}>
-                    <img src={item.image} alt={item.name} className={`w-20 h-20 rounded-xl object-cover border ${cardBorder}`} />
+                  <div
+                    key={
+                      item.productId ||
+                      item._id ||
+                      idx
+                    }
+                    className="px-6 sm:px-8 py-5 flex gap-4 sm:gap-5"
+                  >
+                    <img
+                      src={item.image}
+                      alt={item.name || "Product"}
+                      className={`w-20 h-20 rounded-xl object-cover border ${cardBorder}`}
+                    />
+
                     <div className="flex-1 flex flex-col justify-between">
                       <div>
-                        <p className={`text-sm sm:text-base font-semibold ${textPrimary}`}>{item.name}</p>
-                        <p className={`text-xs ${textMuted}`}>Sold by {item.vendor?.storeName || item.vendorName || "N/A"}  </p>
+                        <p
+                          className={`text-sm sm:text-base font-semibold ${textPrimary}`}
+                        >
+                          {item.name}
+                        </p>
+
+                        <p
+                          className={`text-xs ${textMuted}`}
+                        >
+                          Sold by{" "}
+                          {item.vendor?.storeName ||
+                            item.vendorName ||
+                            "N/A"}
+                        </p>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <p className={`text-xs ${textMuted}`}>{item.quantity} × ₦{item.price?.toLocaleString()}</p>
-                        <p className={`text-sm font-bold ${textPrimary}`}>₦{(item.price * item.quantity)?.toLocaleString()}</p>
+
+                      <div className="flex items-center justify-between gap-4">
+                        <p
+                          className={`text-xs ${textMuted}`}
+                        >
+                          {item.quantity} × ₦
+                          {Number(
+                            item.price || 0
+                          ).toLocaleString()}
+                        </p>
+
+                        <p
+                          className={`text-sm font-bold ${textPrimary}`}
+                        >
+                          ₦
+                          {(
+                            Number(item.price || 0) *
+                            Number(item.quantity || 0)
+                          ).toLocaleString()}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -444,55 +749,132 @@ export default function OrdersDetails() {
               </div>
             </motion.div>
 
-            {/* Note Card */}
-            <motion.div variants={itemVariants} className={`${cardBg} border ${cardBorder} rounded-2xl overflow-hidden`}>
-              <div className={`px-6 sm:px-8 py-5 border-b ${cardBorder}`}>
-                <h3 className={`text-sm font-semibold uppercase tracking-wider ${textMuted}`}>Note</h3>
+            {/* Note */}
+            <motion.div
+              variants={itemVariants}
+              className={`${cardBg} border ${cardBorder} rounded-2xl overflow-hidden`}
+            >
+              <div
+                className={`px-6 sm:px-8 py-5 border-b ${cardBorder}`}
+              >
+                <h3
+                  className={`text-sm font-semibold uppercase tracking-wider ${textMuted}`}
+                >
+                  Note
+                </h3>
               </div>
-              <div className={`divide-y mb-2`}>
-                <div className="mt-3 p-2 ">
-                  <p className={`text-sm pl-4 ${textPrimary}`}>{order?.note || 'No note added'}</p>
-                </div>
+
+              <div className="p-4">
+                <p
+                  className={`text-sm pl-4 ${textPrimary}`}
+                >
+                  {order.note || "No note added"}
+                </p>
               </div>
             </motion.div>
 
-            {/* Dynamic Delivery & Payment */}
+            {/* Delivery & Payment */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <motion.div variants={itemVariants} className={`${cardBg} border ${cardBorder} rounded-2xl p-6`}>
-                <h3 className={`text-xs font-semibold uppercase tracking-wider ${textMuted} mb-4`}>Delivery</h3>
+              <motion.div
+                variants={itemVariants}
+                className={`${cardBg} border ${cardBorder} rounded-2xl p-6`}
+              >
+                <h3
+                  className={`text-xs font-semibold uppercase tracking-wider ${textMuted} mb-4`}
+                >
+                  Delivery
+                </h3>
+
                 <div className="space-y-3">
-                  <p className={`text-sm font-medium ${textPrimary}`}>{user?.identity?.fullName || user?.fullName}</p>
-                  <p className={`text-sm ${textSecondary}`}>{order.delivery?.address}, {order.delivery?.state}</p>
-                  <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded bg-gray-100 text-[10px] font-bold ${isDark ? "bg-white/5" : "bg-gray-100"} ${textSecondary}`}>
-                    <Truck className="w-3 h-3" /> {order.delivery?.method || "Standard"}
+                  <p
+                    className={`text-sm font-medium ${textPrimary}`}
+                  >
+                    {user?.identity?.fullName ||
+                      user?.fullName ||
+                      "Customer"}
+                  </p>
+
+                  <p
+                    className={`text-sm ${textSecondary}`}
+                  >
+                    {order.delivery?.address ||
+                      "Address not available"}
+                    {order.delivery?.state
+                      ? `, ${order.delivery.state}`
+                      : ""}
+                  </p>
+
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold ${isDark
+                        ? "bg-white/5"
+                        : "bg-gray-100"
+                      } ${textSecondary}`}
+                  >
+                    <Truck className="w-3 h-3" />
+                    {order.delivery?.method ||
+                      "Standard"}
                   </span>
                 </div>
               </motion.div>
 
-              <motion.div variants={itemVariants} className={`${cardBg} border ${cardBorder} rounded-2xl p-6`}>
-                <h3 className={`text-xs font-semibold uppercase tracking-wider ${textMuted} mb-4`}>Payment</h3>
+              <motion.div
+                variants={itemVariants}
+                className={`${cardBg} border ${cardBorder} rounded-2xl p-6`}
+              >
+                <h3
+                  className={`text-xs font-semibold uppercase tracking-wider ${textMuted} mb-4`}
+                >
+                  Payment
+                </h3>
+
                 <div className="space-y-3">
-                  <p className={`text-sm font-medium uppercase ${textPrimary}`}>{order.payment?.method || "N/A"}</p>
-                  <p className={`text-xs font-bold uppercase ${order.payment?.status === 'paid' ? 'text-emerald-500' : 'text-amber-500'}`}>
-                    {order.payment?.status?.toUpperCase() || "PENDING"}
+                  <p
+                    className={`text-sm font-medium uppercase ${textPrimary}`}
+                  >
+                    {order.payment?.method ||
+                      "N/A"}
                   </p>
+
+                  <p
+                    className={`text-xs font-bold uppercase ${order.payment?.status ===
+                        "paid"
+                        ? "text-emerald-500"
+                        : "text-amber-500"
+                      }`}
+                  >
+                    {order.payment?.status?.toUpperCase() ||
+                      "PENDING"}
+                  </p>
+
                   {order.payment?.method !== "pod" &&
                     order.payment?.proofs?.length > 0 &&
-                    order.payment.proofs.map((proof, i) => (
-                      <button
-                        key={i}
-                        onClick={() => openProof(proof.file)}
-                        className="text-xs text-green-500 flex items-center gap-1 hover:underline"
-                      >
-                        <Receipt className="w-3 h-3" />
-                        View Receipt {i + 1}
-                      </button>
-                    ))}
+                    order.payment.proofs.map(
+                      (proof, i) => (
+                        <button
+                          key={
+                            proof?._id ||
+                            proof?.file ||
+                            i
+                          }
+                          onClick={() =>
+                            openProof(proof.file)
+                          }
+                          className="text-xs text-green-500 flex items-center gap-1 hover:underline"
+                        >
+                          <Receipt className="w-3 h-3" />
+                          View Receipt {i + 1}
+                        </button>
+                      )
+                    )}
                 </div>
-                <div className="pt-6 border-t border-inherit">
+
+                <div className="pt-6 mt-6 border-t border-inherit">
                   <div className="p-4 rounded-2xl bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-800/20">
                     <p className="text-xs text-red-600 dark:text-red-400 font-bold leading-relaxed">
-                      Tip: POD means Payment On Delivery. PAY_NOW - You've paid for the good's brought
+                      Tip: POD means Payment On
+                      Delivery. PAY_NOW means you
+                      paid for the goods before
+                      delivery.
                     </p>
                   </div>
                 </div>
@@ -500,192 +882,275 @@ export default function OrdersDetails() {
             </div>
           </div>
 
-          {/* SUMMARY COLUMN */}
+          {/* SUMMARY */}
           <div className="lg:col-span-1">
-            <motion.div variants={itemVariants} className={`lg:sticky lg:top-24 ${cardBg} border ${cardBorder} rounded-2xl p-6`}>
-              <h3 className={`text-xs font-semibold uppercase tracking-wider ${textMuted} mb-6`}>Order Summary</h3>
+            <motion.div
+              variants={itemVariants}
+              className={`lg:sticky lg:top-24 ${cardBg} border ${cardBorder} rounded-2xl p-6`}
+            >
+              <h3
+                className={`text-xs font-semibold uppercase tracking-wider ${textMuted} mb-6`}
+              >
+                Order Summary
+              </h3>
+
               <div className="space-y-4">
                 <div className="flex justify-between text-sm">
-                  <span className={textSecondary}>Subtotal</span>
-                  <span className={textPrimary}>₦{order.pricing?.subtotal?.toLocaleString()}</span>
+                  <span className={textSecondary}>
+                    Subtotal
+                  </span>
+
+                  <span className={textPrimary}>
+                    ₦
+                    {Number(
+                      order.pricing?.subtotal ?? 0
+                    ).toLocaleString()}
+                  </span>
                 </div>
+
                 <div className="flex justify-between text-sm">
-                  <span className={textSecondary}>Shipping</span>
-                  <span className={textPrimary}>₦{order.pricing?.deliveryFee?.toLocaleString()}</span>
+                  <span className={textSecondary}>
+                    Shipping
+                  </span>
+
+                  <span className={textPrimary}>
+                    ₦
+                    {Number(
+                      order.pricing?.deliveryFee ?? 0
+                    ).toLocaleString()}
+                  </span>
                 </div>
+
                 <div className="flex justify-between text-sm">
-                  <span className={textSecondary}>Tax</span>
-                  <span className={textPrimary}>₦{order.pricing?.tax?.toLocaleString()}</span>
+                  <span className={textSecondary}>
+                    Tax
+                  </span>
+
+                  <span className={textPrimary}>
+                    ₦
+                    {Number(
+                      order.pricing?.tax ?? 0
+                    ).toLocaleString()}
+                  </span>
                 </div>
+
                 <div className={`h-px ${divider}`} />
+
                 <div className="flex justify-between items-end">
-                  <span className={`font-bold ${textPrimary}`}>Total</span>
-                  <span className={`text-xl font-extrabold ${isDark ? "text-green-400" : "text-green-600"}`}>
-                    ₦{order.pricing?.total?.toLocaleString()}
+                  <span
+                    className={`font-bold ${textPrimary}`}
+                  >
+                    Total
+                  </span>
+
+                  <span
+                    className={`text-xl font-extrabold ${isDark
+                        ? "text-green-400"
+                        : "text-green-600"
+                      }`}
+                  >
+                    ₦
+                    {Number(
+                      order.pricing?.total ?? 0
+                    ).toLocaleString()}
                   </span>
                 </div>
               </div>
             </motion.div>
 
-            {/* Refund/Return Requests Status */}
-            {(order.refundRequest?.requested || order.returnRequest?.requested) && (
-              <div className="space-y-4">
+            {/* Refund / Return */}
+            {(order.refundRequest?.requested ||
+              order.returnRequest?.requested) && (
+                <div className="space-y-4 mt-6">
 
-                {/* RETURN REQUEST */}
-                {order.returnRequest?.requested && (
-                  <motion.div
-                    variants={itemVariants}
-                    className={`${cardBg} border ${cardBorder} rounded-2xl p-6`}
-                  >
-                    <div className="flex items-start gap-3 mb-4">
-                      <FileCheck className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                  {/* RETURN */}
+                  {order.returnRequest?.requested && (
+                    <motion.div
+                      variants={itemVariants}
+                      className={`${cardBg} border ${cardBorder} rounded-2xl p-6`}
+                    >
+                      <div className="flex items-start gap-3 mb-4">
+                        <FileCheck className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
 
-                      <div className="flex-1">
-                        <h4 className={`text-sm font-bold ${textPrimary}`}>
-                          Return Request
-                        </h4>
-
-                        <p className={`text-xs ${textSecondary} mt-1`}>
-                          Status:
-                          <span
-                            className={`ml-1 font-semibold capitalize ${getRequestStatusStyle(order.returnRequest?.status)}`}
+                        <div className="flex-1">
+                          <h4
+                            className={`text-sm font-bold ${textPrimary}`}
                           >
-                            {order.returnRequest?.status || 'pending'}
-                          </span>
-                        </p>
-                      </div>
-                    </div>
+                            Return Request
+                          </h4>
 
-                    <div className={`space-y-2 text-xs ${textSecondary}`}>
-                      <p>
-                        <strong>Reason:</strong>{' '}
-                        {order.returnRequest?.reason}
-                      </p>
-
-                      {order.returnRequest?.details && (
-                        <p>
-                          <strong>Details:</strong>{' '}
-                          {order.returnRequest?.details}
-                        </p>
-                      )}
-
-                      <p>
-                        <strong>Requested:</strong>{' '}
-                        {new Date(
-                          order.returnRequest?.requestedAt
-                        ).toLocaleDateString()}
-                      </p>
-
-                      {order.returnRequest?.reviewedAt && (
-                        <p>
-                          <strong>Reviewed:</strong>{' '}
-                          {new Date(
-                            order.returnRequest?.reviewedAt
-                          ).toLocaleDateString()}
-                        </p>
-                      )}
-
-                      {order.returnRequest?.response && (
-                        <div
-                          className={`${isDark ? 'bg-gray-900' : 'bg-gray-50'} p-3 rounded-xl mt-3`}
-                        >
-                          <strong>Vendor Response:</strong>{' '}
-                          {order.returnRequest?.response}
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* REFUND REQUEST */}
-                {order.refundRequest?.requested && (
-                  <motion.div
-                    variants={itemVariants}
-                    className={`${cardBg} border ${cardBorder} rounded-2xl p-6`}
-                  >
-                    <div className="flex items-start gap-3 mb-4">
-                      <RotateCcw className="w-5 h-5 text-orange-500 mt-0.5 flex-shrink-0" />
-
-                      <div className="flex-1">
-                        <h4 className={`text-sm font-bold ${textPrimary}`}>
-                          Refund Request
-                        </h4>
-
-                        <p className={`text-xs ${textSecondary} mt-1`}>
-                          Status:
-                          <span
-                            className={`ml-1 font-semibold capitalize ${getRequestStatusStyle(order.refundRequest?.status)}`}
+                          <p
+                            className={`text-xs ${textSecondary} mt-1`}
                           >
-                            {order.refundRequest?.status || 'pending'}
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className={`space-y-2 text-xs ${textSecondary}`}>
-                      <p>
-                        <strong>Reason:</strong>{' '}
-                        {order.refundRequest?.reason}
-                      </p>
-
-                      {order.refundRequest?.details && (
-                        <p>
-                          <strong>Details:</strong>{' '}
-                          {order.refundRequest?.details}
-                        </p>
-                      )}
-
-                      <p>
-                        <strong>Requested:</strong>{' '}
-                        {new Date(
-                          order.refundRequest?.requestedAt
-                        ).toLocaleDateString()}
-                      </p>
-
-                      {order.refundRequest?.reviewedAt && (
-                        <p>
-                          <strong>Reviewed:</strong>{' '}
-                          {new Date(
-                            order.refundRequest?.reviewedAt
-                          ).toLocaleDateString()}
-                        </p>
-                      )}
-
-                      {order.refundRequest?.response && (
-                        <div
-                          className={`${isDark ? 'bg-gray-900' : 'bg-gray-50'} p-3 rounded-xl mt-3`}
-                        >
-                          <strong>Vendor Response:</strong>{' '}
-                          {order.refundRequest?.response}
+                            Status:
+                            <span
+                              className={`ml-1 font-semibold capitalize ${getRequestStatusStyle(
+                                order.returnRequest?.status
+                              )}`}
+                            >
+                              {order.returnRequest?.status ||
+                                "pending"}
+                            </span>
+                          </p>
                         </div>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
-              </div>
-            )}
+                      </div>
+
+                      <div
+                        className={`space-y-2 text-xs ${textSecondary}`}
+                      >
+                        <p>
+                          <strong>Reason:</strong>{" "}
+                          {order.returnRequest?.reason}
+                        </p>
+
+                        {order.returnRequest?.details && (
+                          <p>
+                            <strong>Details:</strong>{" "}
+                            {order.returnRequest.details}
+                          </p>
+                        )}
+
+                        {order.returnRequest?.requestedAt && (
+                          <p>
+                            <strong>Requested:</strong>{" "}
+                            {new Date(
+                              order.returnRequest.requestedAt
+                            ).toLocaleDateString()}
+                          </p>
+                        )}
+
+                        {order.returnRequest?.reviewedAt && (
+                          <p>
+                            <strong>Reviewed:</strong>{" "}
+                            {new Date(
+                              order.returnRequest.reviewedAt
+                            ).toLocaleDateString()}
+                          </p>
+                        )}
+
+                        {order.returnRequest?.response && (
+                          <div
+                            className={`${isDark
+                                ? "bg-gray-900"
+                                : "bg-gray-50"
+                              } p-3 rounded-xl mt-3`}
+                          >
+                            <strong>
+                              Vendor Response:
+                            </strong>{" "}
+                            {order.returnRequest.response}
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* REFUND */}
+                  {order.refundRequest?.requested && (
+                    <motion.div
+                      variants={itemVariants}
+                      className={`${cardBg} border ${cardBorder} rounded-2xl p-6`}
+                    >
+                      <div className="flex items-start gap-3 mb-4">
+                        <RotateCcw className="w-5 h-5 text-orange-500 mt-0.5 flex-shrink-0" />
+
+                        <div className="flex-1">
+                          <h4
+                            className={`text-sm font-bold ${textPrimary}`}
+                          >
+                            Refund Request
+                          </h4>
+
+                          <p
+                            className={`text-xs ${textSecondary} mt-1`}
+                          >
+                            Status:
+                            <span
+                              className={`ml-1 font-semibold capitalize ${getRequestStatusStyle(
+                                order.refundRequest?.status
+                              )}`}
+                            >
+                              {order.refundRequest?.status ||
+                                "pending"}
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+
+                      <div
+                        className={`space-y-2 text-xs ${textSecondary}`}
+                      >
+                        <p>
+                          <strong>Reason:</strong>{" "}
+                          {order.refundRequest?.reason}
+                        </p>
+
+                        {order.refundRequest?.details && (
+                          <p>
+                            <strong>Details:</strong>{" "}
+                            {order.refundRequest.details}
+                          </p>
+                        )}
+
+                        {order.refundRequest?.requestedAt && (
+                          <p>
+                            <strong>Requested:</strong>{" "}
+                            {new Date(
+                              order.refundRequest.requestedAt
+                            ).toLocaleDateString()}
+                          </p>
+                        )}
+
+                        {order.refundRequest?.reviewedAt && (
+                          <p>
+                            <strong>Reviewed:</strong>{" "}
+                            {new Date(
+                              order.refundRequest.reviewedAt
+                            ).toLocaleDateString()}
+                          </p>
+                        )}
+
+                        {order.refundRequest?.response && (
+                          <div
+                            className={`${isDark
+                                ? "bg-gray-900"
+                                : "bg-gray-50"
+                              } p-3 rounded-xl mt-3`}
+                          >
+                            <strong>
+                              Vendor Response:
+                            </strong>{" "}
+                            {order.refundRequest.response}
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+              )}
           </div>
         </div>
 
+        {/* Payment proof modal */}
         {showProofModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-            <div className="relative max-w-3xl w-full mx-4">
-              {/* Close button */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+            <div className="relative max-w-3xl w-full">
               <button
                 onClick={closeProof}
-                className="absolute top-2 right-2 bg-red-600 text-white hover:bg-red-900 font-black px-3 py-1 rounded-lg text-sm"
+                className="absolute top-2 right-2 z-10 bg-red-600 text-white hover:bg-red-700 font-black px-3 py-1 rounded-lg text-sm"
               >
                 Close
               </button>
-              {/* Image */}
+
               <img
                 src={activeProof}
                 alt="Payment Proof"
                 className="w-full max-h-[80vh] object-contain rounded-xl"
               />
+
               <button
                 onClick={downloadProof}
-                className="absolute bottom-2 right-2 bg-green-600 text-white px-3 py-1 rounded-lg text-xs hover:bg-green-900"
+                className="absolute bottom-2 right-2 bg-green-600 text-white px-3 py-1 rounded-lg text-xs hover:bg-green-700"
               >
                 Download
               </button>
@@ -693,10 +1158,12 @@ export default function OrdersDetails() {
           </div>
         )}
 
-        {/* Refund/Return Modal */}
+        {/* Refund / Return Modal */}
         <RefundReturnModal
           isOpen={showRefundReturnModal}
-          onClose={() => setShowRefundReturnModal(false)}
+          onClose={() =>
+            setShowRefundReturnModal(false)
+          }
           orderId={orderId}
           requestType={modalRequestType}
           onSuccess={fetchOrder}

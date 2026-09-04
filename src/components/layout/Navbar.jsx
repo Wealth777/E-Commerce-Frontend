@@ -19,7 +19,7 @@ import { useToast } from '../../context/ToastContext';
 import apiClient from '../../api/apiClient';
 import Logo from '/Campus_trade_logo_green_2.png'
 
-const Navbar = () => {
+const Navbar = () => {    
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { isAuthenticated, user, role } = useSelector((state) => state.auth);
     const { items } = useSelector((state) => state.cart);
@@ -82,8 +82,8 @@ const Navbar = () => {
                     { name: 'Orders', path: '/vendor/orders' },
                     { name: 'Notifications', path: '/vendor/notifications' },
                     { name: 'Messages', path: '/vendor/messages' },
-                    { name: 'Ratings & Reviews', path: '/vendor/ratings-reviews' },
-                    { name: 'Reports', path: '/vendor/reports' },
+                    // { name: 'Ratings & Reviews', path: '/vendor/ratings-reviews' },
+                    // { name: 'Reports', path: '/vendor/reports' },
                     { name: 'Request Refund', path: '/vendor/refund-requests' },
                     { name: 'Request Return', path: '/vendor/return-requests' },
                     { name: 'Analytics', path: '/vendor/analytics' },
@@ -98,8 +98,8 @@ const Navbar = () => {
                     { name: 'My Orders', path: '/buyer/orders' },
                     { name: 'Notifications', path: '/buyer/notifications' },
                     { name: 'Messages', path: '/buyer/messages' },
-                    { name: 'Ratings & Reviews', path: '/buyer/ratings-reviews' },
-                    { name: 'Reports', path: '/buyer/reports' },
+                    // { name: 'Ratings & Reviews', path: '/buyer/ratings-reviews' },
+                    // { name: 'Reports', path: '/buyer/reports' },
                     { name: 'My Wishlist', path: '/buyer/wishlist' },
                     { name: 'My Profile', path: '/buyer/profile' },
                     { name: 'Settings', path: '/buyer/settings' },

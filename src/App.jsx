@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchUser, logout } from './store/authSlice';
 import useNotificationSocket from './hooks/useNotificationSocket';
+import useOrderSocket from './hooks/useOrderSocket';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -81,7 +82,9 @@ function App() {
 
   const dispatch = useDispatch();
   const { isAuthenticated } = useSelector((state) => state.auth);
+
   useNotificationSocket();
+  useOrderSocket();
 
   useEffect(() => {
     dispatch(fetchUser());
@@ -114,7 +117,6 @@ function App() {
             <Route path="/vendor/login" element={<VendorLogin />} />
             <Route path="/founder/login" element={<FounderLogin />} />
             <Route path="/security/unauthorized-email-change" element={<UnauthorizedEmailChange />} />
-            {/* <Route path="/settings" element={<VendorSettings />} /> */}
           </Route>
 
           <Route element={<PublicLayout />}>
@@ -237,7 +239,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route
+            {/* <Route
               path="/buyer/ratings-reviews"
               element={
                 <ProtectedRoute requiredRole="buyer">
@@ -256,7 +258,7 @@ function App() {
                   </BuyerDashboardGuard>
                 </ProtectedRoute>
               }
-            />
+            /> */}
             <Route
               path="/buyer/settings"
               element={
@@ -391,7 +393,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route
+            {/* <Route
               path="/vendor/ratings-reviews"
               element={
                 <ProtectedRoute requiredRole="vendor">
@@ -410,7 +412,7 @@ function App() {
                   </VendorDashboardGuard>
                 </ProtectedRoute>
               }
-            />
+            /> */}
             <Route
               path="/vendor/settings"
               element={

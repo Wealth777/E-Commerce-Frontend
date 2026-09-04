@@ -5,6 +5,7 @@ import { useToast } from '../../context/ToastContext';
 import { useTheme } from '../../context/ThemeContext';
 import { EmptyState, ErrorState, LoadingState, ReportCard, ReportForm } from '../../components/feedback';
 import { useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 
 const VendorReports = () => {
   const { isDark } = useTheme();

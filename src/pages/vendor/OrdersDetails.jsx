@@ -1,10 +1,7 @@
-import { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useTheme } from "../../context/ThemeContext";
-import apiClient from "../../api/apiClient";
-import { getMessage, getPayload } from "../../utils/apiResponse";
-import { useToast } from "../../context/ToastContext";
 import {
   ArrowLeft,
   Package,
@@ -15,118 +12,194 @@ import {
   Copy,
   CircleDot,
   User,
+  Download,
+  X,
 } from "lucide-react";
+
+import { useTheme } from "../../context/ThemeContext";
+import apiClient from "../../api/apiClient";
+import { getMessage, getPayload } from "../../utils/apiResponse";
+import { useToast } from "../../context/ToastContext";
 import Loading from "../../components/layout/Loding";
+
+import {
+  addOrder,
+  setSelectedOrder,
+} from "../../store/orderSlice";
 
 export default function VendorOrdersDetails() {
   const { orderId } = useParams();
   const { isDark } = useTheme();
   const { showToast } = useToast();
-  const [order, setOrder] = useState(null);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const {
+    orders = [],
+    selectedOrder,
+  } = useSelector((state) => state.orders);
+
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [actionLoading, setActionLoading] = useState("");
   const [showProofModal, setShowProofModal] = useState(false);
   const [activeProof, setActiveProof] = useState(null);
-  const navigate = useNavigate();
 
-  const safeOrderId = order?._id;
+  const order = useMemo(() => {
+    if (selectedOrder?._id === orderId) {
+      return selectedOrder;
+    }
 
-  useEffect(() => {
-    fetchOrder();
-  }, [orderId]);
+    return (
+      orders.find((item) => item?._id === orderId) || null
+    );
+  }, [orders, selectedOrder, orderId]);
 
-  const fetchOrder = async () => {
+  const safeOrderId = order?._id || orderId;
+
+  const fetchOrder = useCallback(async () => {
+    if (!orderId) return;
+
     try {
       setLoading(true);
-      const res = await apiClient.get(`/vendor/orders/${orderId}`);
-      setOrder(getPayload(res, null));
-    } catch (err) {
-      showToast(getMessage(err, "Failed to load order details"), 'error');
+
+      const response = await apiClient.get(
+        `/vendor/orders/${orderId}`
+      );
+
+      const fetchedOrder = getPayload(response, null);
+
+      if (!fetchedOrder) {
+        throw new Error("Order not found");
+      }
+
+      dispatch(addOrder(fetchedOrder));
+      dispatch(setSelectedOrder(fetchedOrder));
+    } catch (error) {
+      showToast(
+        getMessage(error, "Failed to load order details"),
+        "error"
+      );
     } finally {
       setLoading(false);
     }
-  };
+  }, [dispatch, orderId, showToast]);
 
-  const copyOrderId = () => {
-    if (order?._id) {
-      navigator.clipboard.writeText(order._id);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
+  useEffect(() => {
+    const existingOrder = orders.find(
+      (item) => item?._id === orderId
+    );
 
-  const getStatusConfig = (status) => {
-    const s = status?.toLowerCase() || "pending";
-    const configs = {
-      delivered: { icon: <CheckCircle2 className="w-5 h-5" />, color: "text-emerald-600", bg: isDark ? "bg-emerald-500/15" : "bg-emerald-50", label: "Delivered" },
-      shipped: { icon: <Truck className="w-5 h-5" />, color: "text-green-600", bg: isDark ? "bg-green-500/15" : "bg-green-50", label: "Shipped" },
-      processing: { icon: <Package className="w-5 h-5" />, color: "text-violet-600", bg: isDark ? "bg-violet-500/15" : "bg-violet-50", label: "Processing" },
-      cancelled: { icon: <CircleDot className="w-5 h-5" />, color: "text-red-600", bg: isDark ? "bg-red-500/15" : "bg-red-50", label: "Cancelled" },
-      default: { icon: <Clock className="w-5 h-5" />, color: "text-amber-600", bg: isDark ? "bg-amber-500/15" : "bg-amber-50", label: "Pending" }
-    };
-    return configs[s] || configs.default;
-  };
-
-  const confirmPayment = async (status) => {
-    if (!safeOrderId) {
-      showToast("Order not loaded", 'warning');
+    if (existingOrder) {
+      dispatch(setSelectedOrder(existingOrder));
+      setLoading(false);
       return;
     }
-    try {
-      setActionLoading(`payment-${status}`);
-      await apiClient.post("/vendor/orders/action/confirmpayment", {
-        orderId: safeOrderId,
-        status,
-      });
-      showToast("Payment updated", 'success');
-      fetchOrder();
-    } catch (err) {
-      showToast(getMessage(err, "Payment update failed"), 'error');
-    } finally {
-      setActionLoading("");
-    }
+
+    fetchOrder();
+  }, [dispatch, fetchOrder, orderId, orders]);
+
+  const refreshOrder = async () => {
+    await fetchOrder();
   };
 
-  const confirmOrder = async () => {
-    if (!safeOrderId) {
-      showToast("Order not loaded", 'warning');
-      return;
-    }
-    try {
-      setActionLoading("confirm-order");
-      await apiClient.post("/vendor/orders/action/confirmorder", {
-        orderId: safeOrderId,
-      });
-      showToast("Order confirmed", 'success');
-      fetchOrder();
-    } catch (err) {
-      showToast(getMessage(err, "Order confirm failed"), 'error');
-    } finally {
-      setActionLoading("");
-    }
-  };
-
-  const markShipped = async () => {
+  const updateOrderAction = async ({
+    actionKey,
+    endpoint,
+    payload,
+    successMessage,
+    errorMessage,
+  }) => {
     if (!safeOrderId) {
       showToast("Order not loaded", "warning");
       return;
     }
+
     try {
-      setActionLoading("mark-shipped");
-      await apiClient.post("/vendor/orders/action/confirmshipped", {
+      setActionLoading(actionKey);
+
+      const response = await apiClient.post(endpoint, {
         orderId: safeOrderId,
+        ...payload,
       });
-      showToast("Marked as shipped", 'success');
-      fetchOrder();
-    } catch (err) {
-      showToast(getMessage(err, "Shipping update failed"), 'error');
+
+      const updatedOrder = getPayload(response, null);
+
+      if (updatedOrder?._id) {
+        dispatch(addOrder(updatedOrder));
+        dispatch(setSelectedOrder(updatedOrder));
+      } else {
+        await fetchOrder();
+      }
+
+      showToast(successMessage, "success");
+    } catch (error) {
+      showToast(
+        getMessage(error, errorMessage),
+        "error"
+      );
     } finally {
       setActionLoading("");
     }
   };
 
+  const confirmPayment = async (status) => {
+    await updateOrderAction({
+      actionKey: `payment-${status}`,
+      endpoint: "/vendor/orders/action/confirmpayment",
+      payload: { status },
+      successMessage:
+        status === "paid"
+          ? "Payment marked as paid"
+          : "Payment marked as failed",
+      errorMessage: "Payment update failed",
+    });
+  };
+
+  const confirmOrder = async () => {
+    await updateOrderAction({
+      actionKey: "confirm-order",
+      endpoint: "/vendor/orders/action/confirmorder",
+      payload: {},
+      successMessage: "Order confirmed",
+      errorMessage: "Order confirmation failed",
+    });
+  };
+
+  const markShipped = async () => {
+    await updateOrderAction({
+      actionKey: "mark-shipped",
+      endpoint: "/vendor/orders/action/confirmshipped",
+      payload: {},
+      successMessage: "Order marked as shipped",
+      errorMessage: "Shipping update failed",
+    });
+  };
+
+  const copyOrderId = async () => {
+    if (!order?._id) {
+      showToast("Order ID is unavailable", "warning");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(order._id);
+      setCopied(true);
+
+      window.setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+    } catch {
+      showToast("Unable to copy order ID", "error");
+    }
+  };
+
   const openProof = (file) => {
+    if (!file) {
+      showToast("Payment proof is unavailable", "warning");
+      return;
+    }
+
     setActiveProof(file);
     setShowProofModal(true);
   };
@@ -137,249 +210,595 @@ export default function VendorOrdersDetails() {
   };
 
   const downloadProof = async () => {
-    try {
-      const res = await fetch(activeProof);
-      const blob = await res.blob();
+    if (!activeProof || !order?._id) {
+      showToast("Payment proof is unavailable", "warning");
+      return;
+    }
 
+    try {
+      const response = await fetch(activeProof);
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch payment proof");
+      }
+
+      const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
 
       const link = document.createElement("a");
       link.href = url;
       link.download = `receipt-${order._id}.jpg`;
+
       document.body.appendChild(link);
       link.click();
-
       link.remove();
+
       window.URL.revokeObjectURL(url);
-    } catch (err) {
-      showToast("Download failed", 'error');
+    } catch {
+      showToast("Download failed", "error");
     }
   };
 
-  // Style variables
-  const bgColor = isDark ? "bg-[#0a0a0f]" : "bg-gray-50";
-  const cardBg = isDark ? "bg-[#13131a]" : "bg-white";
-  const cardBorder = isDark ? "border-white/[0.06]" : "border-gray-200";
-  const textPrimary = isDark ? "text-gray-100" : "text-gray-900";
-  const textSecondary = isDark ? "text-gray-400" : "text-gray-500";
-  const textMuted = isDark ? "text-gray-500" : "text-gray-400";
-  const textColor = isDark ? 'text-white' : 'text-gray-900';
+  const getStatusConfig = (status) => {
+    const normalizedStatus = status?.toLowerCase() || "pending";
+
+    const configs = {
+      delivered: {
+        icon: <CheckCircle2 className="w-5 h-5" />,
+        color: "text-emerald-600",
+        bg: isDark ? "bg-emerald-500/15" : "bg-emerald-50",
+        label: "Delivered",
+      },
+
+      shipped: {
+        icon: <Truck className="w-5 h-5" />,
+        color: "text-green-600",
+        bg: isDark ? "bg-green-500/15" : "bg-green-50",
+        label: "Shipped",
+      },
+
+      confirmed: {
+        icon: <Package className="w-5 h-5" />,
+        color: "text-blue-600",
+        bg: isDark ? "bg-blue-500/15" : "bg-blue-50",
+        label: "Confirmed",
+      },
+
+      processing: {
+        icon: <Package className="w-5 h-5" />,
+        color: "text-violet-600",
+        bg: isDark ? "bg-violet-500/15" : "bg-violet-50",
+        label: "Processing",
+      },
+
+      cancelled: {
+        icon: <CircleDot className="w-5 h-5" />,
+        color: "text-red-600",
+        bg: isDark ? "bg-red-500/15" : "bg-red-50",
+        label: "Cancelled",
+      },
+
+      default: {
+        icon: <Clock className="w-5 h-5" />,
+        color: "text-amber-600",
+        bg: isDark ? "bg-amber-500/15" : "bg-amber-50",
+        label: "Pending",
+      },
+    };
+
+    return configs[normalizedStatus] || configs.default;
+  };
+
+  const formatCurrency = (amount) => {
+    return `₦${Number(amount || 0).toLocaleString()}`;
+  };
+
+  const formatDate = (date) => {
+    if (!date) return "Unknown date";
+
+    const parsedDate = new Date(date);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      return "Unknown date";
+    }
+
+    return parsedDate.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  const getProductName = (item) => {
+    return (
+      item?.name ||
+      item?.productId?.name ||
+      "Product"
+    );
+  };
+
+  const getProductImage = (item) => {
+    return (
+      item?.image ||
+      item?.productId?.image ||
+      "/placeholder.png"
+    );
+  };
+
+  const canMarkPayment = order?.payment?.status === "pending";
+  const canConfirmOrder = order?.status === "pending";
+  const canMarkShipped = order?.status === "confirmed";
+
+  const statusConfig = getStatusConfig(order?.status);
+
+  const bgColor = isDark
+    ? "bg-[#0a0a0f]"
+    : "bg-gray-50";
+
+  const cardBg = isDark
+    ? "bg-[#13131a]"
+    : "bg-white";
+
+  const cardBorder = isDark
+    ? "border-white/[0.06]"
+    : "border-gray-200";
+
+  const textPrimary = isDark
+    ? "text-gray-100"
+    : "text-gray-900";
+
+  const textSecondary = isDark
+    ? "text-gray-400"
+    : "text-gray-500";
+
+  const textMuted = isDark
+    ? "text-gray-500"
+    : "text-gray-400";
 
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.5 }
-    }
+      transition: { duration: 0.5 },
+    },
   };
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 }
+    visible: { opacity: 1, y: 0 },
   };
 
-  if (loading) {
+  if (loading && !order) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${bgColor}`}>
+      <div
+        className={`min-h-screen flex items-center justify-center ${bgColor}`}
+      >
         <Loading text="Loading order details..." />
       </div>
     );
   }
 
-  if (!order) return (
-    <div className={`min-h-screen flex items-center justify-center ${bgColor}`}>
-      <div className="text-center space-y-3">
-        <Package className={`w-12 h-12 mx-auto ${textMuted}`} />
-        <p className={`text-lg font-medium ${textPrimary}`}>Order not found</p>
-        <Link to="/vendor/orders" className="text-green-500 hover:underline">Back to Dashboard</Link>
-      </div>
-    </div>
-  );
+  if (!order) {
+    return (
+      <div
+        className={`min-h-screen flex items-center justify-center ${bgColor}`}
+      >
+        <div className="text-center space-y-3">
+          <Package
+            className={`w-12 h-12 mx-auto ${textMuted}`}
+          />
 
-  const statusConfig = getStatusConfig(order.status);
+          <p className={`text-lg font-medium ${textPrimary}`}>
+            Order not found
+          </p>
+
+          <Link
+            to="/vendor/orders"
+            className="text-green-500 hover:underline"
+          >
+            Back to Sales
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen ${bgColor} pb-16`}>
       {/* Header */}
-      <div className={`sticky top-0 z-30 ${isDark ? "bg-[#0a0a0f]/80" : "bg-gray-50/80"} backdrop-blur-xl border-b ${cardBorder}`}>
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <button onClick={() => navigate(-1)} className={`group inline-flex items-center gap-2 text-sm text-gray-400 hover:text-green-500 transition-colors mb-2 rounded-full px-3 py-1.5 ${isDark ? "bg-zinc-900/70 hover:bg-zinc-800 text-zinc-300 ring-1 ring-white/10" : "bg-white/70 hover:bg-white text-zinc-600 ring-1 ring-zinc-900/5"}`}>
+      <div
+        className={`sticky top-0 z-30 ${isDark
+            ? "bg-[#0a0a0f]/80"
+            : "bg-gray-50/80"
+          } backdrop-blur-xl border-b ${cardBorder}`}
+      >
+        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className={`group inline-flex items-center gap-2 text-sm rounded-full px-3 py-1.5 transition-colors ${isDark
+                ? "bg-zinc-900/70 hover:bg-zinc-800 text-zinc-300 ring-1 ring-white/10"
+                : "bg-white/70 hover:bg-white text-zinc-600 ring-1 ring-zinc-900/5"
+              }`}
+          >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
             Back
           </button>
 
-          <button onClick={copyOrderId} className={`flex items-center gap-1.5 text-xs font-mono px-3 py-1.5 rounded-lg border ${cardBorder} ${textMuted}`}>
-            {copied ? "Copied!" : `#${order._id?.slice(-8).toUpperCase()}`}
+          <button
+            type="button"
+            onClick={copyOrderId}
+            className={`flex items-center gap-1.5 text-xs font-mono px-3 py-1.5 rounded-lg border ${cardBorder} ${textMuted}`}
+          >
+            {copied
+              ? "Copied!"
+              : `#${order._id?.slice(-8).toUpperCase()}`}
             <Copy className="w-3 h-3" />
           </button>
         </div>
       </div>
 
-      <motion.div className="max-w-6xl mx-auto px-4 pt-8" variants={containerVariants} initial="hidden" animate="visible">
-        <motion.div variants={itemVariants} className="mb-8">
-          <h1 className={`text-2xl sm:text-3xl font-bold ${textPrimary} tracking-tight`}>Order Details</h1>
+      <motion.div
+        className="max-w-6xl mx-auto px-4 pt-8"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <motion.div
+          variants={itemVariants}
+          className="mb-8"
+        >
+          <h1
+            className={`text-2xl sm:text-3xl font-bold ${textPrimary} tracking-tight`}
+          >
+            Order Details
+          </h1>
+
           <p className={`mt-1 text-sm ${textSecondary}`}>
-            Placed on {new Date(order.createdAt).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+            Placed on {formatDate(order.createdAt)}
           </p>
         </motion.div>
 
-        {/* Order Action */}
-        <motion.div variants={itemVariants} className="mb-8">
-          <h4 className={`text-1xl sm:text-1xl font-bold ${textPrimary} tracking-tight`}>Order Action</h4>
+        {/* Order actions */}
+        <motion.div
+          variants={itemVariants}
+          className="mb-8"
+        >
+          <div className="flex items-center justify-between gap-4">
+            <h4
+              className={`text-lg font-bold ${textPrimary} tracking-tight`}
+            >
+              Order Actions
+            </h4>
+
+            {loading && (
+              <span className={`text-xs ${textSecondary}`}>
+                Refreshing...
+              </span>
+            )}
+          </div>
+
           <div className="flex flex-wrap gap-3 mt-3">
             <button
+              type="button"
               onClick={() => confirmPayment("paid")}
-              disabled={order.payment?.status !== "pending" || actionLoading === "payment-paid"}
-              className={`px-4 py-2 rounded-lg bg-green-600 text-white text-sm ${order.payment?.status !== "pending" || actionLoading === "payment-paid" ? "opacity-40 cursor-not-allowed" : "hover:bg-green-700 transition-colors"}`}
+              disabled={
+                !canMarkPayment ||
+                actionLoading === "payment-paid"
+              }
+              className={`px-4 py-2 rounded-lg bg-green-600 text-white text-sm ${!canMarkPayment ||
+                  actionLoading === "payment-paid"
+                  ? "opacity-40 cursor-not-allowed"
+                  : "hover:bg-green-700 transition-colors"
+                }`}
             >
-              {actionLoading === "payment-paid" ? "Updating..." : "Mark Payment Paid"}
+              {actionLoading === "payment-paid"
+                ? "Updating..."
+                : "Mark Payment Paid"}
             </button>
 
             <button
+              type="button"
               onClick={() => confirmPayment("failed")}
-              disabled={order.payment?.status !== "pending" || actionLoading === "payment-failed"}
-              className={`px-4 py-2 rounded-lg bg-red-600 text-white text-sm ${order.payment?.status !== "pending" || actionLoading === "payment-failed" ? "opacity-40 cursor-not-allowed" : "hover:bg-red-700 transition-colors"}`}
+              disabled={
+                !canMarkPayment ||
+                actionLoading === "payment-failed"
+              }
+              className={`px-4 py-2 rounded-lg bg-red-600 text-white text-sm ${!canMarkPayment ||
+                  actionLoading === "payment-failed"
+                  ? "opacity-40 cursor-not-allowed"
+                  : "hover:bg-red-700 transition-colors"
+                }`}
             >
-              {actionLoading === "payment-failed" ? "Updating..." : "Mark Payment Failed"}
+              {actionLoading === "payment-failed"
+                ? "Updating..."
+                : "Mark Payment Failed"}
             </button>
 
             <button
+              type="button"
               onClick={confirmOrder}
-              disabled={order.status !== "pending" || actionLoading === "confirm-order"}
-              className={`px-4 py-2 rounded-lg bg-blue-600 text-white text-sm ${order.status !== "pending" || actionLoading === "confirm-order" ? "opacity-40 cursor-not-allowed" : "hover:bg-blue-700 transition-colors"}`}
+              disabled={
+                !canConfirmOrder ||
+                actionLoading === "confirm-order"
+              }
+              className={`px-4 py-2 rounded-lg bg-blue-600 text-white text-sm ${!canConfirmOrder ||
+                  actionLoading === "confirm-order"
+                  ? "opacity-40 cursor-not-allowed"
+                  : "hover:bg-blue-700 transition-colors"
+                }`}
             >
-              {actionLoading === "confirm-order" ? "Confirming..." : "Confirm Order"}
+              {actionLoading === "confirm-order"
+                ? "Confirming..."
+                : "Confirm Order"}
             </button>
 
             <button
+              type="button"
               onClick={markShipped}
-              disabled={order.status !== "confirmed" || actionLoading === "mark-shipped"}
-              className={`px-4 py-2 rounded-lg bg-purple-600 text-white text-sm ${order.status !== "confirmed" || actionLoading === "mark-shipped" ? "opacity-40 cursor-not-allowed" : "hover:bg-purple-700 transition-colors"}`}
+              disabled={
+                !canMarkShipped ||
+                actionLoading === "mark-shipped"
+              }
+              className={`px-4 py-2 rounded-lg bg-purple-600 text-white text-sm ${!canMarkShipped ||
+                  actionLoading === "mark-shipped"
+                  ? "opacity-40 cursor-not-allowed"
+                  : "hover:bg-purple-700 transition-colors"
+                }`}
             >
-              {actionLoading === "mark-shipped" ? "Updating..." : "Mark Shipped"}
+              {actionLoading === "mark-shipped"
+                ? "Updating..."
+                : "Mark Shipped"}
+            </button>
+
+            <button
+              type="button"
+              onClick={refreshOrder}
+              disabled={loading}
+              className={`px-4 py-2 rounded-lg border ${cardBorder} ${textPrimary} text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors`}
+            >
+              Refresh
             </button>
           </div>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-
           <div className="lg:col-span-2 space-y-6">
-            {/* Status & Buyer Info */}
-            <motion.div variants={itemVariants} className={`${cardBg} border ${cardBorder} rounded-2xl p-6 flex flex-wrap justify-between items-center gap-4`}>
+            {/* Status and buyer info */}
+            <motion.div
+              variants={itemVariants}
+              className={`${cardBg} border ${cardBorder} rounded-2xl p-6 flex flex-wrap justify-between items-center gap-4`}
+            >
               <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 rounded-xl ${statusConfig.bg} ${statusConfig.color} flex items-center justify-center`}>
+                <div
+                  className={`w-12 h-12 rounded-xl ${statusConfig.bg} ${statusConfig.color} flex items-center justify-center`}
+                >
                   {statusConfig.icon}
                 </div>
+
                 <div>
-                  <p className={`text-xs font-bold uppercase ${textMuted}`}>Order Status</p>
-                  <h2 className={`text-lg font-bold ${textPrimary}`}>{statusConfig.label}</h2>
+                  <p
+                    className={`text-xs font-bold uppercase ${textMuted}`}
+                  >
+                    Order Status
+                  </p>
+
+                  <h2
+                    className={`text-lg font-bold ${textPrimary}`}
+                  >
+                    {statusConfig.label}
+                  </h2>
                 </div>
               </div>
 
-              {/* Buyer Details (Populated from your controller) */}
               <div className="flex items-center gap-3 pl-4 border-l border-gray-100 dark:border-white/10">
-                <div className={`w-10 h-10 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center ${textSecondary}`}>
+                <div
+                  className={`w-10 h-10 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center ${textSecondary}`}
+                >
                   <User className="w-5 h-5" />
                 </div>
+
                 <div>
-                  <p className={`text-xs font-bold uppercase ${textMuted}`}>Customer</p>
-                  <h2 className={`text-sm font-semibold ${textPrimary}`}>{order.buyer?.username}</h2>
-                  <p className="text-xs text-blue-500">{order.buyer?.email}</p>
+                  <p
+                    className={`text-xs font-bold uppercase ${textMuted}`}
+                  >
+                    Customer
+                  </p>
+
+                  <h2
+                    className={`text-sm font-semibold ${textPrimary}`}
+                  >
+                    {order.buyer?.fullName || "Guest User"}
+                  </h2>
+
+                  {order.buyer?.email && (
+                    <p className="text-xs text-blue-500">
+                      {order.buyer.email || 'Null'}
+                    </p>
+                  )}
                 </div>
               </div>
             </motion.div>
 
-            {/* Items for this Vendor */}
-            <motion.div variants={itemVariants} className={`${cardBg} border ${cardBorder} rounded-2xl overflow-hidden`}>
-              <div className="px-6 py-4 border-b border-inherit">
-                <h3 className={`text-sm font-bold uppercase ${textMuted}`}>Products Ordered</h3>
+            {/* Products */}
+            <motion.div
+              variants={itemVariants}
+              className={`${cardBg} border ${cardBorder} rounded-2xl overflow-hidden`}
+            >
+              <div
+                className={`px-6 py-4 border-b ${cardBorder}`}
+              >
+                <h3
+                  className={`text-sm font-bold uppercase ${textMuted}`}
+                >
+                  Products Ordered
+                </h3>
               </div>
-              <div className="divide-y divide-inherit">
-                {order.items?.map((item, idx) => (
-                  <div key={idx} className="p-6 flex gap-4 items-center">
+
+              <div className="divide-y divide-gray-200 dark:divide-white/10">
+                {order.items?.map((item, index) => (
+                  <div
+                    key={`${item.productId || item._id || "item"}-${index}`}
+                    className="p-6 flex gap-4 items-center"
+                  >
                     <img
-                      src={item.image || item.productId?.image || "/placeholder.png"}
-                      alt={item.name || item.productId?.name || "Product"}
+                      src={getProductImage(item)}
+                      alt={getProductName(item)}
                       className="w-16 h-16 rounded-lg object-cover border border-inherit"
                     />
-                    <div className="flex-1">
-                      <h4 className={`font-semibold ${textPrimary}`}>
-                        {item.name || item.productId?.name || "Product"}
+
+                    <div className="flex-1 min-w-0">
+                      <h4
+                        className={`font-semibold ${textPrimary} truncate`}
+                      >
+                        {getProductName(item)}
                       </h4>
-                      <p className={`text-xs ${textMuted}`}>Qty: {item.quantity}</p>
+
+                      <p className={`text-xs ${textMuted}`}>
+                        Qty: {item.quantity || 0}
+                      </p>
                     </div>
-                    <p className={`font-bold ${textPrimary}`}>₦{(item.price * item.quantity).toLocaleString()}</p>
+
+                    <p
+                      className={`font-bold ${textPrimary} whitespace-nowrap`}
+                    >
+                      {formatCurrency(
+                        Number(item.price || 0) *
+                        Number(item.quantity || 0)
+                      )}
+                    </p>
                   </div>
                 ))}
               </div>
             </motion.div>
 
-            {/* Delivery Address */}
-            <motion.div variants={itemVariants} className={`${cardBg} border ${cardBorder} rounded-2xl p-6`}>
-              <h3 className={`text-xs font-bold uppercase ${textMuted} mb-3`}>Shipping Address</h3>
-              <p className={`text-sm ${textPrimary} leading-relaxed`}>
-                {order.delivery?.address}, {order.delivery?.state}
+            {/* Delivery address */}
+            <motion.div
+              variants={itemVariants}
+              className={`${cardBg} border ${cardBorder} rounded-2xl p-6`}
+            >
+              <h3
+                className={`text-xs font-bold uppercase ${textMuted} mb-3`}
+              >
+                Shipping Address
+              </h3>
+
+              <p
+                className={`text-sm ${textPrimary} leading-relaxed`}
+              >
+                {order.delivery?.address || "Address unavailable"}
+                {order.delivery?.state
+                  ? `, ${order.delivery.state}`
+                  : ""}
               </p>
             </motion.div>
 
-            {/* Note Card */}
-            <motion.div variants={itemVariants} className={`${cardBg} border ${cardBorder} rounded-2xl overflow-hidden`}>
-              <div className={`px-6 sm:px-8 py-5 border-b ${cardBorder}`}>
-                <h3 className={`text-sm font-semibold uppercase tracking-wider ${textMuted}`}>Note</h3>
+            {/* Customer note */}
+            <motion.div
+              variants={itemVariants}
+              className={`${cardBg} border ${cardBorder} rounded-2xl overflow-hidden`}
+            >
+              <div
+                className={`px-6 sm:px-8 py-5 border-b ${cardBorder}`}
+              >
+                <h3
+                  className={`text-sm font-semibold uppercase tracking-wider ${textMuted}`}
+                >
+                  Customer Note
+                </h3>
               </div>
-              <div className={`divide-y mb-2`}>
-                <div className="mt-3 p-2 ">
-                  <p className={`text-sm pl-4 ${textPrimary}`}>{order?.note || 'No note added'}</p>
-                </div>
+
+              <div className="p-6">
+                <p className={`text-sm ${textPrimary}`}>
+                  {order.note || "No note added"}
+                </p>
               </div>
             </motion.div>
           </div>
 
-          {/* Right Column: Financials */}
+          {/* Financial information */}
           <div className="lg:col-span-1">
-            <motion.div variants={itemVariants} className={`${cardBg} border ${cardBorder} rounded-2xl p-6 sticky top-24`}>
-              <h3 className={`text-xs font-bold uppercase ${textMuted} mb-4`}>Payment Info</h3>
+            <motion.div
+              variants={itemVariants}
+              className={`${cardBg} border ${cardBorder} rounded-2xl p-6 sticky top-24`}
+            >
+              <h3
+                className={`text-xs font-bold uppercase ${textMuted} mb-4`}
+              >
+                Payment Information
+              </h3>
+
               <div className="space-y-3 mb-6">
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-sm gap-4">
                   <span className={textSecondary}>Method</span>
-                  <span className={`font-medium ${textPrimary}`}>{order.payment?.method}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className={textSecondary}>Status</span>
-                  <span className={`font-bold ${order.payment?.status === 'paid' ? 'text-emerald-500' : 'text-amber-500'}`}>
-                    {order.payment?.status?.toUpperCase()}
+
+                  <span
+                    className={`font-medium ${textPrimary} uppercase`}
+                  >
+                    {order.payment?.method || "Unavailable"}
                   </span>
                 </div>
+
+                <div className="flex justify-between text-sm gap-4">
+                  <span className={textSecondary}>Status</span>
+
+                  <span
+                    className={`font-bold ${order.payment?.status === "paid"
+                        ? "text-emerald-500"
+                        : order.payment?.status === "failed"
+                          ? "text-red-500"
+                          : "text-amber-500"
+                      }`}
+                  >
+                    {order.payment?.status?.toUpperCase() ||
+                      "PENDING"}
+                  </span>
+                </div>
+
                 {order.payment?.method !== "pod" &&
                   order.payment?.proofs?.length > 0 &&
-                  order.payment.proofs.map((proof, i) => (
+                  order.payment.proofs.map((proof, index) => (
                     <button
-                      key={i}
+                      type="button"
+                      key={`${proof.file || "proof"}-${index}`}
                       onClick={() => openProof(proof.file)}
                       className="text-xs text-green-500 flex items-center gap-1 hover:underline"
                     >
                       <Receipt className="w-3 h-3" />
-                      View Receipt {i + 1}
+                      View Receipt {index + 1}
                     </button>
                   ))}
               </div>
 
-              <div className={`pt-4 border-t ${cardBorder} space-y-2`}>
-                <div className="flex justify-between items-center">
-                  <span className={`text-sm font-bold ${textPrimary}`}>Vendor Earnings</span>
-                  <span className="text-xl font-black text-green-500">
-                    ₦{order.pricing?.total?.toLocaleString()}
+              <div
+                className={`pt-4 border-t ${cardBorder} space-y-2`}
+              >
+                <div className="flex justify-between items-center gap-4">
+                  <span
+                    className={`text-sm font-bold ${textPrimary}`}
+                  >
+                    Vendor Earnings
+                  </span>
+
+                  <span className="text-xl font-black text-green-500 whitespace-nowrap">
+                    {formatCurrency(order.pricing?.total)}
                   </span>
                 </div>
-                <p className="text-[10px] text-gray-500 italic text-right">Includes taxes and shipping</p>
+
+                <p className="text-[10px] text-gray-500 italic text-right">
+                  Includes taxes and shipping
+                </p>
               </div>
 
-              <div className="pt-6 border-t border-inherit">
+              <div
+                className={`pt-6 mt-6 border-t ${cardBorder}`}
+              >
                 <div className="p-4 rounded-2xl bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-800/20">
                   <p className="text-xs text-red-600 dark:text-red-400 font-bold leading-relaxed">
-                    Tip: POD means Payment On Delivery. PAY_NOW - You've paid for the good's brought
+                    POD means Payment On Delivery. PAY_NOW means
+                    the buyer paid before delivery.
                   </p>
                 </div>
               </div>
@@ -387,26 +806,36 @@ export default function VendorOrdersDetails() {
           </div>
         </div>
 
+        {/* Payment proof modal */}
         {showProofModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-            <div className="relative max-w-3xl w-full mx-4">
-              {/* Close button */}
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Payment proof"
+          >
+            <div className="relative max-w-3xl w-full">
               <button
+                type="button"
                 onClick={closeProof}
-                className="absolute top-2 right-2 bg-red-600 text-white hover:bg-red-900 font-black px-3 py-1 rounded-lg text-sm"
+                aria-label="Close payment proof"
+                className="absolute top-2 right-2 z-10 bg-red-600 text-white hover:bg-red-700 font-black p-2 rounded-lg"
               >
-                Close
+                <X className="w-4 h-4" />
               </button>
-              {/* Image */}
+
               <img
                 src={activeProof}
-                alt="Payment Proof"
-                className="w-full max-h-[80vh] object-contain rounded-xl"
+                alt="Payment proof"
+                className="w-full max-h-[80vh] object-contain rounded-xl bg-black"
               />
+
               <button
+                type="button"
                 onClick={downloadProof}
-                className="absolute bottom-2 right-2 bg-green-600 text-white px-3 py-1 rounded-lg text-xs hover:bg-green-900"
+                className="absolute bottom-2 right-2 bg-green-600 text-white px-3 py-2 rounded-lg text-xs hover:bg-green-700 flex items-center gap-2"
               >
+                <Download className="w-3 h-3" />
                 Download
               </button>
             </div>
