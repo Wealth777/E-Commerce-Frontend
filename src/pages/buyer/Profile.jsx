@@ -231,8 +231,7 @@ const Profile = () => {
 
       setProfile(data);
 
-      const mapped =
-        mapProfileToForm(data);
+      const mapped = mapProfileToForm(data);
 
       setFormData(mapped);
 
@@ -1502,16 +1501,16 @@ const Profile = () => {
                       label: 'Email',
                       icon: FaEnvelope,
                     },
-                    {
-                      value: 'whatsapp',
-                      label: 'WhatsApp',
-                      icon: FaBell,
-                    },
-                    {
-                      value: 'both',
-                      label: 'Email & WhatsApp',
-                      icon: FaBell,
-                    },
+                    // {
+                    //   value: 'whatsapp',
+                    //   label: 'WhatsApp',
+                    //   icon: FaBell,
+                    // },
+                    // {
+                    //   value: 'both',
+                    //   label: 'Email & WhatsApp',
+                    //   icon: FaBell,
+                    // },
                   ].map((option) => {
 
                     const Icon =

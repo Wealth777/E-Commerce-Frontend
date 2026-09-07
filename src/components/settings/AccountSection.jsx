@@ -19,12 +19,12 @@ const settings = [
         description: "Update your account password to keep your account secure.",
         icon: Lock,
     },
-    {
-        id: "phone",
-        title: "Change Phone Number",
-        description: "Update the phone number linked to your account.",
-        icon: Phone,
-    },
+    // {
+    //     id: "phone",
+    //     title: "Change Phone Number",
+    //     description: "Update the phone number linked to your account.",
+    //     icon: Phone,
+    // },
     {
         id: "email",
         title: "Change Email",

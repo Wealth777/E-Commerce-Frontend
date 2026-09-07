@@ -140,12 +140,15 @@ const Login = () => {
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       {/* Top Premium Brand Header - Sticky/Top flow fixed */}
       <header className="w-full bg-[#1F2937] border-b border-gray-800 py-4 px-6 sm:px-12 flex justify-between items-center">
-        <div className="flex items-center space-x-2">
-          <div className="h-8 w-1 bg-gradient-to-b from-[#10B981] to-[#F59E0B] rounded-full" />
-          <span className="text-xl font-extrabold tracking-tight text-white">
-            Campus<span className="text-[#10B981]">Trade</span>
-          </span>
-        </div>
+        <Link to={'/'}>
+          <div className="flex items-center space-x-1">
+            <div className="h-8 w-1 mr-1 bg-gradient-to-b from-[#10B981] to-[#F59E0B] rounded-full" />
+            <FiShoppingBag className="h-7 w-7 text-green-600" />
+            <span className="text-xl font-extrabold tracking-tight text-white">
+              Campus<span className="text-[#10B981]">Trade</span>
+            </span>
+          </div>
+        </Link>
         <div className="flex items-center text-xs tracking-wider uppercase text-gray-400 font-bold space-x-1">
           <ShieldCheck className="w-4 h-4 text-[#10B981]" />
           <span>Secure Gateway</span>
@@ -156,20 +159,6 @@ const Login = () => {
       <div className="flex-1 flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
           <div>
-            <div className="flex justify-center">
-              <Link to="/" className="flex items-center">
-                <FiShoppingBag className="h-12 w-12 text-green-600" />
-                <div className="ml-3">
-                  <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-                    CampusTrade
-                  </h2>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Independent platform for the student community
-                  </p>
-                </div>
-              </Link>
-            </div>
-
             <h2 className="mt-6 text-center text-2xl font-bold text-gray-900 dark:text-white">
               Sign in to your account
             </h2>
@@ -178,12 +167,6 @@ const Login = () => {
               Or{' '}
               <Link to="/register" className="font-medium text-green-600 hover:text-green-500">
                 create a new account
-              </Link>
-            </p>
-            <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-              Or{' '}
-              <Link to="/vendor/login" className="font-medium text-green-600 hover:text-green-500">
-                are you a vendor
               </Link>
             </p>
           </div>
@@ -273,7 +256,7 @@ const Login = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center justify-center">
+              <div className="grid items-center justify-center">
                 <div className="flex justify-center w-full">
                   <GoogleLogin
                     onSuccess={handleGoogleLogin}
@@ -286,13 +269,13 @@ const Login = () => {
                   />
                 </div>
 
-                <button
+                {/* <button
                   onClick={() => handleSocialLogin('Facebook')}
                   className="flex items-center justify-center w-full py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition"
                 >
                   <FaFacebook className="h-5 w-5 text-blue-600" />
                   <span className="ml-2">Facebook</span>
-                </button>
+                </button> */}
               </div>
             </div>
           </div>

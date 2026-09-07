@@ -45,12 +45,14 @@ const ForgotPassword = () => {
         <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
             {/* Top Premium Brand Header */}
             <header className="w-full bg-[#1F2937] border-b border-gray-800 py-4 px-6 sm:px-12 flex justify-between items-center">
-                <div className="flex items-center space-x-2">
-                    <div className="h-8 w-1 bg-gradient-to-b from-[#10B981] to-[#F59E0B] rounded-full" />
-                    <span className="text-xl font-extrabold tracking-tight text-white">
-                        Campus<span className="text-[#10B981]">Trade</span>
-                    </span>
-                </div>
+                <Link to={'/'}>
+                    <div className="flex items-center space-x-2">
+                        <div className="h-8 w-1 bg-gradient-to-b from-[#10B981] to-[#F59E0B] rounded-full" />
+                        <span className="text-xl font-extrabold tracking-tight text-white">
+                            Campus<span className="text-[#10B981]">Trade</span>
+                        </span>
+                    </div>
+                </Link>
                 <div className="flex items-center text-xs tracking-wider uppercase text-gray-400 font-bold space-x-1">
                     <ShieldCheck className="w-4 h-4 text-[#10B981]" />
                     <span>Secure Gateway</span>

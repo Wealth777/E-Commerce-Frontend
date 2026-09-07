@@ -16,18 +16,18 @@ const notificationOptions = [
         description: "Receive account updates and order notifications by email.",
         icon: Mail,
     },
-    {
-        value: "whatsapp",
-        title: "WhatsApp Notifications",
-        description: "Receive account updates and order notifications through WhatsApp.",
-        icon: MessageCircle,
-    },
-    {
-        value: "both",
-        title: "Email & WhatsApp",
-        description: "Receive notifications through both email and WhatsApp.",
-        icon: Bell,
-    },
+    // {
+    //     value: "whatsapp",
+    //     title: "WhatsApp Notifications",
+    //     description: "Receive account updates and order notifications through WhatsApp.",
+    //     icon: MessageCircle,
+    // },
+    // {
+    //     value: "both",
+    //     title: "Email & WhatsApp",
+    //     description: "Receive notifications through both email and WhatsApp.",
+    //     icon: Bell,
+    // },
 ];
 
 const NotificationSection = ({

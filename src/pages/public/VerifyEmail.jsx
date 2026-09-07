@@ -18,6 +18,7 @@ import {
 import apiClient from '../../api/apiClient';
 import { getMessage } from '../../utils/apiResponse';
 import Loading from '../../components/layout/Loding';
+import { FiShoppingBag } from 'react-icons/fi';
 
 // DECORATIVE RIGHT VECTOR ART WORK COMPONENT
 export function CampusIllustration() {
@@ -216,17 +217,22 @@ const EmailVerification = () => {
 
       {/* Top Premium Brand Header */}
       <header className="w-full bg-[#1F2937] border-b border-gray-800 py-5 px-6 sm:px-12 flex justify-between items-center z-10">
-        <div className="flex items-center space-x-2">
-          {/* Green-to-Gold Accent Bar behind Logo area */}
-          <div className="h-8 w-1 bg-gradient-to-b from-[#10B981] to-[#F59E0B] rounded-full" />
-          <span className="text-xl font-extrabold tracking-tight text-white">
-            Campus<span className="text-[#10B981]">Trade</span>
-          </span>
-        </div>
+        {/* Green-to-Gold Accent Bar behind Logo area */}
+        <Link to={'/'}>
+          <div className="flex items-center space-x-1">
+            <div className="h-8 w-1 mr-1 bg-gradient-to-b from-[#10B981] to-[#F59E0B] rounded-full" />
+            <FiShoppingBag className="h-7 w-7 text-green-600" />
+            <span className="text-xl font-extrabold tracking-tight text-white">
+              Campus<span className="text-[#10B981]">Trade</span>
+            </span>
+          </div>
+        </Link>
+
         <div className="flex items-center text-xs tracking-wider uppercase text-gray-400 font-bold space-x-1">
           <ShieldCheck className="w-4 h-4 text-[#10B981]" />
           <span>Email Verification</span>
         </div>
+
       </header>
 
       {/* Main Split Screen Area */}

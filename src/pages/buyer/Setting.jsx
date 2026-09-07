@@ -498,9 +498,9 @@ export default function Settings() {
                     onChangePassword={() =>
                         setActiveModal("password")
                     }
-                    onChangePhone={() =>
-                        setActiveModal("phone")
-                    }
+                    // onChangePhone={() =>
+                    //     setActiveModal("phone")
+                    // }
                     onChangeEmail={() =>
                         setActiveModal("email")
                     }

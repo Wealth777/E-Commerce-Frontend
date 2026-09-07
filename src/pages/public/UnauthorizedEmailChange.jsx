@@ -19,6 +19,7 @@ import {
 import FAQ from "../../components/layout/FAQ";
 import { getMessage } from "../../utils/apiResponse";
 import apiClient from "../../api/apiClient";
+import { FiShoppingBag } from "react-icons/fi";
 
 export default function UnauthorizedEmailChange() {
   const [searchParams] = useSearchParams();
@@ -63,13 +64,19 @@ export default function UnauthorizedEmailChange() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex flex-col font-sans text-gray-800 dark:text-slate-100 transition-colors duration-200 selection:bg-[#10B981]/10 selection:text-[#10B981]">
-      
+
       {/* Top Header Bar */}
       <header className="w-full bg-[#1F2937] dark:bg-slate-900 border-b border-gray-800 dark:border-slate-800 py-5 px-6 sm:px-12 flex justify-between items-center z-10">
-        <div className="flex items-center space-x-2">
-          <div className="h-10 w-2 bg-gradient-to-b from-[#79b801] to-[#F59E0B] rounded-full" />
-          <img src="https://res.cloudinary.com/dnao9hmx9/image/upload/v1784039850/Campus_trade_logo_green_2_oz2dil.png" width={70} alt="CampusTrade" />
-        </div>
+        <Link to={'/'}>
+          <div className="flex items-center space-x-1">
+            <div className="h-8 w-1 mr-1 bg-gradient-to-b from-[#10B981] to-[#F59E0B] rounded-full" />
+            <FiShoppingBag className="h-7 w-7 text-green-600" />
+            <span className="text-xl font-extrabold tracking-tight text-white">
+              Campus<span className="text-[#10B981]">Trade</span>
+            </span>
+          </div>
+        </Link>
+
         <div className="flex items-center text-xs tracking-wider uppercase text-gray-300 dark:text-gray-400 font-bold space-x-1.5">
           <ShieldCheck className="w-4 h-4 text-[#10B981]" />
           <span>Security Center</span>
@@ -79,7 +86,7 @@ export default function UnauthorizedEmailChange() {
       {/* Main Single-Column Content Area */}
       <main className="flex-grow flex items-center justify-center p-4 sm:p-8 relative">
         <div className="w-full relative z-10">
-          
+
           {/* Subtle Backglow Accent Blobs */}
           <div className="absolute -top-10 -left-10 w-40 h-40 bg-[#10B981]/5 rounded-full blur-3xl -z-10" />
           <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-[#F59E0B]/5 rounded-full blur-3xl -z-10" />
@@ -100,14 +107,13 @@ export default function UnauthorizedEmailChange() {
           ) : (
             /* Main Security Action Card */
             <div className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-2xl transition-all duration-300">
-              
+
               {/* Header Banner */}
               <div
-                className={`p-6 sm:p-10 relative overflow-hidden ${
-                  completed
-                    ? "bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600"
-                    : "bg-gradient-to-r from-rose-600 via-red-600 to-amber-600"
-                }`}
+                className={`p-6 sm:p-10 relative overflow-hidden ${completed
+                  ? "bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600"
+                  : "bg-gradient-to-r from-rose-600 via-red-600 to-amber-600"
+                  }`}
               >
                 <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center gap-5">
                   <div className="p-3 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 text-white shrink-0">
@@ -136,7 +142,7 @@ export default function UnauthorizedEmailChange() {
 
               {/* Card Body */}
               <div className="p-6 sm:p-10 space-y-8">
-                
+
                 {/* Status Alert Banner */}
                 {!completed ? (
                   <div className="space-y-6">

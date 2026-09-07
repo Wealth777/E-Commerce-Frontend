@@ -106,8 +106,8 @@ function App() {
         <Routes>
           <Route element={<AuthLayout />}>
             <Route path="/login" element={<Login />} />
-            <Route path="/vendor/RecoverAccout" element={<VendorRecoverAccout />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/vendor/RecoverAccout" element={<VendorRecoverAccout />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/verify-change-email" element={<VerifyChangeEmail />} />
             <Route path="/resend-verification-email" element={<ResendVerificationLink />} />

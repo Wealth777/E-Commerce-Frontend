@@ -16,7 +16,7 @@ export default function ResetPassword() {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const { showToast } = useToast();
-    
+
     // Extract token and email parameters from URL query params
     const [searchParams] = useSearchParams();
     const token = searchParams.get('token');
@@ -54,7 +54,7 @@ export default function ResetPassword() {
                     email,
                     newPassword: values.password,
                 };
-                
+
                 const res = await apiClient.post(`/auth/reset-password`, payload);
                 showToast(res.data?.message || 'Password reset successful!', 'success');
                 navigate('/login');
@@ -67,69 +67,23 @@ export default function ResetPassword() {
     });
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F19] flex flex-col lg:flex-row font-sans selection:bg-emerald-500/20 selection:text-emerald-500">
-
-            {/* LEFT SIDEBAR: Premium Branding & Social Proof */}
-            <div className="relative w-full lg:w-[45%] xl:w-[40%] bg-slate-900 dark:bg-[#070A13] p-8 sm:p-12 lg:p-16 flex flex-col justify-between overflow-hidden border-b lg:border-b-0 lg:border-r border-slate-800">
-                <div className="absolute top-0 left-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none" />
-                <div className="absolute bottom-10 right-0 w-72 h-72 bg-blue-500/10 rounded-full blur-[100px] pointer-events-none" />
-
-                {/* Top Section: App Identity */}
-                <div className="relative z-10">
-                    <Link to="/" className="inline-flex items-center space-x-3 group">
-                        <div className="h-11 w-11 rounded-xl bg-gradient-to-tr from-emerald-600 to-emerald-400 p-0.5 shadow-lg shadow-emerald-500/20 flex items-center justify-center transition-transform group-hover:scale-105">
-                            <FiShoppingBag className="h-5 w-5 text-white" />
-                        </div>
-                        <div>
-                            <span className="text-xl font-bold text-white tracking-tight">Campus<span className="text-emerald-400">Trade</span></span>
-                            <span className="block text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Vendor Suite</span>
-                        </div>
-                    </Link>
-
-                    {/* Onboarding Value Pitch */}
-                    <div className="mt-16 lg:mt-24 space-y-6">
-                        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
-                            Build your student commerce empire.
-                        </h1>
-                        <p className="text-base text-slate-400 max-w-md leading-relaxed">
-                            Join over 2,400+ campus merchants scaling their service businesses, clothing lines, and tech stores inside the student community.
-                        </p>
+        <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900  ">
+            {/* Top Premium Brand Header - Sticky/Top flow fixed */}
+            <header className="w-full bg-[#1F2937] border-b border-gray-800 py-4 px-6 sm:px-12 flex justify-between items-center">
+                <Link to={'/'}>
+                    <div className="flex items-center space-x-1">
+                        <div className="h-8 w-1 mr-1 bg-gradient-to-b from-[#10B981] to-[#F59E0B] rounded-full" />
+                        <FiShoppingBag className="h-7 w-7 text-green-600" />
+                        <span className="text-xl font-extrabold tracking-tight text-white">
+                            Campus<span className="text-[#10B981]">Trade</span>
+                        </span>
                     </div>
+                </Link>
+                <div className="flex items-center text-xs tracking-wider uppercase text-gray-400 font-bold space-x-1">
+                    <ShieldCheck className="w-4 h-4 text-[#10B981]" />
+                    <span>Secure Gateway</span>
                 </div>
-
-                {/* Bottom Section: Feature Trust Elements */}
-                <div className="mt-12 lg:mt-0 relative z-10 space-y-5 border-t border-slate-800/60 pt-8">
-                    <div className="flex items-start space-x-4">
-                        <div className="mt-0.5 p-2 rounded-lg bg-slate-800/50 border border-slate-700/50 text-emerald-400">
-                            <Zap className="w-4 h-4" />
-                        </div>
-                        <div>
-                            <h4 className="text-sm font-semibold text-slate-200">Instant Digital Storefront</h4>
-                            <p className="text-xs text-slate-400 mt-0.5">Go live inside your local university network within 5 minutes of verification.</p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-start space-x-4">
-                        <div className="mt-0.5 p-2 rounded-lg bg-slate-800/50 border border-slate-700/50 text-emerald-400">
-                            <BarChart3 className="w-4 h-4" />
-                        </div>
-                        <div>
-                            <h4 className="text-sm font-semibold text-slate-200">Optimized Student Analytics</h4>
-                            <p className="text-xs text-slate-400 mt-0.5">Track real-time search volume, trends, and demands active across your targeted campus.</p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-start space-x-4">
-                        <div className="mt-0.5 p-2 rounded-lg bg-slate-800/50 border border-slate-700/50 text-emerald-400">
-                            <ShieldCheck className="w-4 h-4" />
-                        </div>
-                        <div>
-                            <h4 className="text-sm font-semibold text-slate-200">Escrow-backed Transactions</h4>
-                            <p className="text-xs text-slate-400 mt-0.5">Automated secure payouts ensuring full seller protection and prompt delivery receipts.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            </header>
 
             {/* RIGHT SIDEBAR: Form Layout Container */}
             <div className="flex-1 flex flex-col justify-center items-center px-4 sm:px-12 lg:px-16 xl:px-24 py-12 lg:py-16 overflow-y-auto">
@@ -148,7 +102,7 @@ export default function ResetPassword() {
                     {/* Main Form Container */}
                     <div className="bg-white dark:bg-[#111625] border border-slate-200/80 dark:border-slate-800/80 shadow-xl shadow-slate-100/50 dark:shadow-none rounded-2xl p-6 sm:p-8">
                         <form onSubmit={formik.handleSubmit} className="space-y-5">
-                            
+
                             {/* New Password */}
                             <div className="flex flex-col">
                                 <label htmlFor="password" className="text-[10px] font-bold tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 uppercase">
@@ -166,11 +120,10 @@ export default function ResetPassword() {
                                         placeholder="••••••••"
                                         onChange={formik.handleChange}
                                         onBlur={formik.handleBlur}
-                                        className={`w-full bg-slate-50 dark:bg-[#161D30] border ${
-                                            formik.touched.password && formik.errors.password 
-                                                ? 'border-red-500 focus:ring-red-500/20' 
-                                                : 'border-slate-200 dark:border-slate-800 focus:ring-emerald-500/20 focus:border-emerald-500'
-                                        } rounded-xl pl-10 pr-10 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-4 transition-all duration-200`}
+                                        className={`w-full bg-slate-50 dark:bg-[#161D30] border ${formik.touched.password && formik.errors.password
+                                            ? 'border-red-500 focus:ring-red-500/20'
+                                            : 'border-slate-200 dark:border-slate-800 focus:ring-emerald-500/20 focus:border-emerald-500'
+                                            } rounded-xl pl-10 pr-10 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-4 transition-all duration-200`}
                                     />
 
                                     <button
@@ -206,11 +159,10 @@ export default function ResetPassword() {
                                         placeholder="••••••••"
                                         onChange={formik.handleChange}
                                         onBlur={formik.handleBlur}
-                                        className={`w-full bg-slate-50 dark:bg-[#161D30] border ${
-                                            formik.touched.confirmPassword && formik.errors.confirmPassword 
-                                                ? 'border-red-500 focus:ring-red-500/20' 
-                                                : 'border-slate-200 dark:border-slate-800 focus:ring-emerald-500/20 focus:border-emerald-500'
-                                        } rounded-xl pl-10 pr-10 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-4 transition-all duration-200`}
+                                        className={`w-full bg-slate-50 dark:bg-[#161D30] border ${formik.touched.confirmPassword && formik.errors.confirmPassword
+                                            ? 'border-red-500 focus:ring-red-500/20'
+                                            : 'border-slate-200 dark:border-slate-800 focus:ring-emerald-500/20 focus:border-emerald-500'
+                                            } rounded-xl pl-10 pr-10 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-4 transition-all duration-200`}
                                     />
 
                                     <button
