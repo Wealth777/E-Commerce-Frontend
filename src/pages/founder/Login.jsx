@@ -235,7 +235,7 @@ export default function FounderLogin() {
                                         </>
                                     ) : (
                                         <>
-                                            <span>Enter HQ Console</span>
+                                            <span>Login</span>
                                             <ArrowRight className="w-4 h-4 stroke-[2.5] transition-transform duration-200 group-hover:translate-x-0.5" />
                                         </>
                                     )}

@@ -27,7 +27,7 @@ const DangerZoneModal = ({
                 isOpen={activeModal === "suspend"}
                 onClose={onClose}
                 variant="danger"
-                title="Suspend Store"
+                title="Suspend Account"
                 description="Temporarily hide your store from customers."
             >
                 <div className="space-y-5">
@@ -88,7 +88,7 @@ const DangerZoneModal = ({
                             }}
                             className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            {loading.suspend ? "Suspending..." : "Suspend Store"}
+                            {loading.suspend ? "Suspending..." : "Suspend Account"}
                         </button>
                     </div>
                 </div>
@@ -98,7 +98,7 @@ const DangerZoneModal = ({
             <Modal
                 isOpen={activeModal === "reactivate"}
                 onClose={onClose}
-                title="Reactivate Store"
+                title="Reactivate Account"
                 description="Make your store visible to customers again."
             >
                 <div className="space-y-5">
@@ -123,7 +123,7 @@ const DangerZoneModal = ({
                             disabled={loading.reactivate}
                             className="rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700"
                         >
-                            {loading.reactivate ? "Reactivating..." : "Reactivate Store"}
+                            {loading.reactivate ? "Reactivating..." : "Reactivate Account"}
                         </button>
                     </div>
                 </div>

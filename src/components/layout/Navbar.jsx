@@ -71,9 +71,9 @@ const Navbar = () => {
             case 'founder':
                 return [
                     { name: 'Founder Dashboard', path: '/founder/dashboard' },
+                    { name: 'Manage Buyers', path: '/founder/buyers' },
                     { name: 'Manage Vendors', path: '/founder/vendors' },
                     { name: 'Analytics', path: '/founder/analytics' },
-                    { name: 'Manage Buyers', path: '/founder/buyers' }
                 ];
             case 'vendor':
                 return [

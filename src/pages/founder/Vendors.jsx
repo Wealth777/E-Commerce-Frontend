@@ -1,34 +1,84 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import { useTheme } from '../../context/ThemeContext';
-import apiClient from '../../api/apiClient'; // Switched to central Axios client
+import { useToast } from '../../context/ToastContext';
+import apiClient from '../../api/apiClient';
+import { getMessage } from '../../utils/apiResponse';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  Store,
+  ShieldCheck,
+  UserCheck,
+  Ban,
+  RefreshCw,
+  Search,
+  LayoutGrid,
+  List,
+  MoreVertical,
+  Lock,
+  Unlock,
+  AlertCircle,
+  Mail,
+  Phone,
+  Building2,
+  Calendar,
+  CheckCircle2,
+  XCircle,
+  Trash2,
+  ArrowLeft
+} from 'lucide-react';
 
-const FounderVendors = () => {
+export default function VendorsManagement() {
   const { isDark } = useTheme();
+  const { showToast } = useToast();
+  const navigate = useNavigate();
 
-  // --- LIVE BACKEND STATE ---
+  // View & Filter States
+  const [viewMode, setViewMode] = useState('table'); // 'table' | 'card'
+  const [activeTab, setActiveTab] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
+
+  // Data & API States
+  const [loading, setLoading] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [vendors, setVendors] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [filterTab, setFilterTab] = useState('Pending'); // Options: 'Pending', 'Approved', 'All'
+  const [activeActionMenu, setActiveActionMenu] = useState(null);
 
-  // Theme Helpers
-  const bgColor = isDark ? 'bg-gray-900' : 'bg-gray-50';
-  const cardBg = isDark ? 'bg-gray-800' : 'bg-white';
-  const textColor = isDark ? 'text-white' : 'text-gray-900';
-  const subTextColor = isDark ? 'text-gray-400' : 'text-gray-600';
-  const borderColor = isDark ? 'border-gray-700' : 'border-gray-200';
+  // Statistics State
+  const [stats, setStats] = useState({
+    total: 0,
+    pending: 0,
+    approved: 0,
+    suspended: 0,
+    deleted: 0,
+  });
 
-  // --- FETCH VENDORS FROM API ---
+  // Fetch Vendors Data
   const fetchVendors = async () => {
+    setLoading(true);
+    setHasError(false);
     try {
-      setLoading(true);
-      // Connects to your partner's vendor query path
-      const response = await API.get('/api/founder/vendors');
-      setVendors(response.data.vendors || response.data);
-      setError(null);
+      // Endpoint call
+      const response = await apiClient.get('/api/founder/vendors');
+      const data = response.data?.data || response.data || [];
+
+      setVendors(data);
+
+      // Calculate Stats dynamically
+      setStats({
+        total: data.length,
+        pending: data.filter((v) => v.status === 'Pending').length,
+        approved: data.filter((v) => v.status === 'Approved').length,
+        suspended: data.filter((v) => v.status === 'Suspended').length,
+        deleted: data.filter((v) => v.status === 'Deleted').length,
+      });
     } catch (err) {
-      console.error("Error loading vendors:", err);
-      setError("Failed to retrieve the vendor applications directory.");
+      setHasError(true);
+      setErrorMessage(
+        getMessage(err, 'Not found: /api/founder/vendors')
+      );
     } finally {
       setLoading(false);
     }
@@ -38,137 +88,499 @@ const FounderVendors = () => {
     fetchVendors();
   }, []);
 
-  // --- APPROVAL / REJECTION ACTIONS ---
-  const handleApproveVendor = async (id) => {
-    if (window.confirm("Approve this vendor application? They will gain full market permissions immediately.")) {
-      try {
-        await API.patch(`/api/founder/vendors/${id}/approve`);
-        
-        // Smoothly update state locally
-        setVendors(vendors.map(v => v.id === id ? { ...v, verificationStatus: 'Approved' } : v));
-      } catch (err) {
-        console.error("Approval request failed:", err);
-        alert("Could not process vendor approval.");
-      }
-    }
-  };
-
-  const handleRejectVendor = async (id) => {
-    const reason = window.prompt("Enter reason for rejection (this will be sent to the student):");
-    if (reason === null) return; // Cancelled prompt
-
+  // Vendor Action Handlers
+  const handleVendorAction = async (vendorId, action) => {
+    setActiveActionMenu(null);
     try {
-      await API.patch(`/api/founder/vendors/${id}/reject`, { reason });
-      
-      // Update state locally
-      setVendors(vendors.map(v => v.id === id ? { ...v, verificationStatus: 'Rejected' } : v));
+      await apiClient.patch(`/api/founder/vendors/${vendorId}/${action}`);
+      showToast(`Vendor successfully ${action}ed`, 'success');
+      fetchVendors(); // Refresh state
     } catch (err) {
-      console.error("Rejection request failed:", err);
-      alert("Could not process vendor rejection.");
+      showToast(getMessage(err, `Failed to ${action} vendor`), 'error');
     }
   };
 
-  // Filter Logic based on active Tab
-  const filteredVendors = vendors.filter(vendor => {
-    if (filterTab === 'All') return true;
-    return vendor.verificationStatus === filterTab;
-  });
+  // Filter & Sort Logic
+  const filteredVendors = vendors
+    .filter((vendor) => {
+      const matchesTab =
+        activeTab === 'All' ? true : vendor.status?.toLowerCase() === activeTab.toLowerCase();
+      const matchesSearch =
+        vendor.storeName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        vendor.ownerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        vendor.email?.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesTab && matchesSearch;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'newest') return new Date(b.createdAt) - new Date(a.createdAt);
+      if (sortBy === 'oldest') return new Date(a.createdAt) - new Date(b.createdAt);
+      if (sortBy === 'name') return (a.storeName || '').localeCompare(b.storeName || '');
+      return 0;
+    });
 
-   if (loading) {
-      return <Loading text="Loading Registered Vendors..." />;
-    }
+  // Helper function for status badges
+  const renderStatusBadge = (status) => {
+    const statusMap = {
+      Approved: isDark ? 'bg-emerald-950/80 text-emerald-400 border-emerald-800' : 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      Pending: isDark ? 'bg-amber-950/80 text-amber-400 border-amber-800' : 'bg-amber-50 text-amber-700 border-amber-200',
+      Suspended: isDark ? 'bg-rose-950/80 text-rose-400 border-rose-800' : 'bg-rose-50 text-rose-700 border-rose-200',
+      Rejected: isDark ? 'bg-gray-800 text-gray-400 border-gray-700' : 'bg-gray-100 text-gray-600 border-gray-200',
+      Locked: isDark ? 'bg-purple-950/80 text-purple-400 border-purple-800' : 'bg-purple-50 text-purple-700 border-purple-200',
+      Deleted: isDark ? 'bg-gray-800 text-gray-400 border-gray-700' : 'bg-gray-100 text-gray-600 border-gray-300',
+    };
+
+    return (
+      <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${statusMap[status] || statusMap.Rejected}`}>
+        {status}
+      </span>
+    );
+  };
 
   return (
-    <div className={`min-h-screen ${bgColor} py-12 transition-colors duration-200`}>
-      <div className="max-w-7xl mx-auto px-4">
-        
-        <h1 className={`text-3xl font-bold ${textColor} mb-2`}>Vendor Verification Hub</h1>
-        <p className={`${subTextColor} mb-8`}>Review student business applications and manage storefront selling privileges.</p>
+    <div className={`min-h-screen ${isDark ? 'bg-gray-900 text-slate-100' : 'bg-[#F8FAFC] text-slate-800'} p-4 sm:p-6 lg:p-8 transition-colors`}>
+      <div className="max-w-7xl mx-auto space-y-6">
 
-        {/* Tab Switcher Controller */}
-        <div className="flex border-b ${borderColor} mb-6 gap-6">
-          {['Pending', 'Approved', 'All'].map((tab) => (
+        {/* Breadcrumb & Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div className="text-xs text-slate-400 mb-1 font-medium">
+              <button onClick={() => navigate(-1)} className={`group inline-flex items-center gap-2 text-sm text-gray-400 hover:text-green-500 transition-colors mb-2 rounded-full px-3 py-1.5 ${isDark ? "bg-zinc-900/70 hover:bg-zinc-800 text-zinc-300 ring-1 ring-white/10" : "bg-white/70 hover:bg-white text-zinc-600 ring-1 ring-zinc-900/5"}`}>
+                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                Back
+              </button>
+            </div>
+            <h1 className={`text-2xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              All Vendors
+            </h1>
+            <p className={`text-xs md:text-sm ${isDark ? 'text-gray-400' : 'text-slate-500'} mt-1 max-w-2xl`}>
+              Review every store on CampusTrade, approve new onboarding requests, and manage vendor standing across campuses.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
             <button
-              key={tab}
-              onClick={() => setFilterTab(tab)}
-              className={`pb-3 text-sm font-semibold transition-colors relative ${
-                filterTab === tab ? 'text-emerald-500' : subTextColor
-              }`}
+              onClick={fetchVendors}
+              disabled={loading}
+              className={`px-4 py-2.5 text-xs font-semibold rounded-lg border flex items-center gap-2 transition-all shadow-sm ${isDark
+                ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-gray-200'
+                : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'
+                }`}
             >
-              {tab} Requests
-              {filterTab === tab && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500 rounded-full" />
-              )}
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              <span>Refresh</span>
             </button>
-          ))}
+
+            <button
+              onClick={() => setActiveTab('Pending')}
+              className="px-4 py-2.5 text-xs font-semibold rounded-lg bg-[#064E3B] hover:bg-[#04382B] text-white flex items-center gap-2 transition-all shadow-sm"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>Review pending</span>
+            </button>
+          </div>
         </div>
 
-        {error && (
-          <div className="mb-6 p-4 bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300 rounded-xl text-center">
-            {error}
-          </div>
-        )}
-
-        {/* Vendors Grid / List Workspace */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {loading ? (
-            <div className="col-span-full py-12 text-center text-sm ${subTextColor}">
-              <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-500 mb-2"></div>
-              <p>Syncing verification channels...</p>
+        {/* Dynamic Metric Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          {/* Total Vendors */}
+          <div className={`p-5 rounded-2xl border ${isDark ? 'bg-gray-800/80 border-gray-700' : 'bg-white border-slate-200'} shadow-sm flex items-start gap-4`}>
+            <div className={`p-3 rounded-xl ${isDark ? 'bg-gray-700 text-gray-300' : 'bg-slate-100 text-slate-500'}`}>
+              <Store className="w-5 h-5" />
             </div>
-          ) : filteredVendors.length > 0 ? (
-            filteredVendors.map((vendor) => (
-              <div key={vendor.id} className={`${cardBg} p-6 rounded-xl shadow-md border ${borderColor} flex flex-col justify-between`}>
-                <div>
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className={`text-lg font-bold ${textColor}`}>{vendor.shopName || vendor.name}</h3>
-                    <span className={`px-2.5 py-0.5 text-xs font-bold rounded-full ${
-                      vendor.verificationStatus === 'Approved' 
-                        ? 'bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300'
-                        : vendor.verificationStatus === 'Rejected'
-                        ? 'bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300'
-                        : 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 animate-pulse'
-                    }`}>
-                      {vendor.verificationStatus}
-                    </span>
-                  </div>
-                  <p className={`text-xs ${subTextColor} mb-4`}>Owner: {vendor.ownerName} ({vendor.email})</p>
-                  
-                  <div className={`p-3 rounded-lg ${isDark ? 'bg-gray-900/50' : 'bg-gray-100'} text-sm ${textColor} mb-4`}>
-                    <p className="text-xs text-gray-400 font-medium uppercase mb-1">Declared Inventory Catalog</p>
-                    {vendor.description || "No description catalog supplied by applicant."}
-                  </div>
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 tracking-wider uppercase">TOTAL VENDORS</p>
+              <p className={`text-xl font-bold mt-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                {hasError ? '—' : stats.total}
+              </p>
+            </div>
+          </div>
+
+          {/* Pending Approval Card */}
+          <div className={`p-5 rounded-2xl border ${isDark ? 'bg-amber-950/20 border-amber-900/40' : 'bg-[#FFFBEB] border-amber-200/80'} shadow-sm flex items-start gap-4`}>
+            <div className={`p-3 rounded-xl ${isDark ? 'bg-amber-900/50 text-amber-400' : 'bg-amber-100 text-amber-600'}`}>
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[11px] font-bold text-amber-600/80 dark:text-amber-400 tracking-wider uppercase">PENDING APPROVAL</p>
+              <p className={`text-xl font-bold mt-1 ${isDark ? 'text-amber-300' : 'text-slate-800'}`}>
+                {hasError ? '—' : stats.pending}
+              </p>
+            </div>
+          </div>
+
+          {/* Approved Card */}
+          <div className={`p-5 rounded-2xl border ${isDark ? 'bg-gray-800/80 border-gray-700' : 'bg-white border-slate-200'} shadow-sm flex items-start gap-4`}>
+            <div className={`p-3 rounded-xl ${isDark ? 'bg-gray-700 text-gray-300' : 'bg-slate-100 text-slate-500'}`}>
+              <UserCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 tracking-wider uppercase">APPROVED</p>
+              <p className={`text-xl font-bold mt-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                {hasError ? '—' : stats.approved}
+              </p>
+            </div>
+          </div>
+
+          {/* Suspended Card */}
+          <div className={`p-5 rounded-2xl border ${isDark ? 'bg-gray-800/80 border-gray-700' : 'bg-white border-slate-200'} shadow-sm flex items-start gap-4`}>
+            <div className={`p-3 rounded-xl ${isDark ? 'bg-gray-700 text-gray-300' : 'bg-slate-100 text-slate-500'}`}>
+              <Ban className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 tracking-wider uppercase">SUSPENDED</p>
+              <p className={`text-xl font-bold mt-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                {hasError ? '—' : stats.suspended}
+              </p>
+            </div>
+          </div>
+
+          {/* Deleted Card */}
+          <div className={`p-5 rounded-2xl border ${isDark ? 'bg-gray-800/80 border-gray-700' : 'bg-white border-slate-200'} shadow-sm flex items-start gap-4`}>
+            <div className={`p-3 rounded-xl ${isDark ? 'bg-gray-800 text-gray-400' : 'bg-slate-100 text-slate-600'}`}>
+              <Trash2 className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 tracking-wider uppercase">DELETED</p>
+              <p className={`text-xl font-bold mt-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                {hasError ? '—' : stats.deleted}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content Container */}
+        <div className={`rounded-2xl border ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200'} shadow-sm transition-all overflow-hidden`}>
+
+          {/* Controls Header: Search, Filter Tabs, Layout Toggles */}
+          <div className="p-4 md:p-6 border-b border-slate-200 dark:border-gray-700 space-y-4">
+            <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+
+              {/* Search Bar */}
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search store, owner or email..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className={`w-full pl-10 pr-4 py-2.5 text-xs rounded-xl border transition-all outline-none ${isDark
+                    ? 'bg-gray-900 border-gray-700 text-white focus:border-emerald-500'
+                    : 'bg-slate-50 border-slate-200 text-slate-800 focus:border-emerald-600 focus:bg-white'
+                    }`}
+                />
+              </div>
+
+              {/* View Switcher & Sorting Controls */}
+              <div className="flex items-center justify-between lg:justify-end gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-400 font-medium hidden sm:inline">Sort by</span>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className={`px-3 py-2 text-xs rounded-xl border font-medium outline-none ${isDark
+                      ? 'bg-gray-900 border-gray-700 text-gray-200'
+                      : 'bg-slate-50 border-slate-200 text-slate-700'
+                      }`}
+                  >
+                    <option value="newest">Newest first</option>
+                    <option value="oldest">Oldest first</option>
+                    <option value="name">Store Name</option>
+                  </select>
                 </div>
 
-                {/* Conditional Action Controls Panel */}
-                {vendor.verificationStatus === 'Pending' && (
-                  <div className="flex gap-3 mt-2">
-                    <button
-                      onClick={() => handleApproveVendor(vendor.id)}
-                      className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold text-sm transition-colors"
-                    >
-                      Approve Merchant
-                    </button>
-                    <button
-                      onClick={() => handleRejectVendor(vendor.id)}
-                      className="flex-1 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-red-600 dark:hover:bg-red-700 text-gray-800 dark:text-white rounded-lg font-semibold text-sm transition-colors"
-                    >
-                      Decline Request
-                    </button>
-                  </div>
-                )}
+                {/* View Mode Toggle Buttons */}
+                <div className={`p-1 rounded-xl border flex items-center gap-1 ${isDark ? 'bg-gray-900 border-gray-700' : 'bg-slate-100 border-slate-200'}`}>
+                  <button
+                    onClick={() => setViewMode('table')}
+                    title="Table View"
+                    className={`p-1.5 rounded-lg text-xs font-medium transition-all ${viewMode === 'table'
+                      ? 'bg-white dark:bg-gray-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                      : 'text-slate-400 hover:text-slate-600 dark:hover:text-gray-300'
+                      }`}
+                  >
+                    <List className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('card')}
+                    title="Card View"
+                    className={`p-1.5 rounded-lg text-xs font-medium transition-all ${viewMode === 'card'
+                      ? 'bg-white dark:bg-gray-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                      : 'text-slate-400 hover:text-slate-600 dark:hover:text-gray-300'
+                      }`}
+                  >
+                    <LayoutGrid className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-            ))
+            </div>
+
+            {/* Filter Tabs */}
+            <div className="flex items-center gap-2 overflow-x-auto pt-2 no-scrollbar">
+              {['All', 'Pending', 'Approved', 'Suspended', 'Rejected', 'Deleted'].map((tab) => {
+                const isActive = activeTab === tab;
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-all whitespace-nowrap ${isActive
+                      ? 'bg-[#064E3B] text-white shadow-sm'
+                      : isDark
+                        ? 'bg-gray-900/60 text-gray-400 hover:bg-gray-700 hover:text-gray-200'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                  >
+                    {tab}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Section Body: Error Fallback OR Data Views */}
+          {hasError ? (
+            /* Error State */
+            <div className="p-12 flex flex-col items-center justify-center text-center">
+              <div className="w-10 h-10 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 flex items-center justify-center text-rose-500 mb-3">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+              <h3 className={`text-sm font-bold ${isDark ? 'text-gray-200' : 'text-slate-800'} mb-1`}>
+                Couldn't load this section
+              </h3>
+              <p className="text-xs text-slate-400 mb-4 font-mono">{errorMessage}</p>
+              <button
+                onClick={fetchVendors}
+                className={`px-4 py-2 text-xs font-semibold rounded-xl border flex items-center gap-2 transition-colors ${isDark
+                  ? 'border-gray-700 bg-gray-800 hover:bg-gray-700 text-gray-200'
+                  : 'border-slate-300 hover:bg-slate-50 text-slate-700'
+                  }`}
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Try again</span>
+              </button>
+            </div>
+          ) : filteredVendors.length === 0 ? (
+            /* Empty State */
+            <div className="p-12 text-center text-xs text-slate-400">
+              No vendors found matching your criteria.
+            </div>
+          ) : viewMode === 'table' ? (
+            /* Layout 1: Table View */
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className={`border-b ${isDark ? 'border-gray-700 bg-gray-900/40 text-gray-400' : 'border-slate-100 bg-slate-50/50 text-slate-400'} text-[11px] font-bold uppercase tracking-wider`}>
+                    <th className="py-3.5 px-6">Store & Owner</th>
+                    <th className="py-3.5 px-6">Campus</th>
+                    <th className="py-3.5 px-6">Contact</th>
+                    <th className="py-3.5 px-6">Status</th>
+                    <th className="py-3.5 px-6 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-gray-700/60 text-xs">
+                  {filteredVendors.map((vendor) => (
+                    <tr key={vendor.id || vendor._id} className={`group hover:${isDark ? 'bg-gray-700/30' : 'bg-slate-50/80'} transition-colors`}>
+                      <td className="py-4 px-6">
+                        <div>
+                          <p className={`font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>{vendor.storeName || 'Unnamed Store'}</p>
+                          <p className="text-slate-400 text-[11px] mt-0.5">{vendor.ownerName || 'Unknown Owner'}</p>
+                        </div>
+                      </td>
+                      <td className="py-4 px-6 font-medium text-slate-500 dark:text-gray-400">
+                        <div className="flex items-center gap-1.5">
+                          <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{vendor.campus || 'Main Campus'}</span>
+                        </div>
+                      </td>
+                      <td className="py-4 px-6 text-slate-500 dark:text-gray-400 space-y-1">
+                        <div className="flex items-center gap-1.5">
+                          <Mail className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{vendor.email}</span>
+                        </div>
+                        {vendor.phone && (
+                          <div className="flex items-center gap-1.5 text-[11px]">
+                            <Phone className="w-3 h-3 text-slate-400" />
+                            <span>{vendor.phone}</span>
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-4 px-6">{renderStatusBadge(vendor.status)}</td>
+                      <td className="py-4 px-6 text-right relative">
+                        <div className="inline-block text-left">
+                          <button
+                            onClick={() => setActiveActionMenu(activeActionMenu === vendor.id ? null : vendor.id)}
+                            className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-slate-100 text-slate-500'
+                              }`}
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
+
+                          {/* Actions Dropdown */}
+                          {activeActionMenu === vendor.id && (
+                            <ActionDropdown
+                              vendor={vendor}
+                              onAction={handleVendorAction}
+                              onClose={() => setActiveActionMenu(null)}
+                              isDark={isDark}
+                            />
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           ) : (
-            <div className={`col-span-full p-12 text-center text-sm border-2 border-dashed ${borderColor} rounded-xl ${subTextColor}`}>
-              No {filterTab.toLowerCase()} merchant requests listed in local queue registries.
+            /* Layout 2: Card Grid View */
+            <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredVendors.map((vendor) => (
+                <div
+                  key={vendor.id || vendor._id}
+                  className={`p-5 rounded-xl border ${isDark ? 'bg-gray-900/60 border-gray-700 hover:border-gray-600' : 'bg-slate-50/60 border-slate-200 hover:border-slate-300'
+                    } transition-all space-y-4 relative flex flex-col justify-between`}
+                >
+                  <div>
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <div>
+                        <h4 className={`font-bold text-sm ${isDark ? 'text-white' : 'text-slate-800'}`}>{vendor.storeName}</h4>
+                        <p className="text-xs text-slate-400">{vendor.ownerName}</p>
+                      </div>
+                      {renderStatusBadge(vendor.status)}
+                    </div>
+
+                    <div className="space-y-2 text-xs text-slate-500 dark:text-gray-400">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                        <span>{vendor.campus || 'Main Campus'}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="truncate">{vendor.email}</span>
+                      </div>
+                      {vendor.phone && (
+                        <div className="flex items-center gap-2">
+                          <Phone className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{vendor.phone}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Card Quick Action Bar */}
+                  <div className="pt-3 border-t border-slate-200 dark:border-gray-700 flex items-center justify-between">
+                    <span className="text-[11px] text-slate-400 flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      Joined {new Date(vendor.createdAt || Date.now()).toLocaleDateString()}
+                    </span>
+
+                    <div className="relative">
+                      <button
+                        onClick={() => setActiveActionMenu(activeActionMenu === vendor.id ? null : vendor.id)}
+                        className={`p-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1 transition-colors ${isDark ? 'border-gray-700 hover:bg-gray-800 text-gray-300' : 'border-slate-200 hover:bg-white text-slate-600'
+                          }`}
+                      >
+                        <span>Actions</span>
+                        <MoreVertical className="w-3 h-3" />
+                      </button>
+
+                      {/* Dropdown Menu */}
+                      {activeActionMenu === vendor.id && (
+                        <ActionDropdown
+                          vendor={vendor}
+                          onAction={handleVendorAction}
+                          onClose={() => setActiveActionMenu(null)}
+                          isDark={isDark}
+                        />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
-        </div>
 
+          {/* Footer Metadata */}
+          <div className="p-4 border-t border-slate-100 dark:border-gray-700/60 text-xs text-slate-400 flex items-center justify-between">
+            <span>CampusTrade · Founder Console — data shown reflects live API responses.</span>
+            <span>Showing {filteredVendors.length} vendors</span>
+          </div>
+        </div>
       </div>
     </div>
   );
-};
+}
 
-export default FounderVendors;
+/* Dedicated Reusable Action Menu Component */
+function ActionDropdown({ vendor, onAction, onClose, isDark }) {
+  return (
+    <>
+      {/* Click outside backdrop */}
+      <div className="fixed inset-0 z-10" onClick={onClose}></div>
+
+      <div
+        className={`absolute right-0 mt-2 w-48 rounded-xl shadow-xl border z-20 py-1.5 text-xs font-medium ${isDark ? 'bg-gray-800 border-gray-700 text-gray-200' : 'bg-white border-slate-200 text-slate-700'
+          }`}
+      >
+        <div className="px-3 py-1.5 border-b border-slate-100 dark:border-gray-700 text-[10px] text-slate-400 uppercase font-bold tracking-wider">
+          Vendor Actions
+        </div>
+
+        {vendor.status !== 'Approved' && (
+          <button
+            onClick={() => onAction(vendor.id, 'approve')}
+            className="w-full px-3 py-2 text-left hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center gap-2"
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span>Approve Vendor</span>
+          </button>
+        )}
+
+        {vendor.status !== 'Locked' ? (
+          <button
+            onClick={() => onAction(vendor.id, 'lock')}
+            className="w-full px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-gray-700 flex items-center gap-2 text-amber-600 dark:text-amber-400"
+          >
+            <Lock className="w-3.5 h-3.5" />
+            <span>Lock Account</span>
+          </button>
+        ) : (
+          <button
+            onClick={() => onAction(vendor.id, 'unlock')}
+            className="w-full px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-gray-700 flex items-center gap-2 text-emerald-600 dark:text-emerald-400"
+          >
+            <Unlock className="w-3.5 h-3.5" />
+            <span>Unlock Account</span>
+          </button>
+        )}
+
+        <button
+          onClick={() => onAction(vendor.id, 'ban')}
+          className="w-full px-3 py-2 text-left hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center gap-2"
+        >
+          <Ban className="w-3.5 h-3.5" />
+          <span>Ban / Suspend</span>
+        </button>
+
+        {vendor.status !== 'Rejected' && (
+          <button
+            onClick={() => onAction(vendor.id, 'reject')}
+            className="w-full px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-gray-700 flex items-center gap-2 text-slate-500"
+          >
+            <XCircle className="w-3.5 h-3.5" />
+            <span>Reject Onboarding</span>
+          </button>
+        )}
+
+        <div className="my-1 border-t border-slate-100 dark:border-gray-700"></div>
+
+        <button
+          onClick={() => onAction(vendor.id, 'delete')}
+          className="w-full px-3 py-2 text-left hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center gap-2"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+          <span>Delete Store</span>
+        </button>
+      </div>
+    </>
+  );
+}

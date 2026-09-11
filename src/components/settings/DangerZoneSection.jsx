@@ -31,7 +31,7 @@ const DangerZoneSection = ({
         },
         {
             id: "suspend",
-            title: isSuspended ? "Reactivate Store" : "Suspend Store",
+            title: isSuspended ? "Reactivate Account" : "Account",
             description: isSuspended
                 ? "Make your store visible to buyers again."
                 : "Temporarily hide your store from buyers until you decide to reactivate it.",

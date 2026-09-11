@@ -75,6 +75,7 @@ import FounderUsers from './pages/founder/Users';
 import FounderAnalytics from './pages/founder/Analytics';
 import FounderVendors from './pages/founder/Vendors';
 import FounderBuyers from './pages/founder/Buyers';
+import FounderSettings from './pages/founder/Settings';
 
 import CartSync from './CartSync';
 
@@ -274,6 +275,16 @@ function App() {
             {/* Vendor's Route */}
             <Route path="/vendor/onboarding" element={<VendorOnboarding />} />
             <Route
+              path="/vendor/"
+              element={
+                <ProtectedRoute requiredRole="vendor">
+                  <VendorDashboardGuard>
+                    <VendorDashboard />
+                  </VendorDashboardGuard>
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/vendor/dashboard"
               element={
                 <ProtectedRoute requiredRole="vendor">
@@ -426,6 +437,14 @@ function App() {
 
             {/* Founder's Route */}
             <Route
+              path="/founder/"
+              element={
+                <ProtectedRoute requiredRole="founder">
+                  <FounderDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/founder/dashboard"
               element={
                 <ProtectedRoute requiredRole="founder">
@@ -462,6 +481,22 @@ function App() {
               element={
                 <ProtectedRoute requiredRole="founder">
                   <FounderAnalytics />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/founder/profile"
+              element={
+                <ProtectedRoute requiredRole="founder">
+                    <VendorProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/founder/settings"
+              element={
+                <ProtectedRoute requiredRole="founder">
+                    <FounderSettings />
                 </ProtectedRoute>
               }
             />
