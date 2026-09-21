@@ -767,14 +767,13 @@ const Profile = () => {
                 </span>
                 <div
                   className={getStatusBadge(
-                    profile?.verification?.accountStatus ||
+                    profile?.account?.accountStatus ||
                     profile?.accountStatus ||
                     'active'
                   )}
                 >
-                  {profile?.verification?.accountStatus ||
-                    profile?.accountStatus ||
-                    'Active'}
+                  {profile?.account?.accountStatus ||
+                    profile?.accountStatus}
                 </div>
               </div>
 
@@ -1021,36 +1020,23 @@ const Profile = () => {
             <div
               className={`${cardBg} rounded-2xl border ${border} p-6 shadow-md space-y-6`}
             >
-
               <div className="border-b border-gray-700/20 pb-3">
-
                 <h3
                   className={`text-base font-black tracking-tight ${text} flex items-center gap-2`}
                 >
-
                   <FaPhone className="text-green-500" />
-
                   Contact Information
-
                 </h3>
-
               </div>
 
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
                 <div className="space-y-1.5">
-
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">
                     Email Address
                   </label>
 
                   <div className="relative">
-
-                    <FaEnvelope
-                      className={`absolute left-4 top-1/2 -translate-y-1/2 ${textSecondary}`}
-                    />
-
+                    <FaEnvelope className={`absolute left-4 top-1/2 -translate-y-1/2 ${textSecondary}`}/>
                     <input
                       type="email"
                       value={
@@ -1059,9 +1045,7 @@ const Profile = () => {
                       disabled
                       className={`w-full pl-11 pr-4 py-3 rounded-xl border ${border} ${inputBg} ${text} opacity-60 cursor-not-allowed`}
                     />
-
                   </div>
-
                 </div>
 
 

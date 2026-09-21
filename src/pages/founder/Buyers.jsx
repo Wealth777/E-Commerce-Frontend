@@ -22,7 +22,10 @@ import {
   Trash2,
   CheckCircle2,
   ShoppingBag,
-  ArrowLeft
+  ArrowLeft,
+  X,
+  AlertTriangle,
+  RotateCcw
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -31,23 +34,23 @@ export default function BuyersManagement() {
   const { showToast } = useToast();
   const navigate = useNavigate();
 
-  // View & Filter States
   const [viewMode, setViewMode] = useState('table');
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('newest');
 
-  // Data & API States
   const [loading, setLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [buyers, setBuyers] = useState([]);
   const [activeActionMenu, setActiveActionMenu] = useState(null);
 
-  // Statistics State
+  const [pendingAction, setPendingAction] = useState(null);
+
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
+    suspended: 0,
     locked: 0,
     banned: 0,
     deleted: 0,
@@ -69,6 +72,9 @@ export default function BuyersManagement() {
         total: data.length,
         active: data.filter(
           (buyer) => buyer.accountStatus === 'active'
+        ).length,
+        suspended: data.filter(
+          (buyer) => buyer.accountStatus === 'suspended'
         ).length,
         locked: data.filter(
           (buyer) => buyer.accountStatus === 'locked'
@@ -94,28 +100,37 @@ export default function BuyersManagement() {
     fetchBuyers();
   }, []);
 
-  // Buyer Action Handlers
-  const handleBuyerAction = async (buyerId, action) => {
+  const initiateBuyerAction = (buyer, action) => {
     setActiveActionMenu(null);
 
+    if (action === 'unlock' || action === 'unsuspend') {
+      handleBuyerAction(buyer._id, action, '');
+    } else {
+      setPendingAction({ buyer, action });
+    }
+  };
+
+  const handleBuyerAction = async (buyerId, action, reason = '') => {
     try {
       const endpoint = `/founder/buyers/${buyerId}`;
 
       if (action === 'delete') {
-        await apiClient.delete(endpoint);
+        await apiClient.delete(endpoint, { data: { reason } });
       } else {
-        await apiClient.patch(`${endpoint}/${action}`);
+        await apiClient.patch(`${endpoint}/${action}`, { reason });
       }
 
       const messages = {
         lock: 'Buyer account locked successfully',
         unlock: 'Buyer account unlocked successfully',
+        suspend: 'Buyer account suspended successfully',
+        unsuspend: 'Buyer account unsuspended successfully',
         ban: 'Buyer account banned successfully',
         delete: 'Buyer account deleted successfully',
       };
 
       showToast(messages[action], 'success');
-
+      setPendingAction(null);
       fetchBuyers();
     } catch (err) {
       showToast(
@@ -125,7 +140,6 @@ export default function BuyersManagement() {
     }
   };
 
-  // Filter & Sort Logic
   const filteredBuyers = buyers
     .filter((buyer) => {
       const status = buyer.accountStatus;
@@ -166,7 +180,6 @@ export default function BuyersManagement() {
       return 0;
     });
 
-  // Dynamic Status Badge Helper
   const renderStatusBadge = (status) => {
     const statusMap = {
       active: isDark
@@ -225,7 +238,7 @@ export default function BuyersManagement() {
               All Buyers
             </h1>
             <p className={`text-xs md:text-sm ${isDark ? 'text-gray-400' : 'text-slate-500'} mt-1 max-w-2xl`}>
-              Manage student shopping accounts, review active status, handle access locks, and enforce campus trading guidelines.
+              Manage student shopping accounts, review active status, handle access locks or suspensions, and enforce campus trading guidelines.
             </p>
           </div>
 
@@ -244,68 +257,81 @@ export default function BuyersManagement() {
           </div>
         </div>
 
-        {/* Dynamic Metric Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        {/* Dynamic Metric Cards (Updated to 6 Cards Grid) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
           {/* Total Buyers */}
-          <div className={`p-5 rounded-2xl border ${isDark ? 'bg-gray-800/80 border-gray-700' : 'bg-white border-slate-200'} shadow-sm flex items-start gap-4`}>
-            <div className={`p-3 rounded-xl ${isDark ? 'bg-gray-700 text-gray-300' : 'bg-slate-100 text-slate-500'}`}>
-              <Users className="w-5 h-5" />
+          <div className={`p-4 rounded-2xl border ${isDark ? 'bg-gray-800/80 border-gray-700' : 'bg-white border-slate-200'} shadow-sm flex items-start gap-3`}>
+            <div className={`p-2.5 rounded-xl ${isDark ? 'bg-gray-700 text-gray-300' : 'bg-slate-100 text-slate-500'}`}>
+              <Users className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-[11px] font-bold text-slate-400 tracking-wider uppercase">TOTAL BUYERS</p>
-              <p className={`text-xl font-bold mt-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>
+              <p className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">TOTAL</p>
+              <p className={`text-lg font-bold mt-0.5 ${isDark ? 'text-white' : 'text-slate-800'}`}>
                 {hasError ? '—' : stats.total}
               </p>
             </div>
           </div>
 
           {/* Active Buyers */}
-          <div className={`p-5 rounded-2xl border ${isDark ? 'bg-emerald-950/20 border-emerald-900/40' : 'bg-emerald-50/40 border-emerald-200/80'} shadow-sm flex items-start gap-4`}>
-            <div className={`p-3 rounded-xl ${isDark ? 'bg-emerald-900/50 text-emerald-400' : 'bg-emerald-100 text-emerald-700'}`}>
-              <UserCheck className="w-5 h-5" />
+          <div className={`p-4 rounded-2xl border ${isDark ? 'bg-emerald-950/20 border-emerald-900/40' : 'bg-emerald-50/40 border-emerald-200/80'} shadow-sm flex items-start gap-3`}>
+            <div className={`p-2.5 rounded-xl ${isDark ? 'bg-emerald-900/50 text-emerald-400' : 'bg-emerald-100 text-emerald-700'}`}>
+              <UserCheck className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 tracking-wider uppercase">ACTIVE BUYERS</p>
-              <p className={`text-xl font-bold mt-1 ${isDark ? 'text-emerald-300' : 'text-slate-800'}`}>
+              <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 tracking-wider uppercase">ACTIVE</p>
+              <p className={`text-lg font-bold mt-0.5 ${isDark ? 'text-emerald-300' : 'text-slate-800'}`}>
                 {hasError ? '—' : stats.active}
               </p>
             </div>
           </div>
 
-          {/* Locked Accounts */}
-          <div className={`p-5 rounded-2xl border ${isDark ? 'bg-gray-800/80 border-gray-700' : 'bg-white border-slate-200'} shadow-sm flex items-start gap-4`}>
-            <div className={`p-3 rounded-xl ${isDark ? 'bg-purple-950/60 text-purple-400' : 'bg-purple-50 text-purple-600'}`}>
-              <Lock className="w-5 h-5" />
+          {/* Suspended Buyers */}
+          <div className={`p-4 rounded-2xl border ${isDark ? 'bg-amber-950/20 border-amber-900/40' : 'bg-amber-50/40 border-amber-200/80'} shadow-sm flex items-start gap-3`}>
+            <div className={`p-2.5 rounded-xl ${isDark ? 'bg-amber-950/60 text-amber-400' : 'bg-amber-100 text-amber-700'}`}>
+              <AlertTriangle className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-[11px] font-bold text-slate-400 tracking-wider uppercase">LOCKED</p>
-              <p className={`text-xl font-bold mt-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>
+              <p className="text-[10px] font-bold text-amber-700 dark:text-amber-400 tracking-wider uppercase">SUSPENDED</p>
+              <p className={`text-lg font-bold mt-0.5 ${isDark ? 'text-amber-300' : 'text-slate-800'}`}>
+                {hasError ? '—' : stats.suspended}
+              </p>
+            </div>
+          </div>
+
+          {/* Locked Accounts */}
+          <div className={`p-4 rounded-2xl border ${isDark ? 'bg-gray-800/80 border-gray-700' : 'bg-white border-slate-200'} shadow-sm flex items-start gap-3`}>
+            <div className={`p-2.5 rounded-xl ${isDark ? 'bg-purple-950/60 text-purple-400' : 'bg-purple-50 text-purple-600'}`}>
+              <Lock className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">LOCKED</p>
+              <p className={`text-lg font-bold mt-0.5 ${isDark ? 'text-white' : 'text-slate-800'}`}>
                 {hasError ? '—' : stats.locked}
               </p>
             </div>
           </div>
 
           {/* Banned Accounts */}
-          <div className={`p-5 rounded-2xl border ${isDark ? 'bg-gray-800/80 border-gray-700' : 'bg-white border-slate-200'} shadow-sm flex items-start gap-4`}>
-            <div className={`p-3 rounded-xl ${isDark ? 'bg-rose-950/60 text-rose-400' : 'bg-rose-50 text-rose-600'}`}>
-              <Ban className="w-5 h-5" />
+          <div className={`p-4 rounded-2xl border ${isDark ? 'bg-gray-800/80 border-gray-700' : 'bg-white border-slate-200'} shadow-sm flex items-start gap-3`}>
+            <div className={`p-2.5 rounded-xl ${isDark ? 'bg-rose-950/60 text-rose-400' : 'bg-rose-50 text-rose-600'}`}>
+              <Ban className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-[11px] font-bold text-slate-400 tracking-wider uppercase">BANNED</p>
-              <p className={`text-xl font-bold mt-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>
+              <p className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">BANNED</p>
+              <p className={`text-lg font-bold mt-0.5 ${isDark ? 'text-white' : 'text-slate-800'}`}>
                 {hasError ? '—' : stats.banned}
               </p>
             </div>
           </div>
 
           {/* Deleted Accounts */}
-          <div className={`p-5 rounded-2xl border ${isDark ? 'bg-gray-800/80 border-gray-700' : 'bg-white border-slate-200'} shadow-sm flex items-start gap-4`}>
-            <div className={`p-3 rounded-xl ${isDark ? 'bg-gray-800 text-gray-400' : 'bg-slate-100 text-slate-600'}`}>
-              <Trash2 className="w-5 h-5" />
+          <div className={`p-4 rounded-2xl border ${isDark ? 'bg-gray-800/80 border-gray-700' : 'bg-white border-slate-200'} shadow-sm flex items-start gap-3`}>
+            <div className={`p-2.5 rounded-xl ${isDark ? 'bg-gray-800 text-gray-400' : 'bg-slate-100 text-slate-600'}`}>
+              <Trash2 className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-[11px] font-bold text-slate-400 tracking-wider uppercase">DELETED</p>
-              <p className={`text-xl font-bold mt-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>
+              <p className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">DELETED</p>
+              <p className={`text-lg font-bold mt-0.5 ${isDark ? 'text-white' : 'text-slate-800'}`}>
                 {hasError ? '—' : stats.deleted}
               </p>
             </div>
@@ -313,7 +339,7 @@ export default function BuyersManagement() {
         </div>
 
         {/* Main Content Container */}
-        <div className={`rounded-2xl border ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200'} shadow-sm transition-all overflow-hidden`}>
+        <div className={`rounded-2xl border ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200'} shadow-sm transition-all overflow-visible`}>
 
           {/* Filters, Search & View Mode Switcher */}
           <div className="p-4 md:p-6 border-b border-slate-200 dark:border-gray-700 space-y-4">
@@ -378,9 +404,9 @@ export default function BuyersManagement() {
               </div>
             </div>
 
-            {/* Filter Tabs */}
+            {/* Filter Tabs (Added "Suspended") */}
             <div className="flex items-center gap-2 overflow-x-auto pt-2 no-scrollbar">
-              {['All', 'Active', 'Locked', 'Banned', 'Deleted'].map((tab) => {
+              {['All', 'Active', 'Suspended', 'Locked', 'Banned', 'Deleted'].map((tab) => {
                 const isActive = activeTab === tab;
                 return (
                   <button
@@ -429,7 +455,7 @@ export default function BuyersManagement() {
             </div>
           ) : viewMode === 'table' ? (
             /* Layout 1: Table View */
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto lg:overflow-visible">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className={`border-b ${isDark ? 'border-gray-700 bg-gray-900/40 text-gray-400' : 'border-slate-100 bg-slate-50/50 text-slate-400'} text-[11px] font-bold uppercase tracking-wider`}>
@@ -443,7 +469,7 @@ export default function BuyersManagement() {
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-gray-700/60 text-xs">
                   {filteredBuyers.map((buyer) => (
-                    <tr key={buyer.id || buyer._id} className={`group hover:${isDark ? 'bg-gray-700/30' : 'bg-slate-50/80'} transition-colors`}>
+                    <tr key={buyer.id || buyer._id} className={`group hover:${isDark ? 'bg-gray-700/30' : 'bg-slate-50/80'} transition-colors relative`}>
                       <td className="py-4 px-6 font-bold text-slate-800 dark:text-white">
                         {buyer.fullName || 'Student Buyer'}
                       </td>
@@ -473,7 +499,7 @@ export default function BuyersManagement() {
                       </td>
                       <td className="py-4 px-6">{renderStatusBadge(buyer.accountStatus)}</td>
                       <td className="py-4 px-6 text-right relative">
-                        <div className="inline-block text-left">
+                        <div className="inline-block text-left relative">
                           <button
                             onClick={() => setActiveActionMenu(activeActionMenu === buyer._id ? null : buyer._id)}
                             className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-slate-100 text-slate-500'
@@ -486,7 +512,7 @@ export default function BuyersManagement() {
                           {activeActionMenu === buyer._id && (
                             <BuyerActionDropdown
                               buyer={buyer}
-                              onAction={handleBuyerAction}
+                              onAction={(action) => initiateBuyerAction(buyer, action)}
                               onClose={() => setActiveActionMenu(null)}
                               isDark={isDark}
                             />
@@ -500,12 +526,12 @@ export default function BuyersManagement() {
             </div>
           ) : (
             /* Layout 2: Card Grid View */
-            <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
               {filteredBuyers.map((buyer) => (
                 <div
                   key={buyer._id || buyer._id}
                   className={`p-5 rounded-xl border ${isDark ? 'bg-gray-900/60 border-gray-700 hover:border-gray-600' : 'bg-slate-50/60 border-slate-200 hover:border-slate-300'
-                    } transition-all space-y-4 relative flex flex-col justify-between`}
+                    } transition-all space-y-4 relative flex flex-col justify-between ${activeActionMenu === buyer._id ? 'z-20' : 'z-10'}`}
                 >
                   <div>
                     <div className="flex items-start justify-between gap-2 mb-3">
@@ -537,7 +563,7 @@ export default function BuyersManagement() {
                   </div>
 
                   {/* Card Action Footer */}
-                  <div className="pt-3 border-t border-slate-200 dark:border-gray-700 flex items-center justify-between">
+                  <div className="pt-3 border-t border-slate-200 dark:border-gray-700 flex items-center justify-between relative">
                     <span className="text-[11px] text-slate-400 flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
                       Joined {new Date(buyer.createdAt || Date.now()).toLocaleDateString()}
@@ -557,7 +583,7 @@ export default function BuyersManagement() {
                       {activeActionMenu === buyer._id && (
                         <BuyerActionDropdown
                           buyer={buyer}
-                          onAction={handleBuyerAction}
+                          onAction={(action) => initiateBuyerAction(buyer, action)}
                           onClose={() => setActiveActionMenu(null)}
                           isDark={isDark}
                         />
@@ -576,6 +602,19 @@ export default function BuyersManagement() {
           </div>
         </div>
       </div>
+
+      {/* Action Reason Confirmation Modal */}
+      {pendingAction && (
+        <ActionReasonModal
+          buyer={pendingAction.buyer}
+          action={pendingAction.action}
+          onConfirm={(reason) =>
+            handleBuyerAction(pendingAction.buyer._id, pendingAction.action, reason)
+          }
+          onClose={() => setPendingAction(null)}
+          isDark={isDark}
+        />
+      )}
     </div>
   );
 }
@@ -589,14 +628,14 @@ function BuyerActionDropdown({ buyer, onAction, onClose, isDark }) {
   return (
     <>
       <div
-        className="fixed inset-0 z-10"
+        className="fixed inset-0 z-30"
         onClick={onClose}
       />
 
       <div
-        className={`absolute right-0 mt-2 w-48 rounded-xl shadow-xl border z-20 py-1.5 text-xs font-medium ${isDark
-          ? 'bg-gray-800 border-gray-700 text-gray-200'
-          : 'bg-white border-slate-200 text-slate-700'
+        className={`absolute right-0 mt-2 w-48 rounded-xl shadow-xl border z-40 py-1.5 text-xs font-medium lg:right-0 lg:top-full ${isDark
+          ? 'bg-gray-800 border-gray-700 text-gray-200 shadow-black/40'
+          : 'bg-white border-slate-200 text-slate-700 shadow-slate-300/50'
           }`}
       >
         <div className="px-3 py-1.5 border-b border-slate-100 dark:border-gray-700 text-[10px] text-slate-400 uppercase font-bold tracking-wider">
@@ -605,17 +644,18 @@ function BuyerActionDropdown({ buyer, onAction, onClose, isDark }) {
 
         {!isDeleted && !isBanned && (
           <>
+            {/* Lock / Unlock */}
             {!isLocked ? (
               <button
-                onClick={() => onAction(buyer._id, 'lock')}
-                className="w-full px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-gray-700 flex items-center gap-2 text-amber-600 dark:text-amber-400"
+                onClick={() => onAction('lock')}
+                className="w-full px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-gray-700 flex items-center gap-2 text-purple-600 dark:text-purple-400"
               >
                 <Lock className="w-3.5 h-3.5" />
                 <span>Lock Account</span>
               </button>
             ) : (
               <button
-                onClick={() => onAction(buyer._id, 'unlock')}
+                onClick={() => onAction('unlock')}
                 className="w-full px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-gray-700 flex items-center gap-2 text-emerald-600 dark:text-emerald-400"
               >
                 <Unlock className="w-3.5 h-3.5" />
@@ -623,8 +663,9 @@ function BuyerActionDropdown({ buyer, onAction, onClose, isDark }) {
               </button>
             )}
 
+            {/* Ban */}
             <button
-              onClick={() => onAction(buyer._id, 'ban')}
+              onClick={() => onAction('ban')}
               className="w-full px-3 py-2 text-left hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center gap-2"
             >
               <Ban className="w-3.5 h-3.5" />
@@ -637,8 +678,9 @@ function BuyerActionDropdown({ buyer, onAction, onClose, isDark }) {
           <>
             <div className="my-1 border-t border-slate-100 dark:border-gray-700" />
 
+            {/* Delete */}
             <button
-              onClick={() => onAction(buyer._id, 'delete')}
+              onClick={() => onAction('delete')}
               className="w-full px-3 py-2 text-left hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center gap-2"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -648,5 +690,117 @@ function BuyerActionDropdown({ buyer, onAction, onClose, isDark }) {
         )}
       </div>
     </>
+  );
+}
+
+/* Modal Component to Prompt Founder for Action Reason */
+function ActionReasonModal({ buyer, action, onConfirm, onClose, isDark }) {
+  const [reason, setReason] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const actionMeta = {
+    suspend: {
+      title: 'Suspend Buyer Account',
+      description: `Please provide a reason for suspending ${buyer.fullName || 'this buyer'}'s account.`,
+      buttonText: 'Confirm Suspension',
+      badgeClass: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+      btnBg: 'bg-amber-600 hover:bg-amber-700 text-white',
+    },
+    lock: {
+      title: 'Lock Buyer Account',
+      description: `Please provide a reason for locking ${buyer.fullName || 'this buyer'}'s account.`,
+      buttonText: 'Confirm Lock',
+      badgeClass: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
+      btnBg: 'bg-purple-600 hover:bg-purple-700 text-white',
+    },
+    ban: {
+      title: 'Ban Buyer Account',
+      description: `Are you sure you want to ban ${buyer.fullName || 'this buyer'}? Please enter the reason below.`,
+      buttonText: 'Confirm Ban',
+      badgeClass: 'bg-rose-500/10 text-rose-500 border-rose-500/20',
+      btnBg: 'bg-rose-600 hover:bg-rose-700 text-white',
+    },
+    delete: {
+      title: 'Delete Buyer Account',
+      description: `This action will delete ${buyer.fullName || 'this buyer'}'s account. Please specify a reason.`,
+      buttonText: 'Confirm Delete',
+      badgeClass: 'bg-rose-500/10 text-rose-500 border-rose-500/20',
+      btnBg: 'bg-rose-600 hover:bg-rose-700 text-white',
+    },
+  }[action];
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!reason.trim()) return;
+
+    setSubmitting(true);
+    onConfirm(reason);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div className={`w-full max-w-md rounded-2xl border shadow-2xl p-6 transition-all ${
+        isDark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-slate-200 text-slate-800'
+      }`}>
+        <div className="flex items-center justify-between mb-4">
+          <span className={`text-xs font-bold px-2.5 py-1 rounded-full border uppercase tracking-wider ${actionMeta.badgeClass}`}>
+            {action} Action
+          </span>
+          <button
+            onClick={onClose}
+            className={`p-1 rounded-lg transition-colors ${
+              isDark ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-slate-100 text-slate-500'
+            }`}
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <h3 className="text-lg font-bold mb-1">{actionMeta.title}</h3>
+        <p className="text-xs text-slate-400 mb-4">{actionMeta.description}</p>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold mb-1.5 text-slate-400">
+              Reason <span className="text-rose-500">*</span>
+            </label>
+            <textarea
+              rows={3}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="e.g. Temporary policy violation, investigating report..."
+              required
+              className={`w-full p-3 text-xs rounded-xl border outline-none transition-all ${
+                isDark
+                  ? 'bg-gray-900 border-gray-700 text-white focus:border-emerald-500'
+                  : 'bg-slate-50 border-slate-200 text-slate-800 focus:border-emerald-600 focus:bg-white'
+              }`}
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className={`px-4 py-2 text-xs font-semibold rounded-xl border transition-colors ${
+                isDark
+                  ? 'border-gray-700 hover:bg-gray-700 text-gray-300'
+                  : 'border-slate-200 hover:bg-slate-100 text-slate-600'
+              }`}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={!reason.trim() || submitting}
+              className={`px-4 py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-2 ${actionMeta.btnBg} disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              {submitting && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+              <span>{actionMeta.buttonText}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }

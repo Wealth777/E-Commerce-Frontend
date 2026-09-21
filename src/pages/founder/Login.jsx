@@ -12,6 +12,7 @@ import apiClient from '../../api/apiClient';
 import { useDispatch, useSelector } from 'react-redux'
 import { loginFailure, loginStart, loginSuccess } from '../../store/authSlice';
 import { getMessage, getTokenFromResponse, getUserFromResponse } from '../../utils/apiResponse';
+import { GoogleLogin } from "@react-oauth/google";
 
 export default function FounderLogin() {
     const [showPassword, setShowPassword] = useState(false);
@@ -74,6 +75,53 @@ export default function FounderLogin() {
             }
         }
     });
+
+    const isEmailVerificationError = (message) => {
+        const lowerMessage = String(message || '').toLowerCase();
+        return (
+            lowerMessage.includes('verify') && (lowerMessage.includes('email') || lowerMessage.includes('verification'))
+        ) || lowerMessage.includes('email not verified') || lowerMessage.includes('not verified');
+    };
+
+
+    const handleGoogleLogin = async (credentialResponse) => {
+        try {
+            const response = await apiClient.post(
+                "/founder/auth/google",
+                {
+                    idToken: credentialResponse.credential,
+                }
+            );
+
+            const token = getTokenFromResponse(response);
+            const user = getUserFromResponse(response);
+
+            dispatch(
+                loginSuccess({
+                    user,
+                    token,
+                    role: "founder",
+                })
+            );
+
+            showToast("Google login successful", "success");
+
+            if (!user.onboardingCompleted) {
+                navigate("/founder/profile/complete");
+                return;
+            }
+
+            navigate("/founder/dashboard");
+        } catch (error) {
+            const message = getMessage(error, "Google login failed");
+            showToast(message, "error");
+
+            if (isEmailVerificationError(message)) {
+                setTimeout(() => navigate('/resend-verification-email', { replace: true }), 150);
+            }
+        }
+    };
+
 
 
     return (
@@ -240,6 +288,40 @@ export default function FounderLogin() {
                                         </>
                                     )}
                                 </button>
+                            </div>
+
+                            {/* Social Logins Wrapper */}
+                            <div className="mt-6">
+                                <div className="relative mb-6">
+                                    <div className="absolute inset-0 flex items-center">
+                                        <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
+                                    </div>
+                                    <div className="relative flex justify-center text-sm">
+                                        <span className="px-2 bg-white dark:bg-gray-800 text-gray-500">Or continue with</span>
+                                    </div>
+                                </div>
+
+                                <div className="grid items-center justify-center">
+                                    <div className="flex justify-center w-full">
+                                        <GoogleLogin
+                                            onSuccess={handleGoogleLogin}
+                                            onError={() =>
+                                                showToast(
+                                                    "Google login failed",
+                                                    "error"
+                                                )
+                                            }
+                                        />
+                                    </div>
+
+                                    {/* <button
+                                              onClick={() => handleSocialLogin('Facebook')}
+                                              className="flex items-center justify-center w-full py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition"
+                                            >
+                                              <FaFacebook className="h-5 w-5 text-blue-600" />
+                                              <span className="ml-2">Facebook</span>
+                                            </button> */}
+                                </div>
                             </div>
                         </form>
                     </div>
