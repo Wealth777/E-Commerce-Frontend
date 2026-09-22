@@ -15,13 +15,15 @@ import {
   List,
   MoreVertical,
   Lock,
+  Unlock,
   AlertCircle,
   Mail,
   Phone,
   Building2,
   Calendar,
   Trash2,
-  ArrowLeft
+  ArrowLeft,
+  X
 } from 'lucide-react';
 
 export default function VendorsManagement() {
@@ -42,6 +44,15 @@ export default function VendorsManagement() {
   const [vendors, setVendors] = useState([]);
   const [activeActionMenu, setActiveActionMenu] = useState(null);
 
+  // Modal Action State
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    vendor: null,
+    action: null, // 'lock' | 'unlock' | 'ban' | 'delete'
+    reason: '',
+    isSubmitting: false,
+  });
+
   // Statistics State
   const [stats, setStats] = useState({
     total: 0,
@@ -61,8 +72,6 @@ export default function VendorsManagement() {
 
     try {
       const response = await apiClient.get('/founder/vendors');
-
-      console.log('Vendors API response:', response.data);
 
       const vendorsData =
         response.data?.data?.vendors ||
@@ -122,18 +131,47 @@ export default function VendorsManagement() {
     fetchVendors();
   }, []);
 
-  const handleVendorAction = async (vendorId, action) => {
+  // Initiate action: Open confirmation modal
+  const openActionModal = (vendor, action) => {
     setActiveActionMenu(null);
+    setConfirmModal({
+      isOpen: true,
+      vendor,
+      action,
+      reason: '',
+      isSubmitting: false,
+    });
+  };
+
+  // Submit action request with reason
+  const handleConfirmAction = async () => {
+    const { vendor, action, reason } = confirmModal;
+
+    if (!reason.trim()) {
+      showToast('Please enter a reason for this action', 'error');
+      return;
+    }
+
+    const vendorId = vendor.id || vendor._id;
+    setConfirmModal((prev) => ({ ...prev, isSubmitting: true }));
+
     try {
       if (action === 'delete') {
-        await apiClient.delete(`/founder/vendors/${vendorId}`);
+        await apiClient.delete(`/founder/vendors/${vendorId}`, {
+          data: { reason },
+        });
       } else {
-        await apiClient.patch(`/founder/vendors/${vendorId}/${action}`);
+        await apiClient.patch(`/founder/vendors/${vendorId}/${action}`, {
+          reason,
+        });
       }
-      showToast(`Vendor action '${action}' completed successfully`, 'success');
-      fetchVendors(); 
+      showToast(`Vendor account updated (${action}) successfully`, 'success');
+      setConfirmModal({ isOpen: false, vendor: null, action: null, reason: '', isSubmitting: false });
+      fetchVendors();
     } catch (err) {
+      console.log(err)
       showToast(getMessage(err, `Failed to perform ${action} on vendor`), 'error');
+      setConfirmModal((prev) => ({ ...prev, isSubmitting: false }));
     }
   };
 
@@ -213,7 +251,7 @@ export default function VendorsManagement() {
               All Vendors
             </h1>
             <p className={`text-xs md:text-sm ${isDark ? 'text-gray-400' : 'text-slate-500'} mt-1 max-w-2xl`}>
-              Review every store on CampusTrade, manage vendor standings, lock accounts, or apply bans.
+              Review every store on CampusTrade, manage vendor standings, lock/unlock accounts, or apply bans.
             </p>
           </div>
 
@@ -242,7 +280,6 @@ export default function VendorsManagement() {
 
         {/* Dynamic Metric Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {/* Total */}
           <div className={`p-4 rounded-xl border ${isDark ? 'bg-gray-800/80 border-gray-700' : 'bg-white border-slate-200'} shadow-sm flex items-center gap-3`}>
             <div className={`p-2.5 rounded-lg ${isDark ? 'bg-gray-700 text-gray-300' : 'bg-slate-100 text-slate-500'}`}>
               <Store className="w-4 h-4" />
@@ -253,7 +290,6 @@ export default function VendorsManagement() {
             </div>
           </div>
 
-          {/* Pending */}
           <div className={`p-4 rounded-xl border ${isDark ? 'bg-amber-950/20 border-amber-900/40' : 'bg-[#FFFBEB] border-amber-200/80'} shadow-sm flex items-center gap-3`}>
             <div className={`p-2.5 rounded-lg ${isDark ? 'bg-amber-900/50 text-amber-400' : 'bg-amber-100 text-amber-600'}`}>
               <ShieldCheck className="w-4 h-4" />
@@ -264,7 +300,6 @@ export default function VendorsManagement() {
             </div>
           </div>
 
-          {/* Active */}
           <div className={`p-4 rounded-xl border ${isDark ? 'bg-emerald-950/20 border-emerald-900/40' : 'bg-emerald-50/50 border-emerald-200/80'} shadow-sm flex items-center gap-3`}>
             <div className={`p-2.5 rounded-lg ${isDark ? 'bg-emerald-900/50 text-emerald-400' : 'bg-emerald-100 text-emerald-600'}`}>
               <UserCheck className="w-4 h-4" />
@@ -275,7 +310,6 @@ export default function VendorsManagement() {
             </div>
           </div>
 
-          {/* Locked */}
           <div className={`p-4 rounded-xl border ${isDark ? 'bg-purple-950/20 border-purple-900/40' : 'bg-purple-50/50 border-purple-200/80'} shadow-sm flex items-center gap-3`}>
             <div className={`p-2.5 rounded-lg ${isDark ? 'bg-purple-900/50 text-purple-400' : 'bg-purple-100 text-purple-600'}`}>
               <Lock className="w-4 h-4" />
@@ -286,7 +320,6 @@ export default function VendorsManagement() {
             </div>
           </div>
 
-          {/* Banned */}
           <div className={`p-4 rounded-xl border ${isDark ? 'bg-rose-950/20 border-rose-900/40' : 'bg-rose-50/50 border-rose-200/80'} shadow-sm flex items-center gap-3`}>
             <div className={`p-2.5 rounded-lg ${isDark ? 'bg-rose-900/50 text-rose-400' : 'bg-rose-100 text-rose-600'}`}>
               <Ban className="w-4 h-4" />
@@ -297,7 +330,6 @@ export default function VendorsManagement() {
             </div>
           </div>
 
-          {/* Deleted */}
           <div className={`p-4 rounded-xl border ${isDark ? 'bg-gray-800/80 border-gray-700' : 'bg-white border-slate-200'} shadow-sm flex items-center gap-3`}>
             <div className={`p-2.5 rounded-lg ${isDark ? 'bg-gray-800 text-gray-400' : 'bg-slate-100 text-slate-600'}`}>
               <Trash2 className="w-4 h-4" />
@@ -374,7 +406,7 @@ export default function VendorsManagement() {
               </div>
             </div>
 
-            {/* Filter Tabs matching required status values */}
+            {/* Filter Tabs */}
             <div className="flex items-center gap-2 overflow-x-auto pt-2 no-scrollbar">
               {['All', 'pending', 'active', 'suspended', 'locked', 'banned', 'deleted'].map((tab) => {
                 const isActive = activeTab.toLowerCase() === tab.toLowerCase();
@@ -423,7 +455,7 @@ export default function VendorsManagement() {
             </div>
           ) : viewMode === 'table' ? (
             /* Table View */
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto min-h-[320px]">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className={`border-b ${isDark ? 'border-gray-700 bg-gray-900/40 text-gray-400' : 'border-slate-100 bg-slate-50/50 text-slate-400'} text-[11px] font-bold uppercase tracking-wider`}>
@@ -435,119 +467,125 @@ export default function VendorsManagement() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-gray-700/60 text-xs">
-                  {filteredVendors.map((vendor) => (
-                    <tr key={vendor.id || vendor._id} className={`group hover:${isDark ? 'bg-gray-700/30' : 'bg-slate-50/80'} transition-colors`}>
-                      <td className="py-4 px-6">
-                        <div>
-                          <p className={`font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>{vendor.business?.storeName || 'Unnamed Store'}</p>
-                          <p className="text-slate-400 text-[11px] mt-0.5">{vendor.fullName || 'Unknown Owner'}</p>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6 font-medium text-slate-500 dark:text-gray-400">
-                        <div className="flex items-center gap-1.5">
-                          <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{vendor.student?.institution?.name || 'Main Campus'}</span>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6 text-slate-500 dark:text-gray-400 space-y-1">
-                        <div className="flex items-center gap-1.5">
-                          <Mail className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{vendor.email}</span>
-                        </div>
-                        {vendor.phoneNo && (
-                          <div className="flex items-center gap-1.5 text-[11px]">
-                            <Phone className="w-3 h-3 text-slate-400" />
-                            <span>{vendor.phoneNo}</span>
+                  {filteredVendors.map((vendor) => {
+                    const vendorId = vendor.id || vendor._id;
+                    return (
+                      <tr key={vendorId} className={`group hover:${isDark ? 'bg-gray-700/30' : 'bg-slate-50/80'} transition-colors`}>
+                        <td className="py-4 px-6">
+                          <div>
+                            <p className={`font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>{vendor.business?.storeName || 'Unnamed Store'}</p>
+                            <p className="text-slate-400 text-[11px] mt-0.5">{vendor.fullName || 'Unknown Owner'}</p>
                           </div>
-                        )}
-                      </td>
-                      <td className="py-4 px-6">{renderStatusBadge(vendor.accountStatus)}</td>
-                      <td className="py-4 px-6 text-right relative">
-                        <div className="inline-block text-left">
-                          <button
-                            onClick={() => setActiveActionMenu(activeActionMenu === (vendor.id || vendor._id) ? null : (vendor.id || vendor._id))}
-                            className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-slate-100 text-slate-500'}`}
-                          >
-                            <MoreVertical className="w-4 h-4" />
-                          </button>
-
-                          {activeActionMenu === (vendor.id || vendor._id) && (
-                            <ActionDropdown
-                              vendor={vendor}
-                              onAction={handleVendorAction}
-                              onClose={() => setActiveActionMenu(null)}
-                              isDark={isDark}
-                            />
+                        </td>
+                        <td className="py-4 px-6 font-medium text-slate-500 dark:text-gray-400">
+                          <div className="flex items-center gap-1.5">
+                            <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                            <span>{vendor.student?.institution?.name || 'Main Campus'}</span>
+                          </div>
+                        </td>
+                        <td className="py-4 px-6 text-slate-500 dark:text-gray-400 space-y-1">
+                          <div className="flex items-center gap-1.5">
+                            <Mail className="w-3.5 h-3.5 text-slate-400" />
+                            <span>{vendor.email}</span>
+                          </div>
+                          {vendor.phoneNo && (
+                            <div className="flex items-center gap-1.5 text-[11px]">
+                              <Phone className="w-3 h-3 text-slate-400" />
+                              <span>{vendor.phoneNo}</span>
+                            </div>
                           )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="py-4 px-6">{renderStatusBadge(vendor.accountStatus)}</td>
+                        <td className="py-4 px-6 text-right relative">
+                          <div className="inline-block text-left relative">
+                            <button
+                              onClick={() => setActiveActionMenu(activeActionMenu === vendorId ? null : vendorId)}
+                              className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-slate-100 text-slate-500'}`}
+                            >
+                              <MoreVertical className="w-4 h-4" />
+                            </button>
+
+                            {activeActionMenu === vendorId && (
+                              <ActionDropdown
+                                vendor={vendor}
+                                onAction={(v, act) => openActionModal(v, act)}
+                                onClose={() => setActiveActionMenu(null)}
+                                isDark={isDark}
+                              />
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           ) : (
             /* Card Grid View */
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredVendors.map((vendor) => (
-                <div
-                  key={vendor.id || vendor._id}
-                  className={`p-5 rounded-xl border ${isDark ? 'bg-gray-900/60 border-gray-700 hover:border-gray-600' : 'bg-slate-50/60 border-slate-200 hover:border-slate-300'} transition-all space-y-4 relative flex flex-col justify-between`}
-                >
-                  <div>
-                    <div className="flex items-start justify-between gap-2 mb-3">
-                      <div>
-                        <h4 className={`font-bold text-sm ${isDark ? 'text-white' : 'text-slate-800'}`}>{vendor.business?.storeName}</h4>
-                        <p className="text-xs text-slate-400">{vendor.fullName}</p>
-                      </div>
-                      {renderStatusBadge(vendor.accountStatus)}
-                    </div>
-
-                    <div className="space-y-2 text-xs text-slate-500 dark:text-gray-400">
-                      <div className="flex items-center gap-2">
-                        <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                        <span>{vendor.student?.institution?.name || 'Main Campus'}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-3.5 h-3.5 text-slate-400" />
-                        <span className="truncate">{vendor.email}</span>
-                      </div>
-                      {vendor.phoneNo && (
-                        <div className="flex items-center gap-2">
-                          <Phone className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{vendor.phoneNo}</span>
+              {filteredVendors.map((vendor) => {
+                const vendorId = vendor.id || vendor._id;
+                return (
+                  <div
+                    key={vendorId}
+                    className={`p-5 rounded-xl border ${isDark ? 'bg-gray-900/60 border-gray-700 hover:border-gray-600' : 'bg-slate-50/60 border-slate-200 hover:border-slate-300'} transition-all space-y-4 relative flex flex-col justify-between`}
+                  >
+                    <div>
+                      <div className="flex items-start justify-between gap-2 mb-3">
+                        <div>
+                          <h4 className={`font-bold text-sm ${isDark ? 'text-white' : 'text-slate-800'}`}>{vendor.business?.storeName}</h4>
+                          <p className="text-xs text-slate-400">{vendor.fullName}</p>
                         </div>
-                      )}
+                        {renderStatusBadge(vendor.accountStatus)}
+                      </div>
+
+                      <div className="space-y-2 text-xs text-slate-500 dark:text-gray-400">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{vendor.student?.institution?.name || 'Main Campus'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Mail className="w-3.5 h-3.5 text-slate-400" />
+                          <span className="truncate">{vendor.email}</span>
+                        </div>
+                        {vendor.phoneNo && (
+                          <div className="flex items-center gap-2">
+                            <Phone className="w-3.5 h-3.5 text-slate-400" />
+                            <span>{vendor.phoneNo}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-200 dark:border-gray-700 flex items-center justify-between">
+                      <span className="text-[11px] text-slate-400 flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        Joined {new Date(vendor.createdAt || Date.now()).toLocaleDateString()}
+                      </span>
+
+                      <div className="relative">
+                        <button
+                          onClick={() => setActiveActionMenu(activeActionMenu === vendorId ? null : vendorId)}
+                          className={`p-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1 transition-colors ${isDark ? 'border-gray-700 hover:bg-gray-800 text-gray-300' : 'border-slate-200 hover:bg-white text-slate-600'}`}
+                        >
+                          <span>Actions</span>
+                          <MoreVertical className="w-3 h-3" />
+                        </button>
+
+                        {activeActionMenu === vendorId && (
+                          <ActionDropdown
+                            vendor={vendor}
+                            onAction={(v, act) => openActionModal(v, act)}
+                            onClose={() => setActiveActionMenu(null)}
+                            isDark={isDark}
+                          />
+                        )}
+                      </div>
                     </div>
                   </div>
-
-                  <div className="pt-3 border-t border-slate-200 dark:border-gray-700 flex items-center justify-between">
-                    <span className="text-[11px] text-slate-400 flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      Joined {new Date(vendor.createdAt || Date.now()).toLocaleDateString()}
-                    </span>
-
-                    <div className="relative">
-                      <button
-                        onClick={() => setActiveActionMenu(activeActionMenu === (vendor.id || vendor._id) ? null : (vendor.id || vendor._id))}
-                        className={`p-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1 transition-colors ${isDark ? 'border-gray-700 hover:bg-gray-800 text-gray-300' : 'border-slate-200 hover:bg-white text-slate-600'}`}
-                      >
-                        <span>Actions</span>
-                        <MoreVertical className="w-3 h-3" />
-                      </button>
-
-                      {activeActionMenu === (vendor.id || vendor._id) && (
-                        <ActionDropdown
-                          vendor={vendor}
-                          onAction={handleVendorAction}
-                          onClose={() => setActiveActionMenu(null)}
-                          isDark={isDark}
-                        />
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
@@ -558,37 +596,115 @@ export default function VendorsManagement() {
           </div>
         </div>
       </div>
+
+      {/* Reason Confirmation Modal */}
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className={`w-full max-w-md rounded-2xl border p-6 shadow-2xl transition-all ${isDark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-bold capitalize flex items-center gap-2">
+                {confirmModal.action === 'lock' && <Lock className="w-4 h-4 text-purple-500" />}
+                {confirmModal.action === 'unlock' && <Unlock className="w-4 h-4 text-emerald-500" />}
+                {confirmModal.action === 'ban' && <Ban className="w-4 h-4 text-rose-500" />}
+                {confirmModal.action === 'delete' && <Trash2 className="w-4 h-4 text-rose-500" />}
+                {confirmModal.action} Account
+              </h3>
+              <button
+                onClick={() => setConfirmModal({ isOpen: false, vendor: null, action: null, reason: '', isSubmitting: false })}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-gray-200 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-500 dark:text-gray-400 mb-4">
+              Please state the reason for updating <span className="font-semibold text-slate-700 dark:text-slate-200">{confirmModal.vendor?.business?.storeName || confirmModal.vendor?.fullName}</span>. This reason will be logged for administrative tracking.
+            </p>
+
+            <div className="space-y-3">
+              <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                Reason / Justification
+              </label>
+              <textarea
+                rows="3"
+                value={confirmModal.reason}
+                onChange={(e) => setConfirmModal((prev) => ({ ...prev, reason: e.target.value }))}
+                placeholder={`Enter reason for ${confirmModal.action}ing this account...`}
+                className={`w-full p-3 text-xs rounded-xl border outline-none transition-all resize-none ${isDark
+                  ? 'bg-gray-900 border-gray-700 text-white focus:border-emerald-500'
+                  : 'bg-slate-50 border-slate-200 text-slate-800 focus:border-emerald-600 focus:bg-white'
+                  }`}
+              />
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setConfirmModal({ isOpen: false, vendor: null, action: null, reason: '', isSubmitting: false })}
+                className={`px-4 py-2 text-xs font-semibold rounded-xl border transition-colors ${isDark ? 'border-gray-700 hover:bg-gray-700 text-gray-300' : 'border-slate-200 hover:bg-slate-50 text-slate-600'}`}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={confirmModal.isSubmitting || !confirmModal.reason.trim()}
+                onClick={handleConfirmAction}
+                className={`px-4 py-2 text-xs font-semibold rounded-xl text-white transition-all flex items-center gap-2 ${
+                  confirmModal.action === 'lock'
+                    ? 'bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400'
+                    : confirmModal.action === 'unlock'
+                    ? 'bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400'
+                    : 'bg-rose-600 hover:bg-rose-700 disabled:bg-rose-400'
+                }`}
+              >
+                {confirmModal.isSubmitting && <RefreshCw className="w-3 h-3 animate-spin" />}
+                Confirm {confirmModal.action}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-/* Updated Action Menu Component restricted strictly to Lock, Ban, and Delete */
+/* Action Menu Component: Conditionally displays Lock vs Unlock based on vendor status */
 function ActionDropdown({ vendor, onAction, onClose, isDark }) {
-  const vendorId = vendor.id || vendor._id;
+  const isLocked = vendor?.accountStatus?.toLowerCase() === 'locked';
 
   return (
     <>
-      <div className="fixed inset-0 z-10" onClick={onClose}></div>
+      <div className="fixed inset-0 z-30" onClick={onClose}></div>
 
       <div
-        className={`absolute right-0 mt-2 w-48 rounded-xl shadow-xl border z-20 py-1.5 text-xs font-medium ${isDark ? 'bg-gray-800 border-gray-700 text-gray-200' : 'bg-white border-slate-200 text-slate-700'}`}
+        className={`absolute right-0 top-full mt-1 w-48 rounded-xl shadow-xl border z-40 py-1.5 text-xs font-medium lg:right-0 lg:left-auto ${isDark ? 'bg-gray-800 border-gray-700 text-gray-200' : 'bg-white border-slate-200 text-slate-700'}`}
       >
         <div className="px-3 py-1.5 border-b border-slate-100 dark:border-gray-700 text-[10px] text-slate-400 uppercase font-bold tracking-wider">
           Vendor Actions
         </div>
 
-        {/* Lock Action */}
-        <button
-          onClick={() => onAction(vendorId, 'lock')}
-          className="w-full px-3 py-2 text-left hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center gap-2"
-        >
-          <Lock className="w-3.5 h-3.5" />
-          <span>Lock Account</span>
-        </button>
+        {/* Dynamic Lock vs Unlock Check */}
+        {isLocked ? (
+          <button
+            onClick={() => onAction(vendor, 'unlock')}
+            className="w-full px-3 py-2 text-left hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center gap-2"
+          >
+            <Unlock className="w-3.5 h-3.5" />
+            <span>Unlock Account</span>
+          </button>
+        ) : (
+          <button
+            onClick={() => onAction(vendor, 'lock')}
+            className="w-full px-3 py-2 text-left hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center gap-2"
+          >
+            <Lock className="w-3.5 h-3.5" />
+            <span>Lock Account</span>
+          </button>
+        )}
 
         {/* Ban Action */}
         <button
-          onClick={() => onAction(vendorId, 'ban')}
+          onClick={() => onAction(vendor, 'ban')}
           className="w-full px-3 py-2 text-left hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center gap-2"
         >
           <Ban className="w-3.5 h-3.5" />
@@ -599,7 +715,7 @@ function ActionDropdown({ vendor, onAction, onClose, isDark }) {
 
         {/* Delete Action */}
         <button
-          onClick={() => onAction(vendorId, 'delete')}
+          onClick={() => onAction(vendor, 'delete')}
           className="w-full px-3 py-2 text-left hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center gap-2"
         >
           <Trash2 className="w-3.5 h-3.5" />

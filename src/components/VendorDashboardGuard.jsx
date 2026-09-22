@@ -12,25 +12,49 @@ const VendorDashboardGuard = ({ children }) => {
         );
     }
 
-    // if (user?.isSuspend || user?.accountStatus === "Suspended") {
-    //     return (
-    //         <Navigate to="/account-suspended" replace />
-    //     );
-    // }
-
     if (!user?.emailVerified) {
         return (
             <Navigate to="/resend-verification-email" replace />
         );
     }
 
-    if (!user?.onboardingCompleted) {
+    if (!user.onboardingCompleted) {
         return (
-            <Navigate to="/vendor/onboarding" replace />
+            <Navigate
+                to="/vendor/onboarding"
+                replace
+            />
         );
     }
 
-    return children;
+    if (user.verificationStatus === "pending") {
+        return (
+            <Navigate
+                to="/vendor/verification-pending"
+                replace
+            />
+        );
+    }
+
+    if (user.verificationStatus === "rejected") {
+        return (
+            <Navigate
+                to="/vendor/verification-rejected"
+                replace
+            />
+        );
+    }
+
+    if (user.verificationStatus === "approved") {
+        return children;
+    }
+    
+    return (
+        <Navigate
+            to="/vendor/onboarding"
+            replace
+        />
+    );
 };
 
 export default VendorDashboardGuard;

@@ -151,7 +151,7 @@ const normalizeAuthUser = (
     ),
 
     onboardingCompleted: toBoolean(
-      user.onboardingCompleted,
+      user.onboardingCompleted ??
       previous.onboardingCompleted ?? false
     ),
 
@@ -257,6 +257,11 @@ const normalizeAuthUser = (
         previous.business?.type ??
         false,
     };
+
+    normalizedUser.verificationStatus =
+      user.verificationStatus ??
+      previous.verificationStatus ??
+      'pending';
 
     normalizedUser.preferences = {
       notificationPreference:
@@ -440,7 +445,7 @@ const authSlice = createSlice({
         );
       }
 
-      const storageKey =  getUserStorageKey(userRole);
+      const storageKey = getUserStorageKey(userRole);
 
       if (storageKey) {
         localStorage.setItem(

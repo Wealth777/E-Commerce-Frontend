@@ -73,6 +73,7 @@ const Navbar = () => {
                     { name: 'Founder Dashboard', path: '/founder/dashboard' },
                     { name: 'Manage Buyers', path: '/founder/buyers' },
                     { name: 'Manage Vendors', path: '/founder/vendors' },
+                    { name: 'Vendors Approval', path: '/founder/vendors-approval' },
                     { name: 'Analytics', path: '/founder/analytics' },
                 ];
             case 'vendor':

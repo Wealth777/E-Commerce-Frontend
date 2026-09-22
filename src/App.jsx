@@ -75,6 +75,7 @@ import FounderUsers from './pages/founder/Users';
 import FounderAnalytics from './pages/founder/Analytics';
 import FounderVendors from './pages/founder/Vendors';
 import FounderBuyers from './pages/founder/Buyers';
+import FounderVendorApproval from './pages/founder/VendorApproval';
 import FounderSettings from './pages/founder/Settings';
 
 import CartSync from './CartSync';
@@ -473,6 +474,14 @@ function App() {
               element={
                 <ProtectedRoute requiredRole="founder">
                   <FounderBuyers />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/founder/vendors-approval"
+              element={
+                <ProtectedRoute requiredRole="founder">
+                  <FounderVendorApproval />
                 </ProtectedRoute>
               }
             />
