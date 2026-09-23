@@ -28,6 +28,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import Loading from '../../components/layout/Loding';
 
 export default function BuyersManagement() {
   const { isDark } = useTheme();
@@ -39,7 +40,7 @@ export default function BuyersManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('newest');
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [buyers, setBuyers] = useState([]);
@@ -312,7 +313,7 @@ export default function BuyersManagement() {
           </div>
 
           {/* Banned Accounts */}
-          <div className={`p-4 rounded-2xl border ${isDark ? 'bg-gray-800/80 border-gray-700' : 'bg-white border-slate-200'} shadow-sm flex items-start gap-3`}>
+          <div className={`p-4 rounded-2xl border ${isDark ? 'bg-rose-950/10 border-rose-900/30' : 'bg-rose-50/40 border-rose-200/60'} shadow-sm flex items-start gap-3`}>
             <div className={`p-2.5 rounded-xl ${isDark ? 'bg-rose-950/60 text-rose-400' : 'bg-rose-50 text-rose-600'}`}>
               <Ban className="w-4 h-4" />
             </div>
@@ -447,6 +448,10 @@ export default function BuyersManagement() {
                 <RefreshCw className="w-3.5 h-3.5" />
                 <span>Try again</span>
               </button>
+            </div>
+          ) : loading ? (
+            <div className="min-h-[280px] flex items-center justify-center p-12">
+              <Loading text="Loading buyers..." fullScreen={false} />
             </div>
           ) : filteredBuyers.length === 0 ? (
             /* Empty State */
@@ -739,18 +744,16 @@ function ActionReasonModal({ buyer, action, onConfirm, onClose, isDark }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div className={`w-full max-w-md rounded-2xl border shadow-2xl p-6 transition-all ${
-        isDark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-slate-200 text-slate-800'
-      }`}>
+      <div className={`w-full max-w-md rounded-2xl border shadow-2xl p-6 transition-all ${isDark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-slate-200 text-slate-800'
+        }`}>
         <div className="flex items-center justify-between mb-4">
           <span className={`text-xs font-bold px-2.5 py-1 rounded-full border uppercase tracking-wider ${actionMeta.badgeClass}`}>
             {action} Action
           </span>
           <button
             onClick={onClose}
-            className={`p-1 rounded-lg transition-colors ${
-              isDark ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-slate-100 text-slate-500'
-            }`}
+            className={`p-1 rounded-lg transition-colors ${isDark ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-slate-100 text-slate-500'
+              }`}
           >
             <X className="w-5 h-5" />
           </button>
@@ -770,11 +773,10 @@ function ActionReasonModal({ buyer, action, onConfirm, onClose, isDark }) {
               onChange={(e) => setReason(e.target.value)}
               placeholder="e.g. Temporary policy violation, investigating report..."
               required
-              className={`w-full p-3 text-xs rounded-xl border outline-none transition-all ${
-                isDark
+              className={`w-full p-3 text-xs rounded-xl border outline-none transition-all ${isDark
                   ? 'bg-gray-900 border-gray-700 text-white focus:border-emerald-500'
                   : 'bg-slate-50 border-slate-200 text-slate-800 focus:border-emerald-600 focus:bg-white'
-              }`}
+                }`}
             />
           </div>
 
@@ -782,11 +784,10 @@ function ActionReasonModal({ buyer, action, onConfirm, onClose, isDark }) {
             <button
               type="button"
               onClick={onClose}
-              className={`px-4 py-2 text-xs font-semibold rounded-xl border transition-colors ${
-                isDark
+              className={`px-4 py-2 text-xs font-semibold rounded-xl border transition-colors ${isDark
                   ? 'border-gray-700 hover:bg-gray-700 text-gray-300'
                   : 'border-slate-200 hover:bg-slate-100 text-slate-600'
-              }`}
+                }`}
             >
               Cancel
             </button>

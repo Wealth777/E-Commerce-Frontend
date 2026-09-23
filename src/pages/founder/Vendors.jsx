@@ -25,6 +25,7 @@ import {
   ArrowLeft,
   X
 } from 'lucide-react';
+import Loading from '../../components/layout/Loding';
 
 export default function VendorsManagement() {
   const { isDark } = useTheme();
@@ -449,6 +450,10 @@ export default function VendorsManagement() {
                 <span>Try again</span>
               </button>
             </div>
+          ) : loading ? (
+            <div className="min-h-[280px] flex items-center justify-center p-12">
+              <Loading text="Loading vendors..." fullScreen={false} />
+            </div>
           ) : filteredVendors.length === 0 ? (
             <div className="p-12 text-center text-xs text-slate-400">
               No vendors found matching your criteria.
@@ -649,13 +654,12 @@ export default function VendorsManagement() {
                 type="button"
                 disabled={confirmModal.isSubmitting || !confirmModal.reason.trim()}
                 onClick={handleConfirmAction}
-                className={`px-4 py-2 text-xs font-semibold rounded-xl text-white transition-all flex items-center gap-2 ${
-                  confirmModal.action === 'lock'
+                className={`px-4 py-2 text-xs font-semibold rounded-xl text-white transition-all flex items-center gap-2 ${confirmModal.action === 'lock'
                     ? 'bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400'
                     : confirmModal.action === 'unlock'
-                    ? 'bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400'
-                    : 'bg-rose-600 hover:bg-rose-700 disabled:bg-rose-400'
-                }`}
+                      ? 'bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400'
+                      : 'bg-rose-600 hover:bg-rose-700 disabled:bg-rose-400'
+                  }`}
               >
                 {confirmModal.isSubmitting && <RefreshCw className="w-3 h-3 animate-spin" />}
                 Confirm {confirmModal.action}

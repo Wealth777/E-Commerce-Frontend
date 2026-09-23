@@ -1,2236 +1,748 @@
-import React, {
-    useCallback,
-    useEffect,
-    useMemo,
-    useState,
-} from "react";
 
-import apiClient from "../../api/apiClient";
-
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../../context/ThemeContext';
+import { useToast } from '../../context/ToastContext';
+import apiClient from '../../api/apiClient';
+import { getMessage } from '../../utils/apiResponse';
 import {
-    AlertTriangle,
-    ArrowLeft,
-    Building2,
-    Check,
-    CheckCircle2,
-    CircleCheck,
-    Clock3,
-    FileCheck2,
-    FileText,
-    FolderOpen,
-    FolderSearch,
-    LoaderCircle,
-    Paperclip,
-    Search,
     ShieldCheck,
-    Store,
-    X,
+    Search,
+    RefreshCw,
+    ArrowLeft,
+    CheckCircle2,
     XCircle,
-} from "lucide-react";
-
-import { useTheme } from "../../context/ThemeContext";
-import { useToast } from "../../context/ToastContext";
-import { useNavigate } from "react-router-dom";
-
-
-const STATUS_STYLE = {
-    pending: {
-        light: "bg-amber-50 text-amber-700 ring-amber-200",
-        dark: "bg-amber-500/10 text-amber-400 ring-amber-500/20",
-    },
-
-    approved: {
-        light: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-        dark: "bg-emerald-500/10 text-emerald-400 ring-emerald-500/20",
-    },
-
-    rejected: {
-        light: "bg-rose-50 text-rose-700 ring-rose-200",
-        dark: "bg-rose-500/10 text-rose-400 ring-rose-500/20",
-    },
-};
-
-
-const AVATAR_BG = [
-    "bg-indigo-600",
-    "bg-teal-600",
-    "bg-rose-600",
-    "bg-amber-600",
-    "bg-sky-600",
-    "bg-violet-600",
-];
-
-
-const initials = (value = "") =>
-    value
-        .split(" ")
-        .filter(Boolean)
-        .slice(0, 2)
-        .map((word) => word[0])
-        .join("")
-        .toUpperCase();
-
-
-const hashColor = (value = "") =>
-    AVATAR_BG[
-    [...value].reduce(
-        (total, char) => total + char.charCodeAt(0),
-        0
-    ) % AVATAR_BG.length
-    ];
-
-
-const formatDate = (date) => {
-    if (!date) return "—";
-
-    const parsed = new Date(date);
-
-    if (Number.isNaN(parsed.getTime())) {
-        return "—";
-    }
-
-    return parsed.toLocaleDateString();
-};
-
-
-const formatDateTime = (date) => {
-    if (!date) return "—";
-
-    const parsed = new Date(date);
-
-    if (Number.isNaN(parsed.getTime())) {
-        return "—";
-    }
-
-    return parsed.toLocaleString();
-};
-
-
-function Badge({ status, isDark }) {
-    const normalizedStatus = status || "pending";
-
-    const style =
-        STATUS_STYLE[normalizedStatus] ||
-        STATUS_STYLE.pending;
-
-    return (
-        <span
-            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ring-1 ring-inset ${isDark ? style.dark : style.light
-                }`}
-        >
-            <span
-                className={`h-1.5 w-1.5 rounded-full ${normalizedStatus === "pending"
-                    ? "bg-amber-500"
-                    : normalizedStatus === "approved"
-                        ? "bg-emerald-500"
-                        : "bg-rose-500"
-                    }`}
-            />
-
-            {normalizedStatus}
-        </span>
-    );
-}
-
-
-function Field({
-    label,
-    value,
-    mono = false,
-    isDark,
-}) {
-    return (
-        <div>
-            <dt
-                className={`text-[11px] font-semibold uppercase tracking-wider ${isDark
-                    ? "text-slate-500"
-                    : "text-slate-400"
-                    }`}
-            >
-                {label}
-            </dt>
-
-            <dd
-                className={`mt-0.5 break-words text-sm ${isDark
-                    ? "text-slate-200"
-                    : "text-slate-800"
-                    } ${mono ? "font-mono" : ""}`}
-            >
-                {value !== undefined &&
-                    value !== null &&
-                    value !== ""
-                    ? value
-                    : "—"}
-            </dd>
-        </div>
-    );
-}
-
-
-function Section({
-    title,
-    icon: Icon,
-    children,
-    isDark,
-}) {
-    return (
-        <section
-            className={`rounded-xl border p-5 ${isDark
-                ? "border-slate-700 bg-slate-800"
-                : "border-slate-200 bg-white"
-                }`}
-        >
-            <h4
-                className={`mb-4 flex items-center gap-2 text-sm font-bold ${isDark
-                    ? "text-slate-100"
-                    : "text-slate-900"
-                    }`}
-            >
-                <Icon
-                    className={`h-4 w-4 ${isDark
-                        ? "text-slate-400"
-                        : "text-slate-500"
-                        }`}
-                />
-
-                {title}
-            </h4>
-
-            {children}
-        </section>
-    );
-}
-
-
-function Modal({
-    open,
-    onClose,
-    children,
-    max = "max-w-3xl",
-    isDark,
-}) {
-    useEffect(() => {
-        if (!open) return;
-
-        const handleKeyDown = (event) => {
-            if (event.key === "Escape") {
-                onClose();
-            }
-        };
-
-        document.addEventListener(
-            "keydown",
-            handleKeyDown
-        );
-
-        document.body.style.overflow = "hidden";
-
-        return () => {
-            document.removeEventListener(
-                "keydown",
-                handleKeyDown
-            );
-
-            document.body.style.overflow = "";
-        };
-    }, [open, onClose]);
-
-    if (!open) return null;
-
-    return (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 sm:p-6">
-            <div
-                className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm"
-                onClick={onClose}
-            />
-
-            <div
-                className={`relative my-auto w-full ${max} overflow-hidden rounded-2xl shadow-2xl ring-1 ${isDark
-                    ? "bg-slate-900 ring-white/10"
-                    : "bg-white ring-black/5"
-                    }`}
-            >
-                {children}
-            </div>
-        </div>
-    );
-}
-
-
-function ImagePreview({
-    src,
-    label,
-    isDark,
-}) {
-    if (!src) {
-        return (
-            <div
-                className={`flex min-h-32 items-center justify-center rounded-xl border border-dashed ${isDark
-                    ? "border-slate-700 bg-slate-800 text-slate-500"
-                    : "border-slate-300 bg-slate-50 text-slate-400"
-                    }`}
-            >
-                <div className="text-center">
-                    <FileText className="mx-auto h-7 w-7" />
-
-                    <p className="mt-2 text-xs font-medium">
-                        {label} not provided
-                    </p>
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <div
-            className={`overflow-hidden rounded-xl border ${isDark
-                ? "border-slate-700 bg-slate-800"
-                : "border-slate-200 bg-white"
-                }`}
-        >
-            <div className="flex items-center justify-between border-b px-4 py-3">
-                <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-indigo-500" />
-
-                    <span
-                        className={`text-sm font-semibold ${isDark
-                            ? "text-slate-200"
-                            : "text-slate-800"
-                            }`}
-                    >
-                        {label}
-                    </span>
-                </div>
-
-                <a
-                    href={src}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs font-semibold text-indigo-500 hover:text-indigo-600"
-                >
-                    Open
-                </a>
-            </div>
-
-            <div className="p-3">
-                <img
-                    src={src}
-                    alt={label}
-                    className="max-h-80 w-full rounded-lg object-contain"
-                    onError={(event) => {
-                        event.currentTarget.style.display =
-                            "none";
-                    }}
-                />
-            </div>
-        </div>
-    );
-}
-
-
-function DetailsModal({
-    vendor,
-    onClose,
-    onDecide,
-    isDark,
-}) {
-    const [tab, setTab] = useState("overview");
-
-    useEffect(() => {
-        setTab("overview");
-    }, [vendor?._id]);
-
-    if (!vendor) return null;
-
-    const tabs = [
-        ["overview", "Overview"],
-        ["student", "Student"],
-        ["business", "Business"],
-        ["compliance", "Compliance"],
-        ["financial", "Financial"],
-        ["docs", "Documents"],
-    ];
-
-    const mutedText = isDark
-        ? "text-slate-400"
-        : "text-slate-500";
-
-    const strongText = isDark
-        ? "text-slate-100"
-        : "text-slate-900";
-
-    const vendorName =
-        vendor.fullName || "Vendor";
-
-    const storeName =
-        vendor.business?.storeName ||
-        "Vendor Store";
-
-    const documents = [
-        {
-            key: "schoolIdCard",
-            label: "School ID Card",
-            url: vendor.verificationDocuments?.schoolIdCard,
-        },
-        {
-            key: "nationalId",
-            label: "National ID",
-            url: vendor.verificationDocuments?.nationalId,
-        },
-    ];
-
-    return (
-        <Modal
-            open={Boolean(vendor)}
-            onClose={onClose}
-            max="max-w-5xl"
-            isDark={isDark}
-        >
-            <div className="relative overflow-hidden rounded-t-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 px-6 py-6 text-white">
-                <div className="pointer-events-none absolute -right-10 -top-16 h-48 w-48 rounded-full bg-indigo-500/20 blur-2xl" />
-
-                <button
-                    type="button"
-                    onClick={onClose}
-                    aria-label="Close"
-                    className="absolute right-4 top-4 rounded-lg p-1.5 text-slate-300 transition hover:bg-white/10 hover:text-white"
-                >
-                    <X className="h-5 w-5" />
-                </button>
-
-                <div className="flex items-start gap-4">
-                    <div
-                        className={`grid h-14 w-14 shrink-0 place-items-center rounded-xl text-lg font-bold ring-2 ring-white/20 ${hashColor(
-                            storeName
-                        )}`}
-                    >
-                        {initials(storeName)}
-                    </div>
-
-                    <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                            <h2 className="truncate text-xl font-bold">
-                                {storeName}
-                            </h2>
-
-                            <Badge
-                                status={
-                                    vendor.verificationStatus ||
-                                    "pending"
-                                }
-                                isDark={isDark}
-                            />
-                        </div>
-
-                        <p className="mt-1 text-sm text-slate-300">
-                            {vendorName}
-                        </p>
-
-                        <p className="mt-0.5 text-xs text-slate-400">
-                            Submitted{" "}
-                            {formatDate(
-                                vendor.onboardingSentAt
-                            )}
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <div
-                className={`flex gap-1 overflow-x-auto border-b px-4 ${isDark
-                    ? "border-slate-700 bg-slate-800"
-                    : "border-slate-200 bg-slate-50"
-                    }`}
-            >
-                {tabs.map(([key, label]) => (
-                    <button
-                        key={key}
-                        type="button"
-                        onClick={() => setTab(key)}
-                        className={`whitespace-nowrap border-b-2 px-4 py-3 text-sm font-semibold transition ${tab === key
-                            ? isDark
-                                ? "border-indigo-500 text-indigo-400"
-                                : "border-indigo-600 text-indigo-700"
-                            : isDark
-                                ? "border-transparent text-slate-400 hover:text-slate-200"
-                                : "border-transparent text-slate-500 hover:text-slate-800"
-                            }`}
-                    >
-                        {label}
-                    </button>
-                ))}
-            </div>
-
-            <div
-                className={`max-h-[58vh] space-y-4 overflow-y-auto p-5 ${isDark
-                    ? "bg-slate-900"
-                    : "bg-slate-50"
-                    }`}
-            >
-                {tab === "overview" && (
-                    <>
-                        <Section
-                            title="Vendor Information"
-                            icon={Building2}
-                            isDark={isDark}
-                        >
-                            <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
-                                <Field
-                                    label="Full Name"
-                                    value={vendor.fullName}
-                                    isDark={isDark}
-                                />
-
-                                <Field
-                                    label="Serial Number"
-                                    value={vendor.serialNumber}
-                                    mono
-                                    isDark={isDark}
-                                />
-
-                                <Field
-                                    label="Email"
-                                    value={vendor.email}
-                                    isDark={isDark}
-                                />
-
-                                <Field
-                                    label="Phone"
-                                    value={vendor.phoneNo}
-                                    isDark={isDark}
-                                />
-
-                                <Field
-                                    label="Email Verified"
-                                    value={
-                                        vendor.emailVerified
-                                            ? "Yes"
-                                            : "No"
-                                    }
-                                    isDark={isDark}
-                                />
-
-                                <Field
-                                    label="Account Status"
-                                    value={vendor.accountStatus}
-                                    isDark={isDark}
-                                />
-
-                                <Field
-                                    label="Onboarding Completed"
-                                    value={
-                                        vendor.onboardingCompleted
-                                            ? "Yes"
-                                            : "No"
-                                    }
-                                    isDark={isDark}
-                                />
-
-                                <Field
-                                    label="Onboarding Sent"
-                                    value={formatDateTime(
-                                        vendor.onboardingSentAt
-                                    )}
-                                    isDark={isDark}
-                                />
-                            </dl>
-                        </Section>
-
-                        <Section
-                            title="Account State"
-                            icon={ShieldCheck}
-                            isDark={isDark}
-                        >
-                            <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
-                                <Field
-                                    label="Active"
-                                    value={
-                                        vendor.isActive
-                                            ? "Yes"
-                                            : "No"
-                                    }
-                                    isDark={isDark}
-                                />
-
-                                <Field
-                                    label="Suspended"
-                                    value={
-                                        vendor.isSuspend
-                                            ? "Yes"
-                                            : "No"
-                                    }
-                                    isDark={isDark}
-                                />
-
-                                <Field
-                                    label="Locked"
-                                    value={
-                                        vendor.isLocked
-                                            ? "Yes"
-                                            : "No"
-                                    }
-                                    isDark={isDark}
-                                />
-
-                                <Field
-                                    label="Verification"
-                                    value={
-                                        vendor.verificationStatus
-                                    }
-                                    isDark={isDark}
-                                />
-                            </dl>
-                        </Section>
-                    </>
-                )}
-
-                {tab === "student" && (
-                    <>
-                        <Section
-                            title="Student Information"
-                            icon={Building2}
-                            isDark={isDark}
-                        >
-                            <div className="mb-5 flex flex-col gap-4 sm:flex-row">
-                                <div className="shrink-0">
-                                    {vendor.student?.profilePhoto ? (
-                                        <img
-                                            src={
-                                                vendor.student
-                                                    .profilePhoto
-                                            }
-                                            alt={vendor.fullName}
-                                            className="h-24 w-24 rounded-xl object-cover ring-1 ring-slate-200 dark:ring-slate-700"
-                                        />
-                                    ) : (
-                                        <div
-                                            className={`grid h-24 w-24 place-items-center rounded-xl text-xl font-bold text-white ${hashColor(
-                                                vendor.fullName
-                                            )}`}
-                                        >
-                                            {initials(
-                                                vendor.fullName
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="grid flex-1 grid-cols-2 gap-4 sm:grid-cols-3">
-                                    <Field
-                                        label="Gender"
-                                        value={
-                                            vendor.student?.gender
-                                        }
-                                        isDark={isDark}
-                                    />
-
-                                    <Field
-                                        label="Institution"
-                                        value={
-                                            vendor.student
-                                                ?.institution
-                                                ?.name
-                                        }
-                                        isDark={isDark}
-                                    />
-
-                                    <Field
-                                        label="State"
-                                        value={
-                                            vendor.student?.state
-                                                ?.name
-                                        }
-                                        isDark={isDark}
-                                    />
-
-                                    <Field
-                                        label="Matric Number"
-                                        value={
-                                            vendor.student
-                                                ?.matricNumber
-                                        }
-                                        isDark={isDark}
-                                    />
-
-                                    <Field
-                                        label="Faculty"
-                                        value={
-                                            vendor.student?.faculty
-                                        }
-                                        isDark={isDark}
-                                    />
-
-                                    <Field
-                                        label="Department"
-                                        value={
-                                            vendor.student
-                                                ?.department
-                                        }
-                                        isDark={isDark}
-                                    />
-
-                                    <Field
-                                        label="Level"
-                                        value={
-                                            vendor.student?.level
-                                        }
-                                        isDark={isDark}
-                                    />
-
-                                    <Field
-                                        label="Residence"
-                                        value={
-                                            vendor.student
-                                                ?.residence
-                                        }
-                                        isDark={isDark}
-                                    />
-                                </div>
-                            </div>
-
-                            <div
-                                className={`rounded-lg p-4 ${isDark
-                                    ? "bg-slate-900"
-                                    : "bg-slate-50"
-                                    }`}
-                            >
-                                <p
-                                    className={`text-xs font-semibold uppercase tracking-wider ${mutedText}`}
-                                >
-                                    Address
-                                </p>
-
-                                <p
-                                    className={`mt-2 text-sm ${strongText}`}
-                                >
-                                    {vendor.student?.address ||
-                                        "No address provided"}
-                                </p>
-                            </div>
-                        </Section>
-                    </>
-                )}
-
-                {tab === "business" && (
-                    <>
-                        <Section
-                            title="Business Information"
-                            icon={Store}
-                            isDark={isDark}
-                        >
-                            {vendor.business?.logo && (
-                                <div className="mb-5">
-                                    <img
-                                        src={
-                                            vendor.business.logo
-                                        }
-                                        alt={
-                                            vendor.business
-                                                ?.storeName ||
-                                            "Business logo"
-                                        }
-                                        className="h-24 w-24 rounded-xl object-cover ring-1 ring-slate-200 dark:ring-slate-700"
-                                    />
-                                </div>
-                            )}
-
-                            <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
-                                <Field
-                                    label="Store Name"
-                                    value={
-                                        vendor.business
-                                            ?.storeName
-                                    }
-                                    isDark={isDark}
-                                />
-
-                                <Field
-                                    label="Business Type"
-                                    value={
-                                        vendor.business?.type
-                                    }
-                                    isDark={isDark}
-                                />
-
-                                <Field
-                                    label="Facebook"
-                                    value={
-                                        vendor.business
-                                            ?.socials?.facebook
-                                    }
-                                    isDark={isDark}
-                                />
-
-                                <Field
-                                    label="Instagram"
-                                    value={
-                                        vendor.business
-                                            ?.socials?.instagram
-                                    }
-                                    isDark={isDark}
-                                />
-
-                                <Field
-                                    label="WhatsApp"
-                                    value={
-                                        vendor.business
-                                            ?.socials?.whatsapp
-                                    }
-                                    isDark={isDark}
-                                />
-
-                                <Field
-                                    label="TikTok"
-                                    value={
-                                        vendor.business
-                                            ?.socials?.tiktok
-                                    }
-                                    isDark={isDark}
-                                />
-                            </dl>
-
-                            <div
-                                className={`mt-5 rounded-lg p-4 ${isDark
-                                    ? "bg-slate-900"
-                                    : "bg-slate-50"
-                                    }`}
-                            >
-                                <p
-                                    className={`text-xs font-semibold uppercase tracking-wider ${mutedText}`}
-                                >
-                                    Business Description
-                                </p>
-
-                                <p
-                                    className={`mt-2 whitespace-pre-wrap text-sm leading-6 ${strongText}`}
-                                >
-                                    {vendor.business
-                                        ?.description ||
-                                        "No business description provided."}
-                                </p>
-                            </div>
-
-                            {vendor.business?.banner && (
-                                <div className="mt-5">
-                                    <p
-                                        className={`mb-2 text-xs font-semibold uppercase tracking-wider ${mutedText}`}
-                                    >
-                                        Store Banner
-                                    </p>
-
-                                    <img
-                                        src={
-                                            vendor.business.banner
-                                        }
-                                        alt="Store banner"
-                                        className="max-h-72 w-full rounded-xl object-cover"
-                                    />
-                                </div>
-                            )}
-                        </Section>
-                    </>
-                )}
-
-                {tab === "compliance" && (
-                    <>
-                        <Section
-                            title="Verification Status"
-                            icon={ShieldCheck}
-                            isDark={isDark}
-                        >
-                            <div
-                                className={`flex items-center justify-between rounded-lg p-4 ${isDark
-                                    ? "bg-slate-900"
-                                    : "bg-slate-50"
-                                    }`}
-                            >
-                                <div>
-                                    <p
-                                        className={`text-sm font-semibold ${strongText}`}
-                                    >
-                                        Vendor Verification
-                                    </p>
-
-                                    <p
-                                        className={`mt-1 text-xs ${mutedText}`}
-                                    >
-                                        Current onboarding
-                                        verification status
-                                    </p>
-                                </div>
-
-                                <Badge
-                                    status={
-                                        vendor.verificationStatus ||
-                                        "pending"
-                                    }
-                                    isDark={isDark}
-                                />
-                            </div>
-                        </Section>
-
-                        <Section
-                            title="Vendor Terms"
-                            icon={CircleCheck}
-                            isDark={isDark}
-                        >
-                            <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
-                                <Field
-                                    label="Vendor Terms"
-                                    value={
-                                        vendor.terms
-                                            ?.acceptedVendorTerms
-                                            ? "Accepted"
-                                            : "Not Accepted"
-                                    }
-                                    isDark={isDark}
-                                />
-
-                                <Field
-                                    label="Marketplace Policy"
-                                    value={
-                                        vendor.terms
-                                            ?.acceptedMarketplacePolicy
-                                            ? "Accepted"
-                                            : "Not Accepted"
-                                    }
-                                    isDark={isDark}
-                                />
-
-                                <Field
-                                    label="Fraud Policy"
-                                    value={
-                                        vendor.terms
-                                            ?.acceptedFraudPolicy
-                                            ? "Accepted"
-                                            : "Not Accepted"
-                                    }
-                                    isDark={isDark}
-                                />
-
-                                <Field
-                                    label="Accepted At"
-                                    value={formatDateTime(
-                                        vendor.terms
-                                            ?.acceptedAt
-                                    )}
-                                    isDark={isDark}
-                                />
-                            </dl>
-                        </Section>
-
-                        <Section
-                            title="Verification Decision History"
-                            icon={Clock3}
-                            isDark={isDark}
-                        >
-                            <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
-                                <Field
-                                    label="Status"
-                                    value={
-                                        vendor.verificationStatus
-                                    }
-                                    isDark={isDark}
-                                />
-
-                                <Field
-                                    label="Approved At"
-                                    value={formatDateTime(
-                                        vendor.verificationApprovedAt
-                                    )}
-                                    isDark={isDark}
-                                />
-
-                                <Field
-                                    label="Rejected At"
-                                    value={formatDateTime(
-                                        vendor.verificationRejectedAt
-                                    )}
-                                    isDark={isDark}
-                                />
-
-                                <Field
-                                    label="Rejection Reason"
-                                    value={
-                                        vendor.verificationRejectionReason
-                                    }
-                                    isDark={isDark}
-                                />
-                            </dl>
-                        </Section>
-                    </>
-                )}
-
-                {tab === "financial" && (
-                    <Section
-                        title="Bank Details"
-                        icon={FileCheck2}
-                        isDark={isDark}
-                    >
-                        {vendor.bankDetails ? (
-                            <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
-                                <Field
-                                    label="Bank Name"
-                                    value={
-                                        vendor.bankDetails
-                                            ?.bankName
-                                    }
-                                    isDark={isDark}
-                                />
-
-                                <Field
-                                    label="Account Name"
-                                    value={
-                                        vendor.bankDetails
-                                            ?.accountName
-                                    }
-                                    isDark={isDark}
-                                />
-
-                                <Field
-                                    label="Account Number"
-                                    value={
-                                        vendor.bankDetails
-                                            ?.accountNumber
-                                    }
-                                    mono
-                                    isDark={isDark}
-                                />
-                            </dl>
-                        ) : (
-                            <div
-                                className={`rounded-lg border border-dashed p-8 text-center ${isDark
-                                    ? "border-slate-700"
-                                    : "border-slate-300"
-                                    }`}
-                            >
-                                <FileCheck2
-                                    className={`mx-auto h-8 w-8 ${isDark
-                                        ? "text-slate-600"
-                                        : "text-slate-400"
-                                        }`}
-                                />
-
-                                <p
-                                    className={`mt-2 text-sm font-semibold ${isDark
-                                        ? "text-slate-300"
-                                        : "text-slate-700"
-                                        }`}
-                                >
-                                    No bank details found
-                                </p>
-                            </div>
-                        )}
-                    </Section>
-                )}
-
-                {tab === "docs" && (
-                    <Section
-                        title="Verification Documents"
-                        icon={Paperclip}
-                        isDark={isDark}
-                    >
-                        <div className="grid gap-4 md:grid-cols-2">
-                            {documents.map((document) => (
-                                <ImagePreview
-                                    key={document.key}
-                                    src={document.url}
-                                    label={document.label}
-                                    isDark={isDark}
-                                />
-                            ))}
-                        </div>
-                    </Section>
-                )}
-            </div>
-
-            <div
-                className={`flex flex-col-reverse items-center gap-3 rounded-b-2xl border-t px-6 py-4 sm:flex-row sm:justify-between ${isDark
-                    ? "border-slate-700 bg-slate-800"
-                    : "border-slate-200 bg-white"
-                    }`}
-            >
-                <p
-                    className={`text-xs ${isDark
-                        ? "text-slate-500"
-                        : "text-slate-400"
-                        }`}
-                >
-                    Review the submitted information before
-                    making a vendor verification decision.
-                </p>
-
-                {vendor.verificationStatus === "pending" ? (
-                    <div className="flex w-full gap-3 sm:w-auto">
-                        <button
-                            type="button"
-                            onClick={() =>
-                                onDecide(
-                                    vendor,
-                                    "reject"
-                                )
-                            }
-                            className="flex-1 rounded-lg border border-rose-200 bg-transparent px-5 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50 dark:border-rose-500/30 dark:text-rose-400 dark:hover:bg-rose-500/10 sm:flex-none"
-                        >
-                            Reject
-                        </button>
-
-                        <button
-                            type="button"
-                            onClick={() =>
-                                onDecide(
-                                    vendor,
-                                    "approve"
-                                )
-                            }
-                            className="flex-1 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 sm:flex-none"
-                        >
-                            Approve Vendor
-                        </button>
-                    </div>
-                ) : (
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className={`rounded-lg px-5 py-2.5 text-sm font-semibold ${isDark
-                            ? "bg-white text-slate-900 hover:bg-slate-200"
-                            : "bg-slate-900 text-white hover:bg-slate-800"
-                            }`}
-                    >
-                        Close
-                    </button>
-                )}
-            </div>
-        </Modal>
-    );
-}
-
-function ConfirmModal({
-    request,
-    onCancel,
-    onConfirm,
-    isDark,
-}) {
-    const [reason, setReason] = useState("");
-    const [ack, setAck] = useState(false);
-    const [touched, setTouched] = useState(false);
-    const [busy, setBusy] = useState(false);
-
-    useEffect(() => {
-        setReason("");
-        setAck(false);
-        setTouched(false);
-        setBusy(false);
-    }, [
-        request?.vendor?._id,
-        request?.action,
-    ]);
-
-    if (!request) return null;
-
-    const { vendor, action } = request;
-
-    const isReject = action === "reject";
-
-    const vendorName =
-        vendor.business?.storeName ||
-        vendor.fullName ||
-        "Vendor";
-
-    const trimmedReason = reason.trim();
-
-    const reasonInvalid =
-        isReject && trimmedReason.length < 10;
-
-    const blocked =
-        reasonInvalid || !ack || busy;
-
-    const submit = async () => {
-        setTouched(true);
-
-        if (blocked) {
-            return;
-        }
-
-        setBusy(true);
-
-        try {
-            await onConfirm(
-                vendor,
-                action,
-                isReject ? trimmedReason : ""
-            );
-        } finally {
-            setBusy(false);
-        }
-    };
-
-    return (
-        <Modal
-            open={Boolean(request)}
-            onClose={busy ? () => { } : onCancel}
-            max="max-w-lg"
-            isDark={isDark}
-        >
-            <div className="p-6">
-                <div className="flex items-start gap-4">
-                    <div
-                        className={`grid h-12 w-12 shrink-0 place-items-center rounded-full ${
-                            isReject
-                                ? isDark
-                                    ? "bg-rose-500/10 text-rose-400"
-                                    : "bg-rose-100 text-rose-600"
-                                : isDark
-                                    ? "bg-emerald-500/10 text-emerald-400"
-                                    : "bg-emerald-100 text-emerald-600"
-                        }`}
-                    >
-                        {isReject ? (
-                            <AlertTriangle className="h-5 w-5" />
-                        ) : (
-                            <Check className="h-5 w-5" />
-                        )}
-                    </div>
-
-                    <div>
-                        <h3
-                            className={`text-lg font-bold ${
-                                isDark
-                                    ? "text-slate-100"
-                                    : "text-slate-900"
-                            }`}
-                        >
-                            {isReject
-                                ? "Reject vendor application?"
-                                : "Approve vendor onboarding?"}
-                        </h3>
-
-                        <p
-                            className={`mt-1 text-sm ${
-                                isDark
-                                    ? "text-slate-400"
-                                    : "text-slate-500"
-                            }`}
-                        >
-                            You are about{" "}
-                            <span
-                                className={`font-semibold ${
-                                    isReject
-                                        ? "text-rose-500"
-                                        : "text-emerald-500"
-                                }`}
-                            >
-                                {isReject
-                                    ? "reject"
-                                    : "approve"}
-                            </span>{" "}
-                            <span
-                                className={`font-semibold ${
-                                    isDark
-                                        ? "text-slate-200"
-                                        : "text-slate-800"
-                                }`}
-                            >
-                                {vendorName}
-                            </span>
-                            .
-                        </p>
-                    </div>
-                </div>
-
-                <div
-                    className={`mt-5 rounded-xl p-4 ring-1 ${
-                        isDark
-                            ? "bg-slate-800 ring-slate-700"
-                            : "bg-slate-50 ring-slate-200"
-                    }`}
-                >
-                    <dl className="grid grid-cols-2 gap-3 text-sm">
-                        <div>
-                            <dt
-                                className={`text-xs ${
-                                    isDark
-                                        ? "text-slate-500"
-                                        : "text-slate-400"
-                                }`}
-                            >
-                                Vendor ID
-                            </dt>
-
-                            <dd
-                                className={`font-medium ${
-                                    isDark
-                                        ? "text-slate-200"
-                                        : "text-slate-800"
-                                }`}
-                            >
-                                {vendor.serialNumber ||
-                                    vendor._id}
-                            </dd>
-                        </div>
-
-                        <div>
-                            <dt
-                                className={`text-xs ${
-                                    isDark
-                                        ? "text-slate-500"
-                                        : "text-slate-400"
-                                }`}
-                            >
-                                Email
-                            </dt>
-
-                            <dd
-                                className={`truncate font-medium ${
-                                    isDark
-                                        ? "text-slate-200"
-                                        : "text-slate-800"
-                                }`}
-                            >
-                                {vendor.email}
-                            </dd>
-                        </div>
-
-                        <div>
-                            <dt
-                                className={`text-xs ${
-                                    isDark
-                                        ? "text-slate-500"
-                                        : "text-slate-400"
-                                }`}
-                            >
-                                Institution
-                            </dt>
-
-                            <dd
-                                className={`font-medium ${
-                                    isDark
-                                        ? "text-slate-200"
-                                        : "text-slate-800"
-                                }`}
-                            >
-                                {vendor.student?.institution?.name ||
-                                    "—"}
-                            </dd>
-                        </div>
-
-                        <div>
-                            <dt
-                                className={`text-xs ${
-                                    isDark
-                                        ? "text-slate-500"
-                                        : "text-slate-400"
-                                }`}
-                            >
-                                Status
-                            </dt>
-
-                            <dd
-                                className={`font-medium capitalize ${
-                                    isDark
-                                        ? "text-slate-200"
-                                        : "text-slate-800"
-                                }`}
-                            >
-                                {vendor.verificationStatus ||
-                                    "pending"}
-                            </dd>
-                        </div>
-                    </dl>
-                </div>
-
-                {isReject && (
-                    <div className="mt-5">
-                        <label
-                            className={`mb-1.5 block text-sm font-semibold ${
-                                isDark
-                                    ? "text-slate-300"
-                                    : "text-slate-700"
-                            }`}
-                        >
-                            Reason for rejection{" "}
-                            <span className="text-rose-500">
-                                *
-                            </span>
-                        </label>
-
-                        <textarea
-                            rows="4"
-                            value={reason}
-                            maxLength={400}
-                            onChange={(event) =>
-                                setReason(
-                                    event.target.value
-                                )
-                            }
-                            placeholder="Explain why this vendor application is being rejected..."
-                            className={`w-full resize-none rounded-lg border px-3 py-2.5 text-sm outline-none transition focus:ring-2 ${
-                                isDark
-                                    ? "border-slate-700 bg-slate-800 text-slate-200 placeholder:text-slate-600 focus:border-indigo-500 focus:ring-indigo-500/20"
-                                    : "border-slate-300 bg-white text-slate-800 placeholder:text-slate-400 focus:border-indigo-500 focus:ring-indigo-100"
-                            }`}
-                        />
-
-                        <div className="mt-1 flex justify-between text-xs">
-                            <span className="text-rose-500">
-                                {touched &&
-                                    reasonInvalid &&
-                                    "Please provide at least 10 characters."}
-                            </span>
-
-                            <span
-                                className={
-                                    isDark
-                                        ? "text-slate-600"
-                                        : "text-slate-400"
-                                }
-                            >
-                                {reason.length}/400
-                            </span>
-                        </div>
-                    </div>
-                )}
-
-                <label
-                    className={`mt-5 flex cursor-pointer items-start gap-2.5 rounded-lg border p-3 transition ${
-                        isDark
-                            ? "border-slate-700 hover:bg-slate-800"
-                            : "border-slate-200 hover:bg-slate-50"
-                    }`}
-                >
-                    <input
-                        type="checkbox"
-                        checked={ack}
-                        onChange={(event) =>
-                            setAck(
-                                event.target.checked
-                            )
-                        }
-                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                    />
-
-                    <span
-                        className={`text-sm ${
-                            isDark
-                                ? "text-slate-400"
-                                : "text-slate-600"
-                        }`}
-                    >
-                        I confirm that I have reviewed the
-                        onboarding details and authorise
-                        this decision as{" "}
-                        <span
-                            className={`font-semibold ${
-                                isDark
-                                    ? "text-slate-200"
-                                    : "text-slate-800"
-                            }`}
-                        >
-                            Founder
-                        </span>
-                        .
-                    </span>
-                </label>
-
-                {touched && !ack && (
-                    <p className="mt-1 text-xs text-rose-500">
-                        Confirmation is required to
-                        continue.
-                    </p>
-                )}
-            </div>
-
-            <div
-                className={`flex flex-col-reverse gap-3 border-t px-6 py-4 sm:flex-row sm:justify-end ${
-                    isDark
-                        ? "border-slate-700 bg-slate-800"
-                        : "border-slate-200 bg-slate-50"
-                }`}
-            >
-                <button
-                    type="button"
-                    onClick={onCancel}
-                    disabled={busy}
-                    className={`rounded-lg border px-5 py-2.5 text-sm font-semibold transition disabled:opacity-50 ${
-                        isDark
-                            ? "border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-700"
-                            : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
-                    }`}
-                >
-                    Cancel
-                </button>
-
-                <button
-                    type="button"
-                    onClick={submit}
-                    disabled={blocked}
-                    className={`inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition disabled:cursor-not-allowed ${
-                        isReject
-                            ? "bg-rose-600 hover:bg-rose-700"
-                            : "bg-emerald-600 hover:bg-emerald-700"
-                    } ${
-                        blocked
-                            ? "cursor-not-allowed opacity-60"
-                            : ""
-                    }`}
-                >
-                    {busy && (
-                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                    )}
-
-                    {busy
-                        ? "Submitting..."
-                        : isReject
-                            ? "Confirm Rejection"
-                            : "Confirm Approval"}
-                </button>
-            </div>
-        </Modal>
-    );
-}
-
-
-const VendorApproval = () => {
+    Clock,
+    Eye,
+    User,
+    Store,
+    GraduationCap,
+    Building,
+    CreditCard,
+    FileText,
+    ExternalLink,
+    Phone,
+    Mail,
+    MapPin,
+    X,
+    AlertTriangle,
+    Globe,
+    Share2,
+    Calendar,
+    CheckSquare,
+    Square,
+    AlertCircle
+} from 'lucide-react';
+import Loading from "../../components/layout/Loding";
+
+export default function VendorVerificationApprovals() {
     const { isDark } = useTheme();
     const { showToast } = useToast();
     const navigate = useNavigate();
 
+    // Data States
+    const [loadingList, setLoadingList] = useState(false);
     const [vendors, setVendors] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [detailLoading, setDetailLoading] =
-        useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
 
-    const [filter, setFilter] = useState("pending");
-    const [query, setQuery] = useState("");
-    const [detail, setDetail] = useState(null);
-    const [confirmReq, setConfirmReq] =
-        useState(null);
+    // Review Modal States
+    const [selectedVendorId, setSelectedVendorId] = useState(null);
+    const [vendorDetails, setVendorDetails] = useState(null);
+    const [loadingDetails, setLoadingDetails] = useState(false);
 
+    // Action Confirmation Modal States
+    const [actionType, setActionType] = useState(null);
+    const [rejectionReason, setRejectionReason] = useState('');
+    const [submittingAction, setSubmittingAction] = useState(false);
 
-    const getPendingVendorApprovals =
-        useCallback(async () => {
-            try {
-                setLoading(true);
-
-                const response = await apiClient.get(
-                    "/founder/vendors/approvals"
-                );
-
-                const data =
-                    response?.data?.data ??
-                    response?.data;
-
-                setVendors(
-                    Array.isArray(data)
-                        ? data
-                        : []
-                );
-            } catch (error) {
-                console.error(
-                    "Failed to get pending vendor approvals:",
-                    error
-                );
-
-                showToast(
-                    error?.response?.data?.message ||
-                    "Failed to load vendor approval requests.",
-                    "error"
-                );
-
-                setVendors([]);
-            } finally {
-                setLoading(false);
-            }
-        }, [showToast]);
-
+    // 1. Fetch Pending Approvals List
+    const fetchPendingApprovals = useCallback(async () => {
+        setLoadingList(true);
+        try {
+            const response = await apiClient.get('/founder/vendors/approvals');
+            const data = response.data?.data || response.data?.vendors || response.data || [];
+            const vendorList = Array.isArray(data) ? data : data.vendors || [];
+            setVendors(vendorList);
+        } catch (err) {
+            showToast(getMessage(err, 'Failed to fetch pending vendor approvals'), 'error');
+        } finally {
+            setLoadingList(false);
+        }
+    }, [showToast]);
 
     useEffect(() => {
-        getPendingVendorApprovals();
-    }, [getPendingVendorApprovals]);
+        fetchPendingApprovals();
+    }, [fetchPendingApprovals]);
 
-
-    const getVendorDetails = async (vendor) => {
+    // 2. Fetch Detailed Onboarding Info for a Vendor
+    const openVendorReview = async (vendor) => {
+        const id = vendor._id || vendor.id;
+        setSelectedVendorId(id);
+        setLoadingDetails(true);
         try {
-            setDetailLoading(true);
-
-            const response = await apiClient.get(
-                `/founder/vendors/${vendor._id}/onboarding`
-            );
-
-            const data =
-                response?.data?.data ??
-                response?.data;
-
-            if (!data) {
-                throw new Error(
-                    "Vendor details were not returned."
-                );
-            }
-
-            setDetail(data);
-        } catch (error) {
-            console.error(
-                "Failed to get vendor onboarding details:",
-                error
-            );
-
-            showToast(
-                error?.response?.data?.message ||
-                "Failed to load vendor onboarding details.",
-                "error"
-            );
+            const response = await apiClient.get(`/founder/vendors/${id}/onboarding`);
+            const data = response.data?.data || response.data?.vendors || response.data || {};
+            const details = Array.isArray(data) ? data[0] : data.vendor || data;
+            setVendorDetails(details || vendor);
+        } catch (err) {
+            showToast(getMessage(err, 'Failed to load vendor onboarding details'), 'error');
+            setVendorDetails(vendor);
         } finally {
-            setDetailLoading(false);
+            setLoadingDetails(false);
         }
     };
 
+    // Close Detail Drawer/Modal
+    const closeVendorReview = () => {
+        setSelectedVendorId(null);
+        setVendorDetails(null);
+        setActionType(null);
+        setRejectionReason('');
+    };
 
-    const approveVendor = async (vendor) => {
+    // 3. Handle Approve API Call
+    const handleApprove = async () => {
+        if (!selectedVendorId) return;
+        setSubmittingAction(true);
         try {
-            const response = await apiClient.patch(
-                `/founder/vendors/${vendor._id}/approve`
-            );
-
-            showToast(
-                response?.data?.message ||
-                `${vendor.fullName} has been approved.`,
-                "success"
-            );
-
-            setConfirmReq(null);
-            setDetail(null);
-
-            await getPendingVendorApprovals();
-        } catch (error) {
-            console.error(
-                "Failed to approve vendor:",
-                error
-            );
-
-            showToast(
-                error?.response?.data?.message ||
-                "Failed to approve vendor.",
-                "error"
-            );
-
-            throw error;
+            await apiClient.patch(`/founder/vendors/${selectedVendorId}/approve`);
+            showToast('Vendor approved successfully!', 'success');
+            closeVendorReview();
+            fetchPendingApprovals();
+        } catch (err) {
+            showToast(getMessage(err, 'Failed to approve vendor'), 'error');
+        } finally {
+            setSubmittingAction(false);
         }
     };
 
-
-    const rejectVendor = async (
-        vendor,
-        reason
-    ) => {
-        try {
-            const response = await apiClient.patch(
-                `/founder/vendors/${vendor._id}/reject`,
-                {
-                    rejectionReason: reason,
-                }
-            );
-
-            showToast(
-                response?.data?.message ||
-                `${vendor.fullName} has been rejected.`,
-                "warning"
-            );
-
-            setConfirmReq(null);
-            setDetail(null);
-
-            await getPendingVendorApprovals();
-        } catch (error) {
-            console.error(
-                "Failed to reject vendor:",
-                error
-            );
-
-            showToast(
-                error?.response?.data?.message ||
-                "Failed to reject vendor.",
-                "error"
-            );
-
-            throw error;
-        }
-    };
-
-
-    const counts = useMemo(
-        () => ({
-            all: vendors.length,
-
-            pending: vendors.filter(
-                (vendor) =>
-                    vendor.verificationStatus ===
-                    "pending"
-            ).length,
-
-            approved: vendors.filter(
-                (vendor) =>
-                    vendor.verificationStatus ===
-                    "approved"
-            ).length,
-
-            rejected: vendors.filter(
-                (vendor) =>
-                    vendor.verificationStatus ===
-                    "rejected"
-            ).length,
-        }),
-        [vendors]
-    );
-
-
-    const list = useMemo(() => {
-        const search =
-            query.toLowerCase().trim();
-
-        return vendors.filter((vendor) => {
-            const status =
-                vendor.verificationStatus ||
-                "pending";
-
-            const matchesFilter =
-                filter === "all" ||
-                status === filter;
-
-            const searchable = [
-                vendor.fullName,
-                vendor.email,
-                vendor.phoneNo,
-                vendor.serialNumber,
-                vendor._id,
-                vendor.business?.storeName,
-                vendor.business?.type,
-                vendor.student?.matricNumber,
-                vendor.student?.department,
-                vendor.student?.faculty,
-            ]
-                .filter(Boolean)
-                .join(" ")
-                .toLowerCase();
-
-            return (
-                matchesFilter &&
-                searchable.includes(search)
-            );
-        });
-    }, [vendors, filter, query]);
-
-
-    const openConfirm = useCallback(
-        (vendor, action) => {
-            setConfirmReq({
-                vendor,
-                action,
-            });
-        },
-        []
-    );
-
-
-    const handleConfirm = async (
-        vendor,
-        action,
-        reason
-    ) => {
-        if (action === "approve") {
-            await approveVendor(vendor);
+    // 4. Handle Reject API Call
+    const handleReject = async () => {
+        if (!selectedVendorId) return;
+        if (!rejectionReason.trim()) {
+            showToast('Please provide a reason for rejection', 'error');
             return;
         }
 
-        if (action === "reject") {
-            await rejectVendor(
-                vendor,
-                reason
-            );
+        setSubmittingAction(true);
+        try {
+            await apiClient.patch(`/founder/vendors/${selectedVendorId}/reject`, {
+                rejectionReason: rejectionReason.trim(),
+            });
+            showToast('Vendor verification rejected', 'info');
+            closeVendorReview();
+            fetchPendingApprovals();
+        } catch (err) {
+            showToast(getMessage(err, 'Failed to reject vendor'), 'error');
+        } finally {
+            setSubmittingAction(false);
         }
     };
 
+    // Filtered List Client-Side Search
+    const filteredVendors = vendors.filter((v) => {
+        const query = searchQuery.toLowerCase();
+        const name = v.fullName?.toLowerCase() || '';
+        const email = v.email?.toLowerCase() || '';
+        const store = v.business?.storeName?.toLowerCase() || '';
+        const serial = v.serialNumber?.toLowerCase() || '';
+        const matric = v.student?.matricNumber?.toLowerCase() || '';
+        return (
+            name.includes(query) ||
+            email.includes(query) ||
+            store.includes(query) ||
+            serial.includes(query) ||
+            matric.includes(query)
+        );
+    });
 
     return (
-        <div
-            className={`min-h-screen transition-colors duration-200 ${isDark
-                ? "bg-slate-950"
-                : "bg-slate-100"
-                }`}
-        >
-            <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        <div className={`min-h-screen p-4 sm:p-6 lg:p-8 transition-colors ${isDark ? 'bg-gray-900 text-slate-100' : 'bg-[#F8FAFC] text-slate-800'}`}>
+            <div className="max-w-7xl mx-auto space-y-6">
 
-                <div className="mb-1 text-xs font-medium text-slate-400">
-                    <button
-                        onClick={() =>
-                            navigate(-1)
-                        }
-                        className={`group mb-2 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-colors ${isDark
-                            ? "bg-zinc-900/70 text-zinc-300 ring-1 ring-white/10 hover:bg-zinc-800 hover:text-green-500"
-                            : "bg-white/70 text-zinc-600 ring-1 ring-zinc-900/5 hover:bg-white hover:text-green-500"
-                            }`}
-                    >
-                        <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-
-                        Back
-                    </button>
-                </div>
-
-                <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+                {/* Page Top Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <h1
-                            className={`text-2xl font-bold tracking-tight sm:text-3xl ${isDark
-                                ? "text-white"
-                                : "text-slate-900"
+                        <button
+                            onClick={() => navigate(-1)}
+                            className={`group inline-flex items-center gap-2 text-xs font-medium transition-colors mb-2 rounded-full px-3 py-1.5 ${isDark ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300' : 'bg-white hover:bg-slate-100 text-slate-600 ring-1 ring-slate-200'
                                 }`}
                         >
-                            Vendor Onboarding Approvals
+                            <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
+                            Back
+                        </button>
+                        <h1 className={`text-2xl md:text-3xl font-bold flex items-center gap-2.5 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                            <ShieldCheck className="w-7 h-7 text-emerald-500" />
+                            Vendor Approvals
                         </h1>
-
-                        <p
-                            className={`mt-1 text-sm ${isDark
-                                ? "text-slate-400"
-                                : "text-slate-500"
-                                }`}
-                        >
-                            Review submitted vendor
-                            onboarding requests and
-                            record your approval or
-                            rejection decision.
+                        <p className={`text-xs md:text-sm ${isDark ? 'text-gray-400' : 'text-slate-500'} mt-1`}>
+                            Review student merchant applications, identity proofs, and business onboarding files.
                         </p>
                     </div>
 
-                    <div className="relative w-full sm:w-72">
-                        <Search
-                            className={`pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ${isDark
-                                ? "text-slate-500"
-                                : "text-slate-400"
-                                }`}
-                        />
+                    <button
+                        onClick={fetchPendingApprovals}
+                        disabled={loadingList}
+                        className={`px-4 py-2.5 text-xs font-semibold rounded-xl border flex items-center gap-2 transition-all shadow-sm ${isDark
+                            ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-gray-200'
+                            : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'
+                            }`}
+                    >
+                        <RefreshCw className={`w-3.5 h-3.5 ${loadingList ? 'animate-spin' : ''}`} />
+                        <span>Refresh Queue</span>
+                    </button>
+                </div>
 
-                        <input
-                            value={query}
-                            onChange={(event) =>
-                                setQuery(
-                                    event.target.value
-                                )
-                            }
-                            placeholder="Search vendor..."
-                            className={`w-full rounded-lg border py-2.5 pl-9 pr-3 text-sm outline-none transition ${isDark
-                                ? "border-slate-700 bg-slate-900 text-slate-200 placeholder:text-slate-600 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
-                                : "border-slate-300 bg-white text-slate-800 placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                                }`}
-                        />
+                {/* Status / Quick Stats Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className={`p-5 rounded-2xl border ${isDark ? 'bg-gray-800/80 border-gray-700' : 'bg-white border-slate-200'} shadow-sm flex items-center justify-between`}>
+                        <div>
+                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Pending Applications</span>
+                            <span className={`text-2xl font-black ${isDark ? 'text-amber-400' : 'text-amber-600'} mt-1 block`}>
+                                {vendors.length}
+                            </span>
+                        </div>
+                        <div className={`p-3 rounded-xl ${isDark ? 'bg-amber-950/60 text-amber-400' : 'bg-amber-50 text-amber-600'}`}>
+                            <Clock className="w-6 h-6" />
+                        </div>
+                    </div>
+
+                    <div className={`p-5 rounded-2xl border ${isDark ? 'bg-gray-800/80 border-gray-700' : 'bg-white border-slate-200'} shadow-sm flex items-center justify-between`}>
+                        <div>
+                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Completed Onboarding</span>
+                            <span className={`text-2xl font-black ${isDark ? 'text-emerald-400' : 'text-emerald-600'} mt-1 block`}>
+                                {vendors.filter((v) => v.onboardingCompleted).length}
+                            </span>
+                        </div>
+                        <div className={`p-3 rounded-xl ${isDark ? 'bg-emerald-950/60 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>
+                            <CheckCircle2 className="w-6 h-6" />
+                        </div>
+                    </div>
+
+                    <div className={`p-5 rounded-2xl border ${isDark ? 'bg-gray-800/80 border-gray-700' : 'bg-white border-slate-200'} shadow-sm flex items-center justify-between`}>
+                        <div>
+                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Incomplete Profiles</span>
+                            <span className={`text-2xl font-black ${isDark ? 'text-rose-400' : 'text-rose-600'} mt-1 block`}>
+                                {vendors.filter((v) => !v.onboardingCompleted).length}
+                            </span>
+                        </div>
+                        <div className={`p-3 rounded-xl ${isDark ? 'bg-rose-950/60 text-rose-400' : 'bg-rose-50 text-rose-600'}`}>
+                            <AlertTriangle className="w-6 h-6" />
+                        </div>
                     </div>
                 </div>
 
-                <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-                    {[
-                        [
-                            "Awaiting review",
-                            counts.pending,
-                            "text-amber-500",
-                            LoaderCircle,
-                        ],
-                        [
-                            "Approved",
-                            counts.approved,
-                            "text-emerald-500",
-                            CheckCircle2,
-                        ],
-                        [
-                            "Rejected",
-                            counts.rejected,
-                            "text-rose-500",
-                            XCircle,
-                        ],
-                        [
-                            "Total applications",
-                            counts.all,
-                            "text-indigo-500",
-                            FileCheck2,
-                        ],
-                    ].map(
-                        ([
-                            label,
-                            value,
-                            color,
-                            Icon,
-                        ]) => (
-                            <div
-                                key={label}
-                                className={`rounded-xl border p-4 shadow-sm transition-colors ${isDark
-                                    ? "border-slate-800 bg-slate-900"
-                                    : "border-slate-200 bg-white"
+                {/* Vendors List Section */}
+                <div className={`rounded-2xl border ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200'} shadow-sm overflow-hidden`}>
+
+                    {/* Search Header */}
+                    <div className="p-4 md:p-6 border-b border-slate-200 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div className="relative w-full sm:w-80">
+                            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input
+                                type="text"
+                                placeholder="Search store, merchant, email..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className={`w-full pl-10 pr-4 py-2 text-xs rounded-xl border outline-none transition-all ${isDark
+                                    ? 'bg-gray-900 border-gray-700 text-white focus:border-emerald-500'
+                                    : 'bg-slate-50 border-slate-200 text-slate-800 focus:border-emerald-600 focus:bg-white'
                                     }`}
-                            >
-                                <div className="flex items-center justify-between">
-                                    <p
-                                        className={`text-xs font-semibold uppercase tracking-wider ${isDark
-                                            ? "text-slate-500"
-                                            : "text-slate-400"
-                                            }`}
-                                    >
-                                        {label}
-                                    </p>
+                            />
+                        </div>
+                        <span className="text-xs text-slate-400 font-medium">
+                            Showing {filteredVendors.length} applicant(s)
+                        </span>
+                    </div>
 
-                                    <Icon
-                                        className={`h-5 w-5 ${color}`}
-                                    />
-                                </div>
-
-                                <p
-                                    className={`mt-2 text-3xl font-bold ${color}`}
-                                >
-                                    {value}
-                                </p>
-                            </div>
-                        )
-                    )}
-                </div>
-
-                <div className="mb-4 flex flex-wrap gap-2">
-                    {[
-                        "all",
-                        "pending",
-                        "approved",
-                        "rejected",
-                    ].map((key) => (
-                        <button
-                            key={key}
-                            type="button"
-                            onClick={() =>
-                                setFilter(key)
-                            }
-                            className={`rounded-lg px-4 py-2 text-sm font-semibold capitalize transition ${filter === key
-                                ? isDark
-                                    ? "bg-white text-slate-900 shadow-sm"
-                                    : "bg-slate-900 text-white shadow-sm"
-                                : isDark
-                                    ? "bg-slate-900 text-slate-300 ring-1 ring-slate-800 hover:bg-slate-800"
-                                    : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
-                                }`}
-                        >
-                            {key}
-
-                            <span className="ml-1 opacity-60">
-                                {counts[key]}
-                            </span>
-                        </button>
-                    ))}
-                </div>
-
-                <div
-                    className={`overflow-hidden rounded-xl border shadow-sm ${isDark
-                        ? "border-slate-800 bg-slate-900"
-                        : "border-slate-200 bg-white"
-                        }`}
-                >
+                    {/* Vendors Table */}
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-                            <thead
-                                className={
-                                    isDark
-                                        ? "bg-slate-800/60"
-                                        : "bg-slate-50"
-                                }
-                            >
-                                <tr
-                                    className={`text-left text-[11px] font-bold uppercase tracking-wider ${isDark
-                                        ? "text-slate-400"
-                                        : "text-slate-500"
-                                        }`}
-                                >
-                                    <th className="px-5 py-3">
-                                        Vendor
-                                    </th>
-
-                                    <th className="px-5 py-3">
-                                        Business
-                                    </th>
-
-                                    <th className="hidden px-5 py-3 md:table-cell">
-                                        Submitted
-                                    </th>
-
-                                    <th className="px-5 py-3">
-                                        Status
-                                    </th>
-
-                                    <th className="px-5 py-3 text-right">
-                                        Actions
-                                    </th>
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className={`border-b ${isDark ? 'border-gray-700 bg-gray-900/40 text-gray-400' : 'border-slate-100 bg-slate-50/50 text-slate-400'} text-[11px] font-bold uppercase tracking-wider`}>
+                                    <th className="py-3.5 px-6">Merchant & Store</th>
+                                    <th className="py-3.5 px-6">Institution / Student</th>
+                                    <th className="py-3.5 px-6">Business Type</th>
+                                    <th className="py-3.5 px-6">Onboarding</th>
+                                    <th className="py-3.5 px-6">Submission Date</th>
+                                    <th className="py-3.5 px-6">Verification Status</th>
+                                    <th className="py-3.5 px-6 text-right">Action</th>
                                 </tr>
                             </thead>
-
-                            <tbody
-                                className={`divide-y ${isDark
-                                    ? "divide-slate-800"
-                                    : "divide-slate-100"
-                                    }`}
-                            >
-                                {loading ? (
+                            <tbody className="divide-y divide-slate-100 dark:divide-gray-700/60 text-xs">
+                                {loadingList ? (
                                     <tr>
-                                        <td
-                                            colSpan="5"
-                                            className="px-5 py-16 text-center"
-                                        >
-                                            <LoaderCircle
-                                                className={`mx-auto h-7 w-7 animate-spin ${isDark
-                                                    ? "text-slate-500"
-                                                    : "text-slate-400"
-                                                    }`}
-                                            />
-
-                                            <p
-                                                className={`mt-3 text-sm ${isDark
-                                                    ? "text-slate-400"
-                                                    : "text-slate-500"
-                                                    }`}
-                                            >
-                                                Loading vendor
-                                                applications...
-                                            </p>
+                                        <td colSpan="7" className="py-12 text-center text-slate-400">
+                                            <Loading text='Loading vendor verification requests...' />
                                         </td>
                                     </tr>
-                                ) : list.length === 0 ? (
+                                ) : filteredVendors.length === 0 ? (
                                     <tr>
-                                        <td
-                                            colSpan="5"
-                                            className="px-5 py-16 text-center"
-                                        >
-                                            <FolderSearch
-                                                className={`mx-auto h-10 w-10 ${isDark
-                                                    ? "text-slate-700"
-                                                    : "text-slate-300"
-                                                    }`}
-                                            />
-
-                                            <p
-                                                className={`mt-3 text-sm font-semibold ${isDark
-                                                    ? "text-slate-300"
-                                                    : "text-slate-700"
-                                                    }`}
-                                            >
-                                                No vendor
-                                                applications
-                                                found
-                                            </p>
-
-                                            <p
-                                                className={`text-xs ${isDark
-                                                    ? "text-slate-600"
-                                                    : "text-slate-400"
-                                                    }`}
-                                            >
-                                                Try a different
-                                                filter or search
-                                                term.
-                                            </p>
+                                        <td colSpan="7" className="py-12 text-center text-slate-400">
+                                            <ShieldCheck className="w-8 h-8 opacity-40 mx-auto mb-2" />
+                                            No pending vendor approvals found.
                                         </td>
                                     </tr>
                                 ) : (
-                                    list.map(
-                                        (vendor) => {
-                                            const vendorName =
-                                                vendor.fullName ||
-                                                "Unknown Vendor";
+                                    filteredVendors.map((vendor) => (
+                                        <tr key={vendor._id} className={`hover:${isDark ? 'bg-gray-700/30' : 'bg-slate-50/80'} transition-colors`}>
+                                            {/* Merchant & Store */}
+                                            <td className="py-4 px-6">
+                                                <div className="flex items-center gap-3">
+                                                    {vendor.business?.logo ? (
+                                                        <img src={vendor.business.logo} alt="" className="w-10 h-10 rounded-xl object-cover border border-slate-200 dark:border-gray-700" />
+                                                    ) : (
+                                                        <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center justify-center font-bold text-sm">
+                                                            {vendor.business?.storeName ? vendor.business.storeName.charAt(0).toUpperCase() : vendor.fullName?.charAt(0) || 'V'}
+                                                        </div>
+                                                    )}
+                                                    <div>
+                                                        <p className={`font-bold text-xs ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                                                            {vendor.business?.storeName || 'Store Name Not Set'}
+                                                        </p>
+                                                        <p className="text-[11px] text-slate-400 font-medium">
+                                                            {vendor.fullName} ({vendor.serialNumber || 'N/A'})
+                                                        </p>
+                                                        <p className="text-[10px] text-slate-500">{vendor.email}</p>
+                                                    </div>
+                                                </div>
+                                            </td>
 
-                                            const businessName =
-                                                vendor
-                                                    .business
-                                                    ?.storeName ||
-                                                "No store name";
+                                            {/* Student Info */}
+                                            <td className="py-4 px-6">
+                                                <p className={`font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                                                    {vendor.student?.matricNumber || 'Matric N/A'}
+                                                </p>
+                                                <p className="text-[11px] text-slate-400 line-clamp-1">
+                                                    {vendor.student?.department || 'Department N/A'}
+                                                </p>
+                                            </td>
 
-                                            const status =
-                                                vendor.verificationStatus ||
-                                                "pending";
+                                            {/* Business Type */}
+                                            <td className="py-4 px-6">
+                                                <span className="capitalize font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md text-[11px]">
+                                                    {vendor.business?.type || 'General Merchant'}
+                                                </span>
+                                            </td>
 
-                                            return (
-                                                <tr
-                                                    key={
-                                                        vendor._id
+                                            {/* Onboarding Completed */}
+                                            <td className="py-4 px-6">
+                                                {vendor.onboardingCompleted ? (
+                                                    <span className="inline-flex items-center gap-1 text-emerald-500 font-medium text-[11px]">
+                                                        <CheckCircle2 className="w-3.5 h-3.5" /> Completed
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-1 text-amber-500 font-medium text-[11px]">
+                                                        <Clock className="w-3.5 h-3.5" /> Incomplete
+                                                    </span>
+                                                )}
+                                            </td>
+
+                                            {/* Submission Date */}
+                                            <td className="py-4 px-6 text-slate-400 text-[11px]">
+                                                {vendor.onboardingCompletedAt
+                                                    ? new Date(vendor.onboardingCompletedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+                                                    : vendor.createdAt
+                                                        ? new Date(vendor.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+                                                        : 'N/A'}
+                                            </td>
+
+                                            {/* Verification Status */}
+                                            <td className="py-4 px-6">
+                                                {(() => {
+                                                    // Normalizing status to lowercase string (or checking direct property)
+                                                    const status = (
+                                                        vendor.verificationStatus ||
+                                                        vendor.vendorDetails?.verificationStatus ||
+                                                        'pending'
+                                                    ).toString().toLowerCase();
+
+                                                    if (status === 'approved' || status === 'true') {
+                                                        return (
+                                                            <span className="inline-flex items-center gap-1.5 text-emerald-500 font-medium text-[11px] bg-emerald-500/10 px-2.5 py-1 rounded-md">
+                                                                <CheckCircle2 className="w-3.5 h-3.5" /> Approved
+                                                            </span>
+                                                        );
+                                                    } else if (status === 'rejected') {
+                                                        return (
+                                                            <span className="inline-flex items-center gap-1.5 text-rose-500 font-medium text-[11px] bg-rose-500/10 px-2.5 py-1 rounded-md">
+                                                                <AlertCircle className="w-3.5 h-3.5" /> Rejected
+                                                            </span>
+                                                        );
+                                                    } else {
+                                                        return (
+                                                            <span className="inline-flex items-center gap-1.5 text-amber-500 font-medium text-[11px] bg-amber-500/10 px-2.5 py-1 rounded-md">
+                                                                <Clock className="w-3.5 h-3.5" /> Pending
+                                                            </span>
+                                                        );
                                                     }
-                                                    className={`group transition ${isDark
-                                                        ? "hover:bg-slate-800/60"
-                                                        : "hover:bg-slate-50"
+                                                })()}
+                                            </td>
+
+                                            {/* Action */}
+                                            <td className="py-4 px-6 text-right">
+                                                <button
+                                                    onClick={() => openVendorReview(vendor)}
+                                                    className={`px-3 py-1.5 rounded-lg border text-xs font-semibold inline-flex items-center gap-1.5 transition-colors ${isDark
+                                                        ? 'border-gray-700 bg-gray-900 hover:bg-gray-800 text-gray-200'
+                                                        : 'border-slate-200 bg-slate-50 hover:bg-white text-slate-700'
                                                         }`}
                                                 >
-                                                    <td className="px-5 py-4">
-                                                        <div className="flex items-center gap-3">
-                                                            <div
-                                                                className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg text-xs font-bold text-white ${hashColor(
-                                                                    vendorName
-                                                                )}`}
-                                                            >
-                                                                {initials(
-                                                                    vendorName
-                                                                )}
-                                                            </div>
-
-                                                            <div className="min-w-0">
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() =>
-                                                                        getVendorDetails(
-                                                                            vendor
-                                                                        )
-                                                                    }
-                                                                    className={`block truncate text-sm font-semibold hover:underline ${isDark
-                                                                        ? "text-slate-100 hover:text-indigo-400"
-                                                                        : "text-slate-900 hover:text-indigo-600"
-                                                                        }`}
-                                                                >
-                                                                    {
-                                                                        vendorName
-                                                                    }
-                                                                </button>
-
-                                                                <p
-                                                                    className={`truncate text-xs ${isDark
-                                                                        ? "text-slate-600"
-                                                                        : "text-slate-400"
-                                                                        }`}
-                                                                >
-                                                                    {
-                                                                        vendor.serialNumber
-                                                                    }
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-
-                                                    <td className="px-5 py-4">
-                                                        <p
-                                                            className={`text-sm font-medium ${isDark
-                                                                ? "text-slate-300"
-                                                                : "text-slate-700"
-                                                                }`}
-                                                        >
-                                                            {
-                                                                businessName
-                                                            }
-                                                        </p>
-
-                                                        <p
-                                                            className={`text-xs capitalize ${isDark
-                                                                ? "text-slate-600"
-                                                                : "text-slate-400"
-                                                                }`}
-                                                        >
-                                                            {vendor
-                                                                .business
-                                                                ?.type ||
-                                                                "No type"}
-                                                        </p>
-                                                    </td>
-
-                                                    <td
-                                                        className={`hidden px-5 py-4 text-sm md:table-cell ${isDark
-                                                            ? "text-slate-400"
-                                                            : "text-slate-600"
-                                                            }`}
-                                                    >
-                                                        {formatDate(
-                                                            vendor.onboardingSentAt
-                                                        )}
-                                                    </td>
-
-                                                    <td className="px-5 py-4">
-                                                        <Badge
-                                                            status={
-                                                                status
-                                                            }
-                                                            isDark={
-                                                                isDark
-                                                            }
-                                                        />
-                                                    </td>
-
-                                                    <td className="px-5 py-4">
-                                                        <div className="flex items-center justify-end gap-2">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() =>
-                                                                    getVendorDetails(
-                                                                        vendor
-                                                                    )
-                                                                }
-                                                                disabled={
-                                                                    detailLoading
-                                                                }
-                                                                className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${isDark
-                                                                    ? "border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
-                                                                    : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
-                                                                    }`}
-                                                            >
-                                                                {detailLoading
-                                                                    ? "Loading..."
-                                                                    : "View details"}
-                                                            </button>
-
-                                                            {status ===
-                                                                "pending" && (
-                                                                    <>
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() =>
-                                                                                openConfirm(
-                                                                                    vendor,
-                                                                                    "reject"
-                                                                                )
-                                                                            }
-                                                                            className="rounded-lg border border-rose-500/30 bg-transparent px-3 py-1.5 text-xs font-semibold text-rose-500 transition hover:bg-rose-500/10"
-                                                                        >
-                                                                            Reject
-                                                                        </button>
-
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() =>
-                                                                                openConfirm(
-                                                                                    vendor,
-                                                                                    "approve"
-                                                                                )
-                                                                            }
-                                                                            className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700"
-                                                                        >
-                                                                            Approve
-                                                                        </button>
-                                                                    </>
-                                                                )}
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        }
-                                    )
+                                                    <Eye className="w-3.5 h-3.5 text-emerald-500" />
+                                                    <span>Review Application</span>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
                                 )}
                             </tbody>
                         </table>
                     </div>
                 </div>
-            </main>
+            </div>
 
-            <DetailsModal
-                vendor={detail}
-                onClose={() =>
-                    setDetail(null)
-                }
-                onDecide={openConfirm}
-                isDark={isDark}
-            />
+            {/* Verification Review Modal / Modal Drawer */}
+            {selectedVendorId && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+                    <div className={`w-full max-w-4xl max-h-[90vh] rounded-2xl border shadow-2xl overflow-hidden flex flex-col my-auto ${isDark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-slate-200 text-slate-800'
+                        }`}>
 
-            <ConfirmModal
-                request={confirmReq}
-                onCancel={() =>
-                    setConfirmReq(null)
-                }
-                onConfirm={handleConfirm}
-                isDark={isDark}
-            />
+                        {/* Modal Header */}
+                        <div className="p-5 border-b border-slate-200 dark:border-gray-700 flex items-center justify-between">
+                            <div className="flex items-center gap-2.5">
+                                <ShieldCheck className="w-6 h-6 text-emerald-500" />
+                                <div>
+                                    <h3 className="font-bold text-base">
+                                        Verification Review: {vendorDetails?.business?.storeName || vendorDetails?.fullName}
+                                    </h3>
+                                    <p className="text-[11px] text-slate-400">
+                                        Serial: {vendorDetails?.serialNumber || 'N/A'} · Status: <span className="uppercase text-amber-500 font-bold">{vendorDetails?.verificationStatus || 'Pending'}</span>
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={closeVendorReview}
+                                className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-slate-100 text-slate-500'
+                                    }`}
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {/* Modal Content */}
+                        <div className="p-6 overflow-y-auto space-y-6">
+                            {loadingDetails ? (
+                                <div className="py-16 text-center text-slate-400">
+                                    <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2 text-emerald-500" />
+                                    Fetching full onboarding verification files...
+                                </div>
+                            ) : vendorDetails ? (
+                                <>
+                                    {/* Store Banner & Brand Header */}
+                                    {vendorDetails.business?.banner && (
+                                        <div className="relative h-36 w-full rounded-xl overflow-hidden border border-slate-200 dark:border-gray-700">
+                                            <img src={vendorDetails.business.banner} alt="Store Banner" className="w-full h-full object-cover" />
+                                        </div>
+                                    )}
+
+                                    {/* Merchant & Business Basic Cards */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {/* Personal / Student Info */}
+                                        <div className={`p-4 rounded-xl border ${isDark ? 'bg-gray-900/40 border-gray-700' : 'bg-slate-50/60 border-slate-200'} space-y-3`}>
+                                            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                                                <User className="w-3.5 h-3.5 text-emerald-500" /> Personal & Student Profile
+                                            </h4>
+
+                                            <div className="flex items-center gap-3">
+                                                {vendorDetails.student?.profilePhoto ? (
+                                                    <img src={vendorDetails.student.profilePhoto} alt="" className="w-12 h-12 rounded-full object-cover border" />
+                                                ) : (
+                                                    <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-gray-700 flex items-center justify-center font-bold text-slate-500">
+                                                        {vendorDetails.fullName?.charAt(0)}
+                                                    </div>
+                                                )}
+                                                <div>
+                                                    <p className="font-bold text-sm">{vendorDetails.fullName}</p>
+                                                    <p className="text-xs text-slate-400 flex items-center gap-1">
+                                                        <Mail className="w-3 h-3" /> {vendorDetails.email}
+                                                    </p>
+                                                    <p className="text-xs text-slate-400 flex items-center gap-1">
+                                                        <Phone className="w-3 h-3" /> {vendorDetails.phoneNo}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="pt-2 border-t border-slate-200 dark:border-gray-700/60 space-y-1 text-xs">
+                                                <p className="flex justify-between">
+                                                    <span className="text-slate-400">Gender:</span>
+                                                    <span className="font-semibold capitalize">{vendorDetails.student?.gender || 'N/A'}</span>
+                                                </p>
+                                                <p className="flex justify-between">
+                                                    <span className="text-slate-400">Matriculation No:</span>
+                                                    <span className="font-mono font-bold text-emerald-500">{vendorDetails.student?.matricNumber || 'N/A'}</span>
+                                                </p>
+                                                <p className="flex justify-between">
+                                                    <span className="text-slate-400">Faculty / Dept:</span>
+                                                    <span className="font-semibold">{vendorDetails.student?.faculty || 'N/A'} / {vendorDetails.student?.department || 'N/A'}</span>
+                                                </p>
+                                                <p className="flex justify-between">
+                                                    <span className="text-slate-400">Academic Level:</span>
+                                                    <span className="font-semibold">{vendorDetails.student?.level || 'N/A'}</span>
+                                                </p>
+                                                <p className="flex justify-between">
+                                                    <span className="text-slate-400">Residence:</span>
+                                                    <span className="font-semibold capitalize">{vendorDetails.student?.residence || 'N/A'}</span>
+                                                </p>
+                                                <p className="flex justify-between">
+                                                    <span className="text-slate-400">Address:</span>
+                                                    <span className="font-semibold">{vendorDetails.student?.address || 'N/A'}</span>
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* Business Profile */}
+                                        <div className={`p-4 rounded-xl border ${isDark ? 'bg-gray-900/40 border-gray-700' : 'bg-slate-50/60 border-slate-200'} space-y-3`}>
+                                            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                                                <Store className="w-3.5 h-3.5 text-emerald-500" /> Business Details
+                                            </h4>
+
+                                            <div className="flex items-center gap-3">
+                                                {vendorDetails.business?.logo ? (
+                                                    <img src={vendorDetails.business.logo} alt="" className="w-12 h-12 rounded-xl object-cover border" />
+                                                ) : (
+                                                    <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold">
+                                                        <Store className="w-6 h-6" />
+                                                    </div>
+                                                )}
+                                                <div>
+                                                    <p className="font-bold text-sm">{vendorDetails.business?.storeName || 'N/A'}</p>
+                                                    <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-500 uppercase mt-1">
+                                                        {vendorDetails.business?.type || 'Merchant'}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <div className="pt-2 border-t border-slate-200 dark:border-gray-700/60 text-xs space-y-2">
+                                                <div>
+                                                    <span className="text-slate-400 block text-[11px] mb-0.5">Store Description:</span>
+                                                    <p className={`p-2.5 rounded-lg border text-xs leading-relaxed ${isDark ? 'bg-gray-900/60 border-gray-700 text-gray-300' : 'bg-white border-slate-200 text-slate-600'
+                                                        }`}>
+                                                        {vendorDetails.business?.description || 'No description provided.'}
+                                                    </p>
+                                                </div>
+
+                                                {/* Social Links */}
+                                                <div className="pt-1">
+                                                    <span className="text-slate-400 block text-[11px] mb-1">Social Handles:</span>
+                                                    <div className="flex flex-wrap gap-2 text-[11px]">
+                                                        {vendorDetails.business?.socials?.whatsapp && (
+                                                            <span className="px-2 py-1 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 font-mono">
+                                                                WA: {vendorDetails.business.socials.whatsapp}
+                                                            </span>
+                                                        )}
+                                                        {vendorDetails.business?.socials?.instagram && (
+                                                            <span className="px-2 py-1 rounded bg-pink-500/10 text-pink-500 border border-pink-500/20 font-mono">
+                                                                IG: @{vendorDetails.business.socials.instagram}
+                                                            </span>
+                                                        )}
+                                                        {vendorDetails.business?.socials?.tiktok && (
+                                                            <span className="px-2 py-1 rounded bg-blue-500/10 text-blue-500 border border-blue-500/20 font-mono">
+                                                                TikTok: {vendorDetails.business.socials.tiktok}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Verification Documents Section */}
+                                    <div className={`p-4 rounded-xl border ${isDark ? 'bg-gray-900/40 border-gray-700' : 'bg-slate-50/60 border-slate-200'} space-y-3`}>
+                                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                                            <FileText className="w-3.5 h-3.5 text-emerald-500" /> Verification Documents Submitted
+                                        </h4>
+
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            {/* School ID Card */}
+                                            <div className={`p-3 rounded-xl border flex flex-col items-center text-center gap-2 ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200'
+                                                }`}>
+                                                <span className="text-xs font-bold text-slate-400">School ID Card</span>
+                                                {vendorDetails.verificationDocuments?.schoolIdCard ? (
+                                                    <div className="w-full space-y-2">
+                                                        <img
+                                                            src={vendorDetails.verificationDocuments.schoolIdCard}
+                                                            alt="School ID"
+                                                            className="h-32 w-full object-cover rounded-lg border"
+                                                        />
+                                                        <a
+                                                            href={vendorDetails.verificationDocuments.schoolIdCard}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            className="inline-flex items-center gap-1 text-xs text-blue-500 hover:underline font-semibold"
+                                                        >
+                                                            <ExternalLink className="w-3.5 h-3.5" /> View Full Image
+                                                        </a>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-xs text-rose-500 py-4 font-medium">Document Missing</p>
+                                                )}
+                                            </div>
+
+                                            {/* National ID */}
+                                            <div className={`p-3 rounded-xl border flex flex-col items-center text-center gap-2 ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200'
+                                                }`}>
+                                                <span className="text-xs font-bold text-slate-400">National ID (NIN / Voter / Passport)</span>
+                                                {vendorDetails.verificationDocuments?.nationalId ? (
+                                                    <div className="w-full space-y-2">
+                                                        <img
+                                                            src={vendorDetails.verificationDocuments.nationalId}
+                                                            alt="National ID"
+                                                            className="h-32 w-full object-cover rounded-lg border"
+                                                        />
+                                                        <a
+                                                            href={vendorDetails.verificationDocuments.nationalId}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            className="inline-flex items-center gap-1 text-xs text-blue-500 hover:underline font-semibold"
+                                                        >
+                                                            <ExternalLink className="w-3.5 h-3.5" /> View Full Image
+                                                        </a>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-xs text-rose-500 py-4 font-medium">Document Missing</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Bank & Financial Details */}
+                                    <div className={`p-4 rounded-xl border ${isDark ? 'bg-gray-900/40 border-gray-700' : 'bg-slate-50/60 border-slate-200'} space-y-2`}>
+                                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                                            <CreditCard className="w-3.5 h-3.5 text-emerald-500" /> Payout Bank Details
+                                        </h4>
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                                            <div>
+                                                <span className="text-slate-400 block text-[10px]">Bank Name</span>
+                                                <span className="font-bold">{vendorDetails.bankDetails?.bankName || 'N/A'}</span>
+                                            </div>
+                                            <div>
+                                                <span className="text-slate-400 block text-[10px]">Account Name</span>
+                                                <span className="font-bold">{vendorDetails.bankDetails?.accountName || 'N/A'}</span>
+                                            </div>
+                                            <div>
+                                                <span className="text-slate-400 block text-[10px]">Account Number</span>
+                                                <span className="font-mono font-bold text-emerald-500">{vendorDetails.bankDetails?.accountNumber || 'N/A'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Policy Acceptance Terms */}
+                                    <div className={`p-4 rounded-xl border ${isDark ? 'bg-gray-900/40 border-gray-700' : 'bg-slate-50/60 border-slate-200'} space-y-2`}>
+                                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Policy Consent & Acceptance</h4>
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                                            <div className="flex items-center gap-1.5 text-slate-300">
+                                                {vendorDetails.terms?.acceptedVendorTerms ? (
+                                                    <CheckSquare className="w-4 h-4 text-emerald-500" />
+                                                ) : (
+                                                    <Square className="w-4 h-4 text-slate-500" />
+                                                )}
+                                                <span>Vendor Terms</span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 text-slate-300">
+                                                {vendorDetails.terms?.acceptedMarketplacePolicy ? (
+                                                    <CheckSquare className="w-4 h-4 text-emerald-500" />
+                                                ) : (
+                                                    <Square className="w-4 h-4 text-slate-500" />
+                                                )}
+                                                <span>Marketplace Policy</span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 text-slate-300">
+                                                {vendorDetails.terms?.acceptedFraudPolicy ? (
+                                                    <CheckSquare className="w-4 h-4 text-emerald-500" />
+                                                ) : (
+                                                    <Square className="w-4 h-4 text-slate-500" />
+                                                )}
+                                                <span>Fraud Policy</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Rejection Form Box (If actionType === 'reject') */}
+                                    {actionType === 'reject' && (
+                                        <div className="p-4 rounded-xl border border-rose-500/40 bg-rose-500/10 space-y-3 animate-fadeIn">
+                                            <h4 className="text-xs font-bold text-rose-500 uppercase tracking-wider flex items-center gap-1">
+                                                <AlertTriangle className="w-4 h-4" /> Reject Verification Request
+                                            </h4>
+                                            <p className="text-xs text-slate-300">
+                                                Please state the precise reason for rejection. This reason will be logged and communicated to the vendor.
+                                            </p>
+                                            <textarea
+                                                rows="3"
+                                                value={rejectionReason}
+                                                onChange={(e) => setRejectionReason(e.target.value)}
+                                                placeholder="e.g., School ID image is blurry, National ID number does not match provided name..."
+                                                className={`w-full p-3 text-xs rounded-xl border outline-none transition-all ${isDark ? 'bg-gray-900 border-rose-500/40 text-white' : 'bg-white border-rose-300 text-slate-800'
+                                                    }`}
+                                            />
+                                            <div className="flex justify-end gap-2 pt-1">
+                                                <button
+                                                    onClick={() => setActionType(null)}
+                                                    className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-600 hover:bg-slate-700 text-slate-300"
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    onClick={handleReject}
+                                                    disabled={submittingAction}
+                                                    className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-rose-600 hover:bg-rose-700 text-white flex items-center gap-1.5"
+                                                >
+                                                    {submittingAction && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                                                    Confirm Rejection
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            ) : null}
+                        </div>
+
+                        {/* Modal Footer Controls */}
+                        <div className="p-4 border-t border-slate-200 dark:border-gray-700 flex flex-wrap items-center justify-between gap-3">
+                            <button
+                                onClick={closeVendorReview}
+                                className={`px-4 py-2 text-xs font-semibold rounded-xl border transition-colors ${isDark ? 'border-gray-700 bg-gray-900 hover:bg-gray-800 text-gray-300' : 'border-slate-300 hover:bg-slate-100 text-slate-700'
+                                    }`}
+                            >
+                                Close Panel
+                            </button>
+
+                            <div className="flex items-center gap-2">
+                                {actionType !== 'reject' && (
+                                    <button
+                                        onClick={() => setActionType('reject')}
+                                        disabled={submittingAction}
+                                        className="px-4 py-2 text-xs font-semibold rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 flex items-center gap-1.5 transition-all"
+                                    >
+                                        <XCircle className="w-4 h-4" />
+                                        Reject Application
+                                    </button>
+                                )}
+
+                                <button
+                                    onClick={handleApprove}
+                                    disabled={submittingAction}
+                                    className="px-5 py-2 text-xs font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-md flex items-center gap-1.5 transition-all"
+                                >
+                                    {submittingAction ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                                    Approve Verification
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            )}
+
         </div>
     );
-};
-
-
-export default VendorApproval;
+}
