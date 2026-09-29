@@ -71,12 +71,14 @@ import VendorRecoverAccout from './pages/vendor/RecoverAccount';
 // Founder Pages
 import FounderLogin from './pages/founder/Login';
 import FounderDashboard from './pages/founder/Dashboard';
-import FounderUsers from './pages/founder/Users';
+import FounderUsers from './pages/founder/Product';
 import FounderAnalytics from './pages/founder/Analytics';
 import FounderVendors from './pages/founder/Vendors';
 import FounderBuyers from './pages/founder/Buyers';
 import FounderVendorApproval from './pages/founder/VendorApproval';
 import FounderOrder from './pages/founder/Order';
+import FounderProduct from './pages/founder/Product';
+import FounderActivities from './pages/founder/Activities';
 import FounderSettings from './pages/founder/Settings';
 
 import CartSync from './CartSync';
@@ -125,6 +127,7 @@ function App() {
           <Route element={<PublicLayout />}>
             <Route path="/" element={<Home />} />
             <Route path="/products" element={<Products />} />
+            <Route path="/common/search/products" element={<Products />} />
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/vendor/:vendorId" element={<VendorDetails />} />
             <Route path="/aboutus" element={<AboutUs />} />
@@ -455,14 +458,6 @@ function App() {
               }
             />
             <Route
-              path="/founder/users"
-              element={
-                <ProtectedRoute requiredRole="founder">
-                  <FounderUsers />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/founder/vendors"
               element={
                 <ProtectedRoute requiredRole="founder">
@@ -487,10 +482,18 @@ function App() {
               }
             />
             <Route
-              path="/founder/order"
+              path="/founder/orders"
               element={
                 <ProtectedRoute requiredRole="founder">
                   <FounderOrder />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/founder/products"
+              element={
+                <ProtectedRoute requiredRole="founder">
+                  <FounderProduct />
                 </ProtectedRoute>
               }
             />
@@ -503,10 +506,18 @@ function App() {
               }
             />
             <Route
+              path="/founder/activities"
+              element={
+                <ProtectedRoute requiredRole="founder">
+                  <FounderActivities />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/founder/profile"
               element={
                 <ProtectedRoute requiredRole="founder">
-                    <VendorProfile />
+                  <VendorProfile />
                 </ProtectedRoute>
               }
             />
@@ -514,7 +525,7 @@ function App() {
               path="/founder/settings"
               element={
                 <ProtectedRoute requiredRole="founder">
-                    <FounderSettings />
+                  <FounderSettings />
                 </ProtectedRoute>
               }
             />

@@ -65,6 +65,7 @@ const AddProduct = () => {
       stock: '',
       image: '',
       imageUrl: '',
+      visibility: null
     },
 
     validationSchema: Yup.object({
@@ -108,6 +109,9 @@ const AddProduct = () => {
       imageUrl: Yup.string()
         .url('Invalid URL')
         .nullable(),
+
+      visibility: Yup.boolean()
+        .required('Product visibility is required'),
     }),
 
     onSubmit: async (values, { resetForm }) => {
@@ -122,6 +126,7 @@ const AddProduct = () => {
         formData.append('originalPrice', Number(values.originalPrice || values.price));
         formData.append('category', values.category);
         formData.append('stock', Number(values.stock));
+        formData.append('visibility', values.visibility);
 
         if (values.subCategory) {
           formData.append('subCategory', values.subCategory);
@@ -591,6 +596,32 @@ const AddProduct = () => {
                 {formik.touched.stock && formik.errors.stock && (
                   <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1">
                     <span>●</span> {formik.errors.stock}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="visibility" className={`block text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                  Product Visibility <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <FaBox className={`absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
+                  <select
+                    name="visibility"
+                    id="visibility"
+                    value={formik.values.visibility === null ? '' : String(formik.values.visibility)}
+                    onChange={(e) => formik.setFieldValue('visibility', e.target.value === 'true')}
+                    onBlur={formik.handleBlur}
+                    className={`w-full pl-11 pr-4 py-3 rounded-lg border transition-all duration-200 ${isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-200 text-gray-900 focus:bg-white'} focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                  >
+                    <option value="">Select visibility</option>
+                    <option value="true">On</option>
+                    <option value="false">Off</option>
+                  </select>
+                </div>
+                {formik.touched.visibility && formik.errors.visibility && (
+                  <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1">
+                    <span>●</span> {formik.errors.visibility}
                   </p>
                 )}
               </div>

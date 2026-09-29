@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -7,7 +7,6 @@ import {
     FiSearch,
     FiMenu,
     FiX,
-    FiShoppingBag,
     FiMoon,
     FiSun
 } from 'react-icons/fi';
@@ -17,32 +16,78 @@ import NotificationBell from '../notifications/NotificationBell';
 import { getMessage } from '../../utils/apiResponse';
 import { useToast } from '../../context/ToastContext';
 import apiClient from '../../api/apiClient';
-import Logo from '/Campus_trade_logo_green_2.png'
+import Logo from '/Campus_trade_logo_green_2.png';
 
-const Navbar = () => {    
+const Navbar = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { isAuthenticated, user, role } = useSelector((state) => state.auth);
     const { items } = useSelector((state) => state.cart);
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
     const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState({
+        products: [],
+        vendors: [],
+    });
+
+    const [isSearching, setIsSearching] = useState(false);
+    const [showSearchResults, setShowSearchResults] = useState(false);
+    const searchRef = useRef(null);
+
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const { isDarkMode, toggleTheme } = useTheme();
     const { showToast } = useToast();
 
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (searchRef.current && !searchRef.current.contains(event.target)) {
+                setShowSearchResults(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Fetch live search results with a debounce effect
+    useEffect(() => {
+        const trimmedQuery = searchQuery.trim();
+        if (!trimmedQuery) {
+            setSearchResults({ products: [], vendors: [] });
+            setShowSearchResults(false);
+            return;
+        }
+
+        const fetchResults = async () => {
+            setIsSearching(true);
+            try {
+                const res = await apiClient.get(`/common/search?query=${encodeURIComponent(trimmedQuery)}`);
+                setSearchResults({
+                    products: res.data?.data?.products || [],
+                    vendors: res.data?.data?.vendors || [],
+                });
+                setShowSearchResults(true);
+            } catch (error) {
+                showToast("Failed to fetch live search results", error);
+            } finally {
+                setIsSearching(false);
+            }
+        };
+
+        const timer = setTimeout(fetchResults, 300);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
     const handleLogout = async () => {
         try {
             const res = await apiClient.post(`/auth/logout`);
-
             showToast(getMessage(res, "Logout successful"), 'success');
         } catch (error) {
             showToast(getMessage(error, 'Logout Failed'), 'error');
         } finally {
             localStorage.setItem("cart", JSON.stringify(items));
-
             dispatch(logout());
-
             setIsMenuOpen(false);
             setIsProfileMenuOpen(false);
 
@@ -58,12 +103,20 @@ const Navbar = () => {
 
     const cartItems = useSelector(state => state.cart.items);
 
-    const handleSearch = (e) => {
+    const handleSearchSubmit = (e) => {
         e.preventDefault();
         if (searchQuery.trim()) {
-            navigate(`/products?search=${encodeURIComponent(searchQuery)}`);
+            navigate(`/common/search/products?search=${encodeURIComponent(searchQuery)}`);
+            setShowSearchResults(false);
+            setSearchQuery('');
             setIsMenuOpen(false);
         }
+    };
+
+    const handleResultClick = (path) => {
+        navigate(path);
+        setShowSearchResults(false);
+        setSearchQuery('');
     };
 
     const getRoleBasedLinks = () => {
@@ -74,7 +127,9 @@ const Navbar = () => {
                     { name: 'Manage Buyers', path: '/founder/buyers' },
                     { name: 'Manage Vendors', path: '/founder/vendors' },
                     { name: 'Vendors Approval', path: '/founder/vendors-approval' },
-                    { name: 'Manage Order', path: '/founder/order' },
+                    { name: 'Manage Orders', path: '/founder/orders' },
+                    { name: 'Manage Products', path: '/founder/products' },
+                    { name: 'Manage Users Activities', path: '/founder/activities' },
                     { name: 'Analytics', path: '/founder/analytics' },
                 ];
             case 'vendor':
@@ -84,8 +139,6 @@ const Navbar = () => {
                     { name: 'Orders', path: '/vendor/orders' },
                     { name: 'Notifications', path: '/vendor/notifications' },
                     { name: 'Messages', path: '/vendor/messages' },
-                    // { name: 'Ratings & Reviews', path: '/vendor/ratings-reviews' },
-                    // { name: 'Reports', path: '/vendor/reports' },
                     { name: 'Request Refund', path: '/vendor/refund-requests' },
                     { name: 'Request Return', path: '/vendor/return-requests' },
                     { name: 'Analytics', path: '/vendor/analytics' },
@@ -100,8 +153,6 @@ const Navbar = () => {
                     { name: 'My Orders', path: '/buyer/orders' },
                     { name: 'Notifications', path: '/buyer/notifications' },
                     { name: 'Messages', path: '/buyer/messages' },
-                    // { name: 'Ratings & Reviews', path: '/buyer/ratings-reviews' },
-                    // { name: 'Reports', path: '/buyer/reports' },
                     { name: 'My Wishlist', path: '/buyer/wishlist' },
                     { name: 'My Profile', path: '/buyer/profile' },
                     { name: 'Settings', path: '/buyer/settings' },
@@ -124,7 +175,6 @@ const Navbar = () => {
                                 <span className="text-lg md:text-xl font-heading font-bold text-gray-900 dark:text-white leading-tight">
                                     CampusTrade
                                 </span>
-                                {/* Hidden subtext on mobile to save space */}
                                 <span className="hidden sm:block text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
                                     Independent student community platform
                                 </span>
@@ -132,25 +182,108 @@ const Navbar = () => {
                         </Link>
                     </div>
 
-                    {/* Search bar - Desktop (Centering improved) */}
-                    <div className="hidden md:flex flex-1 max-w-md lg:max-w-xl mx-4 lg:mx-8">
-                        <form onSubmit={handleSearch} className="w-full">
+                    {/* Search bar - Desktop with Dropdown */}
+                    <div className="hidden md:flex flex-1 max-w-md lg:max-w-xl mx-4 lg:mx-8 relative" ref={searchRef}>
+                        <form onSubmit={handleSearchSubmit} className="w-full">
                             <div className="relative">
                                 <input
                                     type="text"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
+                                    onFocus={() => {
+                                        if (searchQuery.trim()) setShowSearchResults(true);
+                                    }}
                                     placeholder="Search products..."
                                     className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 transition-all"
                                 />
                                 <FiSearch className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                             </div>
                         </form>
+
+                        {/* Search Dropdown Results */}
+                        {showSearchResults && (
+                            <div className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 max-h-96 overflow-y-auto z-50">
+                                {isSearching ? (
+                                    <div className="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                                        Searching...
+                                    </div>
+                                ) : searchResults.products.length === 0 && searchResults.vendors.length === 0 ? (
+                                    <div className="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                                        No results found for "{searchQuery}"
+                                    </div>
+                                ) : (
+                                    <div className="p-2 space-y-4">
+                                        {/* PRODUCTS SECTION */}
+                                        {searchResults.products.length > 0 && (
+                                            <div>
+                                                <div className="px-3 py-1 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                                                    Products
+                                                </div>
+                                                <div className="mt-1 space-y-1">
+                                                    {searchResults.products.map((product) => (
+                                                        <div
+                                                            key={product._id || product.id}
+                                                            onClick={() => handleResultClick(`/product/${product._id || product.id}`)}
+                                                            className="flex items-center space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg cursor-pointer transition-colors"
+                                                        >
+                                                            <img
+                                                                src={product.image || product.images?.[0] || 'https://via.placeholder.com/40'}
+                                                                alt={product.name}
+                                                                className="h-10 w-10 object-cover rounded-md flex-shrink-0"
+                                                            />
+                                                            <div className="flex flex-col truncate">
+                                                                <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                                                    {product.name}
+                                                                </span>
+                                                                <span className="text-xs text-green-600 dark:text-green-400 font-semibold">
+                                                                    ₦{product.price?.toLocaleString()}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* VENDORS SECTION */}
+                                        {searchResults.vendors.length > 0 && (
+                                            <div>
+                                                <div className="px-3 py-1 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider border-t border-gray-100 dark:border-gray-700 pt-3">
+                                                    Vendors
+                                                </div>
+                                                <div className="mt-1 space-y-1">
+                                                    {searchResults.vendors.map((vendor) => (
+                                                        <div
+                                                            key={vendor._id || vendor.id}
+                                                            onClick={() => handleResultClick(`/vendor/${vendor._id || vendor.id}`)}
+                                                            className="flex items-center space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg cursor-pointer transition-colors"
+                                                        >
+                                                            <img
+                                                                src={vendor.business?.logo || vendor.student?.profilePhoto || 'https://via.placeholder.com/40'}
+                                                                alt={vendor.storeName}
+                                                                className="h-10 w-10 object-cover rounded-full flex-shrink-0"
+                                                            />
+                                                            <div className="flex flex-col truncate">
+                                                                <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                                                    {vendor.storeName || vendor.fullName}
+                                                                </span>
+                                                                <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                                                    {vendor.category || vendor.bio || 'Verified Vendor'}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     {/* Right side icons */}
                     <div className="flex items-center space-x-1 sm:space-x-3">
-                        {/* Theme toggle - Always visible */}
                         <button
                             onClick={toggleTheme}
                             className="p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -160,7 +293,6 @@ const Navbar = () => {
 
                         <NotificationBell />
 
-                        {/* Cart icon - Always visible */}
                         <Link
                             to="/cart"
                             className="relative p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -241,8 +373,7 @@ const Navbar = () => {
             {isMenuOpen && (
                 <div className="md:hidden bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 animate-in slide-in-from-top-2 duration-200">
                     <div className="p-4 space-y-4">
-                        {/* Mobile search bar */}
-                        <form onSubmit={handleSearch}>
+                        <form onSubmit={handleSearchSubmit}>
                             <div className="relative">
                                 <input
                                     type="text"

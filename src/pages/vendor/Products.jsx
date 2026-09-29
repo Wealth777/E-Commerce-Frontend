@@ -60,7 +60,12 @@ const Products = () => {
   };
 
   const handleEdit = (product) => {
-    setEditingProduct({ ...product });
+    setEditingProduct({
+      ...product,
+      visibility: product.visibility === false || product.visibility === 'false'
+        ? false
+        : true,
+    });
     setModalOpen(true);
   };
 
@@ -87,6 +92,7 @@ const Products = () => {
       };
 
       formData.append('stock', editingProduct.stock);
+      formData.append('visibility', editingProduct.visibility === true ? 'true' : 'false');
 
       formData.append('image', editingProduct.image);
 
@@ -420,6 +426,21 @@ const Products = () => {
                     onChange={(e) => setEditingProduct({ ...editingProduct, image: e.target.value })}
                     className={`w-full px-4 py-3 rounded-xl border-2 ${isDark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'} focus:border-red-500 outline-none transition-all`}
                   />
+                </div>
+                <div>
+                  <label htmlFor="visibility" className={`block text-xs font-bold uppercase tracking-wider mb-1 ${secondaryText}`}>Product Visibility</label>
+                  <select
+                    id="visibility"
+                    value={editingProduct.visibility ? 'true' : 'false'}
+                    onChange={(e) => setEditingProduct({
+                      ...editingProduct,
+                      visibility: e.target.value === 'true',
+                    })}
+                    className={`w-full px-4 py-3 rounded-xl border-2 ${isDark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'} focus:border-red-500 outline-none transition-all`}
+                  >
+                    <option value="true">On</option>
+                    <option value="false">Off</option>
+                  </select>
                 </div>
               </div>
             </div>

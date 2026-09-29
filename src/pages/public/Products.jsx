@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { setProducts, setFilter, filterProducts } from '../../store/productSlice';
 import ProductCard from '../../components/cards/ProductCard';
@@ -17,6 +18,9 @@ const Products = () => {
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [searchParams] = useSearchParams();
+
+  const searchQuery = searchParams.get('search') || '';
 
   useEffect(() => {
     fetchProducts();

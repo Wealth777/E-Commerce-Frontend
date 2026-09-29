@@ -19,9 +19,9 @@ const useOrderSocket = () => {
         const socket = getNotificationSocket();
 
         if (!socket) {
-            console.warn(
-                "Order socket: shared notification socket is not available yet."
-            );
+            // console.warn(
+            //     "Order socket: shared notification socket is not available yet."
+            // );
             return;
         }
 
@@ -46,7 +46,7 @@ const useOrderSocket = () => {
         };
 
         const handleConnect = () => {
-            console.log("Order socket connected:", socket.id);
+            // console.log("Order socket connected:", socket.id);
             attachOrderListeners();
         };
 
