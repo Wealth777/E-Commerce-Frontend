@@ -204,7 +204,7 @@ const VendorReturnRequests = () => {
                         Order ID
                       </p>
                       <p className="font-mono text-sm uppercase font-semibold">
-                        {request.orderId?.slice(-8) || request._id?.slice(-8) || 'N/A'}
+                        {request.order?.code || request.orderId?.slice(-8) || request._id?.slice(-8) || 'N/A'}
                       </p>
                     </div>
 

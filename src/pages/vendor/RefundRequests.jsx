@@ -216,7 +216,7 @@ const VendorRefundRequests = () => {
                         Order ID
                       </p>
                       <p className="font-mono text-sm font-semibold uppercase">
-                        {request.orderId?.slice(-8) || request._id?.slice(-8) || 'N/A'}
+                        {request.order?.code || request.orderId?.slice(-8) || request._id?.slice(-8) || 'N/A'}
                       </p>
                     </div>
 
@@ -235,8 +235,7 @@ const VendorRefundRequests = () => {
                           Customer
                         </p>
                         <p className={`text-sm font-semibold ${textColor}`}>
-                          {request.buyerInfo?.username ||
-                            request.buyerInfo?.fullName ||
+                          {request.buyerInfo?.fullName ||
                             'Unknown'}
                         </p>
                         <p className={`text-xs ${secondaryText}`}>

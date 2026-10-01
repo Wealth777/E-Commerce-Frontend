@@ -271,7 +271,7 @@ const App = () => {
 
                 {/* Right Column: Activity & Support */}
                 <div className="space-y-6">
-                  <section>
+                  {/* <section>
                     <h3 className={`text-lg font-bold ${textColor} mb-4`}>Recent Activity</h3>
                     <div className={`${cardBg} border ${borderColor} rounded-2xl p-5 shadow-sm`}>
                       {activity?.length > 0 ? (
@@ -295,6 +295,59 @@ const App = () => {
                         <div className="text-center py-10">
                           <Clock className={`w-10 h-10 ${subTextColor} mx-auto mb-3 opacity-20`} />
                           <p className={`text-sm ${subTextColor}`}>No activity recorded yet.</p>
+                        </div>
+                      )}
+                    </div>
+                  </section> */}
+
+                  <section>
+                    <h3 className={`text-lg font-bold ${textColor} mb-4`}>Recent Activity</h3>
+                    <div className={`${cardBg} border ${borderColor} rounded-2xl p-5 shadow-sm`}>
+                      {activity?.length > 0 ? (
+                        <div className="space-y-3">
+                          {activity.map((item, index) => {
+                            const actionText = typeof formatAction === 'function' ? formatAction(item.action) : item.action;
+
+                            return (
+                              <div
+                                key={item._id || index}
+                                className={`${isDark ? 'bg-gray-900/60' : 'bg-gray-50/80'} rounded-xl p-4 border ${borderColor} transition-all hover:shadow-sm`}
+                              >
+                                <div className="flex justify-between items-start gap-3 mb-1.5">
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                                    <p className={`text-sm font-semibold truncate ${textColor}`}>
+                                      {actionText}
+                                    </p>
+                                  </div>
+                                  <span className={`text-[11px] font-medium shrink-0 ${subTextColor}`}>
+                                    {item.createdAt ? new Date(item.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
+                                  </span>
+                                </div>
+
+                                <p className={`text-xs pl-4 ${subTextColor}`}>
+                                  {item.entity || 'Account activity updated'}
+                                </p>
+
+                                {/* Friendly metadata chip instead of raw JSON code box */}
+                                {item.metadata && typeof item.metadata === 'object' && Object.keys(item.metadata).length > 0 && (
+                                  <div className="mt-2.5 ml-4 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                                    <span>Changes: {Object.keys(item.metadata).join(', ')}</span>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center py-10 text-center">
+                          <div className={`p-3 rounded-full ${isDark ? 'bg-gray-800' : 'bg-gray-100'} mb-3`}>
+                            <Clock className={`w-6 h-6 ${subTextColor} opacity-40`} />
+                          </div>
+                          <p className={`text-sm font-medium ${textColor}`}>No activity recorded yet</p>
+                          <p className={`text-xs mt-1 ${subTextColor} max-w-xs`}>
+                            When changes happen to your account, security settings, or inventory, they will appear right here.
+                          </p>
                         </div>
                       )}
                     </div>

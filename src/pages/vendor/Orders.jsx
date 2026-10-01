@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -9,7 +9,7 @@ import {
   FaUser,
   FaShippingFast,
 } from "react-icons/fa";
-import { ArrowLeft, RefreshCw } from "lucide-react";
+import { ArrowLeft, RefreshCw, Search, X, ShoppingBag } from "lucide-react";
 
 import { useTheme } from "../../context/ThemeContext";
 import { useToast } from "../../context/ToastContext";
@@ -28,6 +28,7 @@ const VendorOrders = () => {
   const { showToast } = useToast();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const [searchQuery, setSearchQuery] = useState("");
 
   const {
     orders = [],
@@ -60,6 +61,32 @@ const VendorOrders = () => {
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
+
+  const filteredOrders = useMemo(() => {
+    const query = searchQuery
+      .trim()
+      .toLowerCase()
+      .replace(/^#/, "");
+
+    return [...orders]
+      .filter((order) => {
+        if (!query) return true;
+
+        const orderCode = (
+          order?.code ||
+          order?._id?.toString().slice(-8)
+        )
+          ?.toString()
+          .toLowerCase();
+
+        return orderCode?.includes(query);
+      })
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt || 0) -
+          new Date(a.createdAt || 0)
+      );
+  }, [orders, searchQuery]);
 
   const totalRevenue = useMemo(() => {
     return orders.reduce((total, order) => {
@@ -189,11 +216,10 @@ const VendorOrders = () => {
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className={`group inline-flex items-center gap-2 text-sm mb-4 rounded-full px-3 py-1.5 transition-colors ${
-            isDark
-              ? "bg-zinc-900/70 hover:bg-zinc-800 text-zinc-300 ring-1 ring-white/10"
-              : "bg-white/70 hover:bg-white text-zinc-600 ring-1 ring-zinc-900/5"
-          }`}
+          className={`group inline-flex items-center gap-2 text-sm mb-4 rounded-full px-3 py-1.5 transition-colors ${isDark
+            ? "bg-zinc-900/70 hover:bg-zinc-800 text-zinc-300 ring-1 ring-white/10"
+            : "bg-white/70 hover:bg-white text-zinc-600 ring-1 ring-zinc-900/5"
+            }`}
         >
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
           Back
@@ -222,9 +248,8 @@ const VendorOrders = () => {
                 </p>
 
                 <p
-                  className={`text-xl font-black ${
-                    isDark ? "text-green-400" : "text-green-600"
-                  }`}
+                  className={`text-xl font-black ${isDark ? "text-green-400" : "text-green-600"
+                    }`}
                 >
                   {formatCurrency(totalRevenue)}
                 </p>
@@ -243,6 +268,53 @@ const VendorOrders = () => {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Search */}
+        <div className="mb-6 mt-6">
+          <div
+            className={`relative flex items-center rounded-2xl border px-4 py-3 transition-colors ${isDark
+              ? "bg-gray-900 border-gray-800"
+              : "bg-white border-gray-200"
+              }`}
+          >
+            <Search
+              className={`w-5 h-5 mr-3 ${isDark ? "text-gray-500" : "text-gray-400"
+                }`}
+            />
+
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by order code..."
+              className={`w-full bg-transparent outline-none text-sm ${isDark
+                ? "text-white placeholder:text-gray-500"
+                : "text-gray-900 placeholder:text-gray-400"
+                }`}
+            />
+
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className={`p-1 rounded-full transition-colors ${isDark
+                  ? "text-gray-400 hover:bg-gray-800 hover:text-white"
+                  : "text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+                  }`}
+                aria-label="Clear search"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          {searchQuery && (
+            <p className={`mt-2 text-xs ${secondaryText}`}>
+              {filteredOrders.length}{" "}
+              {filteredOrders.length === 1 ? "order" : "orders"} found
+            </p>
+          )}
         </div>
 
         {/* Loading */}
@@ -276,25 +348,51 @@ const VendorOrders = () => {
               Try Again
             </button>
           </div>
-        ) : orders.length === 0 ? (
+        ) : filteredOrders.length === 0 ? (
           <div
-            className={`${cardBg} border-2 border-dashed rounded-[2.5rem] p-16 text-center shadow-sm mt-6`}
+            className={`${cardBg} border-2 border-dashed rounded-[2.5rem] p-16 text-center shadow-sm`}
           >
             <div className="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
-              <FaBox size={32} className="text-gray-400" />
+              <FaBox
+                size={32}
+                className="text-gray-400"
+              />
             </div>
 
-            <h2 className={`text-2xl font-bold ${textColor}`}>
-              No sales yet
+            <h2 className="text-2xl font-bold mb-2">
+              {searchQuery
+                ? "No matching orders"
+                : "No orders found"}
             </h2>
 
-            <p className={`${secondaryText} max-w-xs mx-auto mt-2`}>
-              Your store orders will appear here once customers start buying.
+            <p
+              className={`${secondaryText} max-w-xs mx-auto mb-8`}
+            >
+              {searchQuery
+                ? `No order matches "${searchQuery}". Try another order code.`
+                : "Looks like you haven't made any purchases yet."}
             </p>
+
+            {searchQuery ? (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="inline-flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-green-700 transition-all duration-200"
+              >
+                <X className="w-5 h-5" />
+                Clear Search
+              </button>
+            ) : (
+              <Link to="/products">
+                <button className="inline-flex items-center gap-2 bg-white text-green-600 px-6 py-3 rounded-xl font-semibold hover:bg-green-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 shadow-green-600/20">
+                  <ShoppingBag />
+                  Start Shopping
+                </button>
+              </Link>
+            )}
           </div>
         ) : (
           <div className="space-y-6 mt-6">
-            {orders.map((order) => {
+            {filteredOrders.map((order) => {
               const items = order?.items || [];
               const firstItem = items[0];
               const paymentStatus =
@@ -311,9 +409,8 @@ const VendorOrders = () => {
                   <div className="px-6 py-4 border-b border-inherit flex flex-wrap items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                       <div
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                          isDark ? "bg-gray-800" : "bg-gray-50"
-                        }`}
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? "bg-gray-800" : "bg-gray-50"
+                          }`}
                       >
                         <FaUser className="text-blue-500" />
                       </div>
@@ -325,6 +422,15 @@ const VendorOrders = () => {
 
                         <p className={`font-bold text-sm ${textColor}`}>
                           {order.buyer?.fullName || "Guest User"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-gray-500 uppercase tracking-tighter">
+                          Order REP
+                        </p>
+
+                        <p className={`font-bold text-sm ${textColor}`}>
+                          {order.code || "#" + order._id?.toString().slice(-8).toUpperCase() || "N/A"}
                         </p>
                       </div>
                     </div>
@@ -380,11 +486,10 @@ const VendorOrders = () => {
                               return (
                                 <div
                                   key={`${order._id}-${index}`}
-                                  className={`w-12 h-12 rounded-xl border-2 ${
-                                    isDark
-                                      ? "border-gray-900 bg-gray-800"
-                                      : "border-white bg-gray-100"
-                                  } flex items-center justify-center overflow-hidden`}
+                                  className={`w-12 h-12 rounded-xl border-2 ${isDark
+                                    ? "border-gray-900 bg-gray-800"
+                                    : "border-white bg-gray-100"
+                                    } flex items-center justify-center overflow-hidden`}
                                 >
                                   {image ? (
                                     <img
@@ -449,11 +554,10 @@ const VendorOrders = () => {
                         <Link
                           to={`/vendor/orders/${order._id}`}
                           aria-label={`View order ${order._id}`}
-                          className={`p-4 rounded-2xl ${
-                            isDark
-                              ? "bg-gray-800 hover:bg-gray-700"
-                              : "bg-yellow-50 hover:bg-yellow-100"
-                          } transition-all text-green-600 shadow-sm`}
+                          className={`p-4 rounded-2xl ${isDark
+                            ? "bg-gray-800 hover:bg-gray-700"
+                            : "bg-yellow-50 hover:bg-yellow-100"
+                            } transition-all text-green-600 shadow-sm`}
                         >
                           <FaChevronRight />
                         </Link>

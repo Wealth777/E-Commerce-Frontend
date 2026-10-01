@@ -262,7 +262,7 @@ const VendorDashboard = () => {
 
           {/* Sidebar Section */}
           <div className="space-y-6">
-            <div>
+            {/* <div>
               <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'} mb-4`}>
                 Recent Activity
               </h3>
@@ -295,10 +295,79 @@ const VendorDashboard = () => {
                   </div>
                 )}
               </div>
+            </div> */}
+
+            <div>
+              <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'} mb-4`}>
+                Recent Activity
+              </h3>
+              <div className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} border rounded-2xl shadow-sm p-5 md:p-6`}>
+                {activity?.length > 0 ? (
+                  <div className="space-y-4">
+                    {activity.map((item, index) => {
+                      // You can map raw actions to clean user-facing descriptions here if needed
+                      const actionText = formatAction ? formatAction(item.action) : item.action;
+
+                      return (
+                        <div
+                          key={item._id || index}
+                          className={`flex items-start gap-4 p-4 rounded-xl border transition-all ${isDark
+                              ? 'bg-gray-900/50 border-gray-700/60 hover:border-gray-600'
+                              : 'bg-gray-50/70 border-gray-100 hover:border-gray-200'
+                            }`}
+                        >
+                          {/* Activity Status Icon / Indicator */}
+                          <div className={`p-2.5 rounded-xl shrink-0 mt-0.5 ${isDark ? 'bg-gray-800 text-emerald-400' : 'bg-emerald-50 text-emerald-600'
+                            }`}>
+                            <Clock className="w-4 h-4" />
+                          </div>
+
+                          {/* Activity Details */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2 mb-1">
+                              <h4 className={`text-sm font-semibold truncate ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                                {actionText}
+                              </h4>
+                              <span className={`text-xs font-medium shrink-0 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                                {item.createdAt ? new Date(item.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
+                              </span>
+                            </div>
+
+                            <p className={`text-xs leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                              {item.entity || 'Account updated successfully'}
+                            </p>
+
+                            {/* Clean inline details instead of raw JSON code box */}
+                            {item.metadata && typeof item.metadata === 'object' && Object.keys(item.metadata).length > 0 && (
+                              <div className={`mt-2.5 inline-flex items-center gap-2 px-2.5 py-1 rounded-lg text-xs ${isDark ? 'bg-gray-800/80 text-gray-300' : 'bg-gray-200/60 text-gray-700'
+                                }`}>
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                <span>Updated {Object.keys(item.metadata).join(', ')}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <div className={`p-4 rounded-full ${isDark ? 'bg-gray-700/50' : 'bg-gray-100'} mb-3`}>
+                      <Clock className={`w-6 h-6 ${isDark ? 'text-gray-400' : 'text-gray-400'}`} />
+                    </div>
+                    <p className={`text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                      No activity yet
+                    </p>
+                    <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                      When changes or actions happen on your account, they will show up here.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Store Status Card */}
-            <div className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} border rounded-xl p-5 md:p-6`}>
+            {/* <div className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} border rounded-xl p-5 md:p-6`}>
               <h4 className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'} mb-4`}>
                 Store Status
               </h4>
@@ -316,7 +385,7 @@ const VendorDashboard = () => {
                   campustrade.com/{user?.store?.storeName?.toLowerCase().replace(/\s+/g, '-') || 'shop'}
                 </p>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </main>

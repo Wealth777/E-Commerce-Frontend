@@ -295,7 +295,7 @@ export default function OrdersDetails() {
 
     try {
       await navigator.clipboard.writeText(
-        order._id.toString()
+        order.code || "#" + order._id.toString().slice(-8).toUpperCase()
       );
 
       setCopied(true);
@@ -508,12 +508,11 @@ export default function OrdersDetails() {
 
   const statusConfig = getStatusConfig(order.status);
 
-  const orderRef = order._id
-    ? `#${order._id
-      .toString()
-      .slice(-8)
-      .toUpperCase()}`
-    : "N/A";
+  const orderRef = order.code
+    ? order.code
+    : order._id
+      ? `#${order._id.toString().slice(-8).toUpperCase()}`
+      : "N/A";
 
   return (
     <div
@@ -521,8 +520,8 @@ export default function OrdersDetails() {
     >
       <div
         className={`sticky top-0 z-30 ${isDark
-            ? "bg-[#0a0a0f]/80"
-            : "bg-gray-50/80"
+          ? "bg-[#0a0a0f]/80"
+          : "bg-gray-50/80"
           } backdrop-blur-xl border-b ${cardBorder}`}
       >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
@@ -596,8 +595,8 @@ export default function OrdersDetails() {
                 actionLoading === "deliver"
               }
               className={`px-4 py-2 rounded-lg text-sm text-white bg-green-600 ${order.status !== "shipped"
-                  ? "opacity-40 cursor-not-allowed"
-                  : "hover:bg-green-700"
+                ? "opacity-40 cursor-not-allowed"
+                : "hover:bg-green-700"
                 }`}
             >
               {actionLoading === "deliver"
@@ -612,8 +611,8 @@ export default function OrdersDetails() {
                 actionLoading === "cancel"
               }
               className={`px-4 py-2 rounded-lg text-sm text-white bg-red-600 ${order.status !== "pending"
-                  ? "opacity-40 cursor-not-allowed"
-                  : "hover:bg-red-700"
+                ? "opacity-40 cursor-not-allowed"
+                : "hover:bg-red-700"
                 }`}
             >
               {actionLoading === "cancel"
@@ -806,8 +805,8 @@ export default function OrdersDetails() {
 
                   <span
                     className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold ${isDark
-                        ? "bg-white/5"
-                        : "bg-gray-100"
+                      ? "bg-white/5"
+                      : "bg-gray-100"
                       } ${textSecondary}`}
                   >
                     <Truck className="w-3 h-3" />
@@ -837,9 +836,9 @@ export default function OrdersDetails() {
 
                   <p
                     className={`text-xs font-bold uppercase ${order.payment?.status ===
-                        "paid"
-                        ? "text-emerald-500"
-                        : "text-amber-500"
+                      "paid"
+                      ? "text-emerald-500"
+                      : "text-amber-500"
                       }`}
                   >
                     {order.payment?.status?.toUpperCase() ||
@@ -945,8 +944,8 @@ export default function OrdersDetails() {
 
                   <span
                     className={`text-xl font-extrabold ${isDark
-                        ? "text-green-400"
-                        : "text-green-600"
+                      ? "text-green-400"
+                      : "text-green-600"
                       }`}
                   >
                     ₦
@@ -1031,8 +1030,8 @@ export default function OrdersDetails() {
                         {order.returnRequest?.response && (
                           <div
                             className={`${isDark
-                                ? "bg-gray-900"
-                                : "bg-gray-50"
+                              ? "bg-gray-900"
+                              : "bg-gray-50"
                               } p-3 rounded-xl mt-3`}
                           >
                             <strong>
@@ -1113,8 +1112,8 @@ export default function OrdersDetails() {
                         {order.refundRequest?.response && (
                           <div
                             className={`${isDark
-                                ? "bg-gray-900"
-                                : "bg-gray-50"
+                              ? "bg-gray-900"
+                              : "bg-gray-50"
                               } p-3 rounded-xl mt-3`}
                           >
                             <strong>

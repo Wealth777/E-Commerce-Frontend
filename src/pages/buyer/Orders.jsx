@@ -12,7 +12,7 @@ import {
   FaShippingFast,
 } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, ShoppingBag } from "lucide-react";
+import { ArrowLeft, ShoppingBag, Search, X } from "lucide-react";
 import Loading from "../../components/layout/Loding";
 import { setOrders } from "../../store/orderSlice";
 
@@ -27,6 +27,7 @@ const Orders = () => {
   );
 
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -52,12 +53,30 @@ const Orders = () => {
   }, [fetchOrders]);
 
   const groupedOrders = useMemo(() => {
-    return [...orders].sort(
-      (a, b) =>
-        new Date(b.createdAt || 0) -
-        new Date(a.createdAt || 0)
-    );
-  }, [orders]);
+    const query = searchQuery
+      .trim()
+      .toLowerCase()
+      .replace(/^#/, "");
+
+    return [...orders]
+      .filter((order) => {
+        if (!query) return true;
+
+        const orderCode = (
+          order?.code ||
+          order?._id?.toString().slice(-8)
+        )
+          ?.toString()
+          .toLowerCase();
+
+        return orderCode?.includes(query);
+      })
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt || 0) -
+          new Date(a.createdAt || 0)
+      );
+  }, [orders, searchQuery]);
 
   const getPaymentStyle = (status) => {
     switch (status?.toLowerCase()) {
@@ -226,6 +245,53 @@ const Orders = () => {
           </div>
         </div>
 
+        {/* Search */}
+        <div className="mb-6">
+          <div
+            className={`relative flex items-center rounded-2xl border px-4 py-3 transition-colors ${isDark
+              ? "bg-gray-900 border-gray-800"
+              : "bg-white border-gray-200"
+              }`}
+          >
+            <Search
+              className={`w-5 h-5 mr-3 ${isDark ? "text-gray-500" : "text-gray-400"
+                }`}
+            />
+
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by order code..."
+              className={`w-full bg-transparent outline-none text-sm ${isDark
+                ? "text-white placeholder:text-gray-500"
+                : "text-gray-900 placeholder:text-gray-400"
+                }`}
+            />
+
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className={`p-1 rounded-full transition-colors ${isDark
+                  ? "text-gray-400 hover:bg-gray-800 hover:text-white"
+                  : "text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+                  }`}
+                aria-label="Clear search"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          {searchQuery && (
+            <p className={`mt-2 text-xs ${secondaryText}`}>
+              {groupedOrders.length}{" "}
+              {groupedOrders.length === 1 ? "order" : "orders"} found
+            </p>
+          )}
+        </div>
+
         {/* Error */}
         {error && !isLoading && (
           <div className="mb-6 rounded-2xl border border-red-500/20 bg-red-500/10 p-4">
@@ -249,6 +315,36 @@ const Orders = () => {
           <div className="flex flex-col items-center justify-center py-20 space-y-4">
             <Loading text="Retrieving your orders..." />
           </div>
+          // ) : groupedOrders.length === 0 ? (
+          //   <div
+          //     className={`${cardBg} border-2 border-dashed rounded-[2.5rem] p-16 text-center shadow-sm`}
+          //   >
+          //     <div className="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
+          //       <FaBox
+          //         size={32}
+          //         className="text-gray-400"
+          //       />
+          //     </div>
+
+          //     <h2 className="text-2xl font-bold mb-2">
+          //       No orders found
+          //     </h2>
+
+          //     <p
+          //       className={`${secondaryText} max-w-xs mx-auto mb-8`}
+          //     >
+          //       Looks like you haven't made any purchases
+          //       yet.
+          //     </p>
+
+          //     <Link to="/products">
+          //       <button className="inline-flex items-center gap-2 bg-white text-green-600 px-6 py-3 rounded-xl font-semibold hover:bg-green-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 shadow-green-600/20">
+          //         <ShoppingBag />
+          //         Start Shopping
+          //       </button>
+          //     </Link>
+          //   </div>
+          // )
         ) : groupedOrders.length === 0 ? (
           <div
             className={`${cardBg} border-2 border-dashed rounded-[2.5rem] p-16 text-center shadow-sm`}
@@ -261,22 +357,35 @@ const Orders = () => {
             </div>
 
             <h2 className="text-2xl font-bold mb-2">
-              No orders found
+              {searchQuery
+                ? "No matching orders"
+                : "No orders found"}
             </h2>
 
             <p
               className={`${secondaryText} max-w-xs mx-auto mb-8`}
             >
-              Looks like you haven't made any purchases
-              yet.
+              {searchQuery
+                ? `No order matches "${searchQuery}". Try another order code.`
+                : "Looks like you haven't made any purchases yet."}
             </p>
 
-            <Link to="/products">
-              <button className="inline-flex items-center gap-2 bg-white text-green-600 px-6 py-3 rounded-xl font-semibold hover:bg-green-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 shadow-green-600/20">
-                <ShoppingBag />
-                Start Shopping
+            {searchQuery ? (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="inline-flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-green-700 transition-all duration-200"
+              >
+                <X className="w-5 h-5" />
+                Clear Search
               </button>
-            </Link>
+            ) : (
+              <Link to="/products">
+                <button className="inline-flex items-center gap-2 bg-white text-green-600 px-6 py-3 rounded-xl font-semibold hover:bg-green-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 shadow-green-600/20">
+                  <ShoppingBag />
+                  Start Shopping
+                </button>
+              </Link>
+            )}
           </div>
         ) : (
           <div className="space-y-6">
@@ -325,10 +434,7 @@ const Orders = () => {
 
                         <p className="font-bold text-sm">
                           #
-                          {order._id
-                            ?.toString()
-                            .slice(-8)
-                            .toUpperCase()}
+                          {order?.code || order._id?.toString().slice(-8).toUpperCase() || 'N/A'}
                         </p>
                       </div>
                     </div>

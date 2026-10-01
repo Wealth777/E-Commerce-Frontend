@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { useToast } from '../../context/ToastContext';
 import apiClient from '../../api/apiClient';
@@ -16,7 +16,6 @@ import {
   RotateCcw,
   RefreshCw,
   Search,
-  Filter,
   Eye,
   ChevronLeft,
   ChevronRight,
@@ -25,9 +24,6 @@ import {
   User,
   Store,
   MapPin,
-  FileText,
-  DollarSign,
-  AlertCircle,
   ExternalLink,
   ShieldAlert,
   X
@@ -92,27 +88,34 @@ export default function OrdersManagement() {
   // Fetch Orders List
   const fetchOrders = useCallback(async () => {
     setLoadingOrders(true);
+
     try {
       const params = {
         page,
         limit,
       };
-      if (activeTab !== 'All') params.status = activeTab.toLowerCase();
-      if (searchQuery.trim()) params.search = searchQuery.trim();
 
-      const res = await apiClient.get('/founder/orders', { params });
+      if (activeTab !== "All") {
+        params.status = activeTab.toLowerCase();
+      }
+
+      const res = await apiClient.get("/founder/orders", { params });
       const data = res.data?.data || res.data || {};
 
       setOrders(data.orders || []);
+
       if (data.pagination) {
         setPagination(data.pagination);
       }
     } catch (err) {
-      showToast(getMessage(err, 'Failed to fetch orders list'), 'error');
+      showToast(
+        getMessage(err, "Failed to fetch orders list"),
+        "error"
+      );
     } finally {
       setLoadingOrders(false);
     }
-  }, [page, activeTab, searchQuery, showToast]);
+  }, [page, activeTab, showToast]);
 
   // Fetch Order Details for Modal
   const fetchOrderDetails = async (orderId) => {
@@ -137,6 +140,29 @@ export default function OrdersManagement() {
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
+
+  const filteredOrders = useMemo(() => {
+    const query = searchQuery
+      .trim()
+      .toLowerCase()
+      .replace(/^#/, "");
+
+    if (!query) return orders;
+
+    return orders.filter((order) => {
+      const orderId = order?._id?.toString().toLowerCase();
+
+      const orderCode = order?.code
+        ?.toString()
+        .toLowerCase()
+        .replace(/^#/, "");
+
+      return (
+        orderId?.includes(query) ||
+        orderCode?.includes(query)
+      );
+    });
+  }, [orders, searchQuery]);
 
   // Badge Status Renderer
   const renderStatusBadge = (status) => {
@@ -167,13 +193,12 @@ export default function OrdersManagement() {
     const isFailed = statusLower === 'failed';
 
     return (
-      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold uppercase ${
-        isPaid
-          ? 'bg-emerald-500/10 text-emerald-500'
-          : isFailed
+      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold uppercase ${isPaid
+        ? 'bg-emerald-500/10 text-emerald-500'
+        : isFailed
           ? 'bg-rose-500/10 text-rose-500'
           : 'bg-amber-500/10 text-amber-500'
-      }`}>
+        }`}>
         <CreditCard className="w-3 h-3" />
         {method === 'pod' ? 'POD' : 'PAY NOW'} · {status}
       </span>
@@ -189,9 +214,8 @@ export default function OrdersManagement() {
           <div>
             <button
               onClick={() => navigate(-1)}
-              className={`group inline-flex items-center gap-2 text-xs font-medium transition-colors mb-2 rounded-full px-3 py-1.5 ${
-                isDark ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300' : 'bg-white hover:bg-slate-100 text-slate-600 ring-1 ring-slate-200'
-              }`}
+              className={`group inline-flex items-center gap-2 text-xs font-medium transition-colors mb-2 rounded-full px-3 py-1.5 ${isDark ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300' : 'bg-white hover:bg-slate-100 text-slate-600 ring-1 ring-slate-200'
+                }`}
             >
               <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
               Back
@@ -210,9 +234,8 @@ export default function OrdersManagement() {
               fetchOrders();
             }}
             disabled={loadingOrders || loadingStats}
-            className={`px-4 py-2.5 text-xs font-semibold rounded-xl border flex items-center gap-2 transition-all shadow-sm ${
-              isDark ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-gray-200' : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'
-            }`}
+            className={`px-4 py-2.5 text-xs font-semibold rounded-xl border flex items-center gap-2 transition-all shadow-sm ${isDark ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-gray-200' : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'
+              }`}
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loadingOrders || loadingStats ? 'animate-spin' : ''}`} />
             <span>Refresh Overview</span>
@@ -328,17 +351,16 @@ export default function OrdersManagement() {
                 <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Search code, buyer, vendor..."
+                  placeholder="Search by code, buyer, vendor..."
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
                     setPage(1);
                   }}
-                  className={`w-full pl-10 pr-4 py-2 text-xs rounded-xl border outline-none transition-all ${
-                    isDark
-                      ? 'bg-gray-900 border-gray-700 text-white focus:border-emerald-500'
-                      : 'bg-slate-50 border-slate-200 text-slate-800 focus:border-emerald-600 focus:bg-white'
-                  }`}
+                  className={`w-full pl-10 pr-4 py-2 text-xs rounded-xl border outline-none transition-all ${isDark
+                    ? 'bg-gray-900 border-gray-700 text-white focus:border-emerald-500'
+                    : 'bg-slate-50 border-slate-200 text-slate-800 focus:border-emerald-600 focus:bg-white'
+                    }`}
                 />
               </div>
 
@@ -351,13 +373,12 @@ export default function OrdersManagement() {
                       setActiveTab(tab);
                       setPage(1);
                     }}
-                    className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all whitespace-nowrap ${
-                      activeTab === tab
-                        ? 'bg-[#064E3B] text-white shadow-sm'
-                        : isDark
+                    className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all whitespace-nowrap ${activeTab === tab
+                      ? 'bg-[#064E3B] text-white shadow-sm'
+                      : isDark
                         ? 'bg-gray-900/60 text-gray-400 hover:bg-gray-700 hover:text-gray-200'
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
+                      }`}
                   >
                     {tab}
                   </button>
@@ -386,7 +407,7 @@ export default function OrdersManagement() {
                       <Loading text='Loading catalog orders...' />
                     </td>
                   </tr>
-                ) : orders.length === 0 ? (
+                ) : filteredOrders.length === 0 ? (
                   <tr>
                     <td colSpan="6" className="py-12 text-center text-slate-400">
                       <ShoppingBag className="w-8 h-8 opacity-40 mx-auto mb-2" />
@@ -394,17 +415,16 @@ export default function OrdersManagement() {
                     </td>
                   </tr>
                 ) : (
-                  orders.map((order) => (
+                  filteredOrders.map((order) => (
                     <tr key={order._id || order.id} className={`hover:${isDark ? 'bg-gray-700/30' : 'bg-slate-50/80'} transition-colors`}>
                       {/* Code & Buyer Info */}
                       <td className="py-4 px-6">
                         <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-xs block">
-                          #{order.code || order._id?.substring(0, 8).toUpperCase()}
+                          {order.code || "#" + order._id?.toString().slice(-8).toUpperCase()}
                         </span>
                         <div className="flex items-center gap-1 text-[11px] text-slate-400 mt-1">
                           <User className="w-3 h-3" />
                           <span>Buyer ID: {typeof order.buyer === 'object' ? order.buyer?.serialNumber : order.buyer?.serialNumber || 'N/A'}</span>
-                          {/* <span>Buyer ID: {typeof order.buyer === 'object' ? order.buyer?._id?.substring(0, 8) : order.buyer?.substring(0, 8) || 'N/A'}</span> */}
                         </div>
                       </td>
 
@@ -455,11 +475,10 @@ export default function OrdersManagement() {
                       <td className="py-4 px-6 text-right">
                         <button
                           onClick={() => fetchOrderDetails(order._id || order.id)}
-                          className={`px-3 py-1.5 rounded-lg border text-xs font-semibold inline-flex items-center gap-1.5 transition-colors ${
-                            isDark
-                              ? 'border-gray-700 bg-gray-900 hover:bg-gray-800 text-gray-200'
-                              : 'border-slate-200 bg-slate-50 hover:bg-white text-slate-700'
-                          }`}
+                          className={`px-3 py-1.5 rounded-lg border text-xs font-semibold inline-flex items-center gap-1.5 transition-colors ${isDark
+                            ? 'border-gray-700 bg-gray-900 hover:bg-gray-800 text-gray-200'
+                            : 'border-slate-200 bg-slate-50 hover:bg-white text-slate-700'
+                            }`}
                         >
                           <Eye className="w-3.5 h-3.5" />
                           <span>View</span>
@@ -482,11 +501,10 @@ export default function OrdersManagement() {
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={!pagination.hasPreviousPage || loadingOrders}
-                className={`p-1.5 rounded-lg border transition-colors ${
-                  pagination.hasPreviousPage && !loadingOrders
-                    ? isDark ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-white' : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'
-                    : 'opacity-40 cursor-not-allowed border-transparent'
-                }`}
+                className={`p-1.5 rounded-lg border transition-colors ${pagination.hasPreviousPage && !loadingOrders
+                  ? isDark ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-white' : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'
+                  : 'opacity-40 cursor-not-allowed border-transparent'
+                  }`}
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -498,11 +516,10 @@ export default function OrdersManagement() {
               <button
                 onClick={() => setPage((p) => p + 1)}
                 disabled={!pagination.hasNextPage || loadingOrders}
-                className={`p-1.5 rounded-lg border transition-colors ${
-                  pagination.hasNextPage && !loadingOrders
-                    ? isDark ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-white' : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'
-                    : 'opacity-40 cursor-not-allowed border-transparent'
-                }`}
+                className={`p-1.5 rounded-lg border transition-colors ${pagination.hasNextPage && !loadingOrders
+                  ? isDark ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-white' : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'
+                  : 'opacity-40 cursor-not-allowed border-transparent'
+                  }`}
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -514,9 +531,8 @@ export default function OrdersManagement() {
       {/* Order Details Modal */}
       {(selectedOrderId || loadingModal) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className={`w-full max-w-3xl max-h-[90vh] rounded-2xl border shadow-2xl overflow-hidden flex flex-col ${
-            isDark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-slate-200 text-slate-800'
-          }`}>
+          <div className={`w-full max-w-3xl max-h-[90vh] rounded-2xl border shadow-2xl overflow-hidden flex flex-col ${isDark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-slate-200 text-slate-800'
+            }`}>
             {/* Modal Header */}
             <div className="p-5 border-b border-slate-200 dark:border-gray-700 flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -530,9 +546,8 @@ export default function OrdersManagement() {
                   setSelectedOrderId(null);
                   setModalData(null);
                 }}
-                className={`p-1.5 rounded-lg transition-colors ${
-                  isDark ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-slate-100 text-slate-500'
-                }`}
+                className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-slate-100 text-slate-500'
+                  }`}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -548,9 +563,8 @@ export default function OrdersManagement() {
               ) : (
                 <>
                   {/* Primary Banner Status */}
-                  <div className={`p-4 rounded-xl border flex flex-wrap items-center justify-between gap-4 ${
-                    isDark ? 'bg-gray-900/60 border-gray-700' : 'bg-slate-50 border-slate-200'
-                  }`}>
+                  <div className={`p-4 rounded-xl border flex flex-wrap items-center justify-between gap-4 ${isDark ? 'bg-gray-900/60 border-gray-700' : 'bg-slate-50 border-slate-200'
+                    }`}>
                     <div>
                       <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">Current Status</span>
                       <div className="mt-1">{renderStatusBadge(modalData.status)}</div>
@@ -703,9 +717,8 @@ export default function OrdersManagement() {
                   setSelectedOrderId(null);
                   setModalData(null);
                 }}
-                className={`px-4 py-2 text-xs font-semibold rounded-xl border transition-colors ${
-                  isDark ? 'border-gray-700 bg-gray-900 hover:bg-gray-800 text-gray-300' : 'border-slate-300 hover:bg-slate-100 text-slate-700'
-                }`}
+                className={`px-4 py-2 text-xs font-semibold rounded-xl border transition-colors ${isDark ? 'border-gray-700 bg-gray-900 hover:bg-gray-800 text-gray-300' : 'border-slate-300 hover:bg-slate-100 text-slate-700'
+                  }`}
               >
                 Close Dialog
               </button>

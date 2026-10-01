@@ -198,15 +198,14 @@ const ReviewRefundReturnModal = ({
             <div className="flex justify-between gap-4">
               <span className={textSecondary}>Order ID:</span>
               <span className={`font-mono font-semibold uppercase ${textPrimary}`}>
-                {request.orderId?.slice(-8) || 'N/A'}
+                {request.order?.code || request.orderId?.slice(-8) || 'N/A'}
               </span>
             </div>
 
             <div className="flex justify-between gap-4">
               <span className={textSecondary}>Customer:</span>
               <span className={`font-semibold ${textPrimary}`}>
-                {request.buyerInfo?.username ||
-                  request.buyerInfo?.fullName ||
+                {request.buyerInfo?.fullName ||
                   'Unknown'}
               </span>
             </div>

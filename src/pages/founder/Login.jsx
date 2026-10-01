@@ -106,11 +106,6 @@ export default function FounderLogin() {
 
             showToast("Google login successful", "success");
 
-            if (!user.onboardingCompleted) {
-                navigate("/founder/profile/complete");
-                return;
-            }
-
             navigate("/founder/dashboard");
         } catch (error) {
             const message = getMessage(error, "Google login failed");

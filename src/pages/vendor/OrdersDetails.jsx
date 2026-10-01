@@ -183,7 +183,7 @@ export default function VendorOrdersDetails() {
     }
 
     try {
-      await navigator.clipboard.writeText(order._id);
+      await navigator.clipboard.writeText(order.code || "#" + order._id?.slice(-8).toUpperCase());
       setCopied(true);
 
       window.setTimeout(() => {
@@ -434,7 +434,7 @@ export default function VendorOrdersDetails() {
           >
             {copied
               ? "Copied!"
-              : `#${order._id?.slice(-8).toUpperCase()}`}
+              : order.code|| `#${order._id?.slice(-8).toUpperCase()}`}
             <Copy className="w-3 h-3" />
           </button>
         </div>

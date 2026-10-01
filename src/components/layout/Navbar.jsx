@@ -69,7 +69,7 @@ const Navbar = () => {
                 });
                 setShowSearchResults(true);
             } catch (error) {
-                showToast("Failed to fetch live search results", error);
+                // showToast("Failed to fetch live search results", error);
             } finally {
                 setIsSearching(false);
             }
