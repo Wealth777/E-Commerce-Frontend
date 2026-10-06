@@ -168,7 +168,7 @@ const App = () => {
                   {user?.identity?.fullName || user?.fullName || 'User'}!
                 </h1>
                 <p className="text-black text-sm md:text-base opacity-90">
-                  Manage your vendor dashboard and track your sales performance in real-time.
+                  Explore your favorite stores, track your campus orders, and discover great deals in real-time.
                 </p>
               </div>
               <Link to="/products" className="inline-flex items-center justify-center gap-2 bg-white text-green-700 px-6 py-3 rounded-xl font-bold hover:bg-green-50 transition-all shadow-lg active:scale-95 self-start lg:self-center">

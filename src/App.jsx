@@ -79,6 +79,8 @@ import FounderVendorApproval from './pages/founder/VendorApproval';
 import FounderOrder from './pages/founder/Order';
 import FounderProduct from './pages/founder/Product';
 import FounderActivities from './pages/founder/Activities';
+import FounderContactMessages from './pages/founder/ContactMessages';
+import FounderSendNotificationPage from './pages/founder/SendNotificationPage';
 import FounderSettings from './pages/founder/Settings';
 
 import CartSync from './CartSync';
@@ -510,6 +512,22 @@ function App() {
               element={
                 <ProtectedRoute requiredRole="founder">
                   <FounderActivities />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/founder/contact/message"
+              element={
+                <ProtectedRoute requiredRole="founder">
+                  <FounderContactMessages />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/founder/notifications/send"
+              element={
+                <ProtectedRoute requiredRole="founder">
+                  <FounderSendNotificationPage />
                 </ProtectedRoute>
               }
             />

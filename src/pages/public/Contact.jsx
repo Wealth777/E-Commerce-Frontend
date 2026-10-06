@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { 
-  Mail, 
-  Clock, 
-  MapPin, 
-  Phone, 
-  Copy, 
-  Check, 
-  Send, 
+import {
+  Mail,
+  Clock,
+  MapPin,
+  Phone,
+  Copy,
+  Check,
+  Send,
   MessageCircle,
   HelpCircle,
   ChevronDown,
@@ -17,6 +17,9 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
+import apiClient from '../../api/apiClient';
+import { getMessage } from '../../utils/apiResponse';
+
 const Contact = () => {
   const { showToast } = useToast();
   const [copied, setCopied] = useState(false);
@@ -33,22 +36,55 @@ const Contact = () => {
       email: '',
       subject: '',
       message: '',
+      image: null
     },
     validationSchema: Yup.object({
       name: Yup.string().min(2, 'Name must be at least 2 characters').required('Name is required'),
       email: Yup.string().email('Invalid email address').required('Email is required'),
       subject: Yup.string().min(3, 'Subject must be at least 3 characters').required('Subject is required'),
       message: Yup.string().min(10, 'Message must be at least 10 characters').required('Message is required'),
+      image: Yup.mixed().nullable()
+        .test(
+          "fileSize",
+          "Image must not exceed 5MB",
+          (value) => {
+            if (!value) return true;
+            return value.size <= 5 * 1024 * 1024;
+          }
+        )
+        .test(
+          "fileType",
+          "Only image files are allowed",
+          (value) => {
+            if (!value) return true;
+            return value.type.startsWith("image/");
+          }
+        ),
     }),
     onSubmit: async (values, { resetForm, setSubmitting }) => {
       try {
-        // Simulate API call - replace with your actual apiClient
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        // await apiClient.post('/contact', values);
-        showToast('Message sent successfully! We\'ll get back to you soon.', 'success');
+        const formData = new FormData();
+
+        formData.append("name", values.name);
+        formData.append("email", values.email);
+        formData.append("subject", values.subject);
+        formData.append("message", values.message);
+
+        if (values.image) {
+          formData.append("image", values.image);
+        }
+
+        await apiClient.post("/common/contact", formData);
+        showToast("Message sent successfully! We'll get back to you soon.", 'success');
         resetForm();
       } catch (error) {
-        showToast('Failed to send message. Please try again.', 'error');
+        showToast(
+          getMessage(
+            error,
+            'Failed to send message. Please try again.'
+          ),
+          'error'
+        );
       } finally {
         setSubmitting(false);
       }
@@ -108,13 +144,13 @@ const Contact = () => {
           <div className="absolute top-0 left-0 w-96 h-96 bg-white rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
           <div className="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full blur-3xl translate-x-1/2 translate-y-1/2"></div>
         </div>
-        
+
         <div className="relative max-w-7xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-6">
             <Headphones className="w-4 h-4 text-white" />
             <span className="text-white text-sm font-medium">24/7 Support Available</span>
           </div>
-          
+
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6">
             Get in Touch with <span className="text-yellow-300">CampusTrade</span>
           </h1>
@@ -127,7 +163,7 @@ const Contact = () => {
       <div className="max-w-7xl mx-auto px-4 -mt-12 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {contactMethods.map((method, index) => (
-            <div 
+            <div
               key={index}
               className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300 border border-gray-100 dark:border-gray-700"
             >
@@ -181,11 +217,10 @@ const Contact = () => {
                     value={formik.values.name}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
-                    className={`w-full px-4 py-3 rounded-lg border bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                      formik.touched.name && formik.errors.name 
-                        ? 'border-red-500 focus:ring-red-500' 
-                        : 'border-gray-300 dark:border-gray-600 focus:border-green-500'
-                    }`}
+                    className={`w-full px-4 py-3 rounded-lg border bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 ${formik.touched.name && formik.errors.name
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-gray-300 dark:border-gray-600 focus:border-green-500'
+                      }`}
                     placeholder="John Doe"
                   />
                   {formik.touched.name && formik.errors.name && (
@@ -203,11 +238,10 @@ const Contact = () => {
                     value={formik.values.email}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
-                    className={`w-full px-4 py-3 rounded-lg border bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                      formik.touched.email && formik.errors.email 
-                        ? 'border-red-500 focus:ring-red-500' 
-                        : 'border-gray-300 dark:border-gray-600 focus:border-green-500'
-                    }`}
+                    className={`w-full px-4 py-3 rounded-lg border bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 ${formik.touched.email && formik.errors.email
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-gray-300 dark:border-gray-600 focus:border-green-500'
+                      }`}
                     placeholder="john@example.com"
                   />
                   {formik.touched.email && formik.errors.email && (
@@ -226,11 +260,10 @@ const Contact = () => {
                   value={formik.values.subject}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
-                  className={`w-full px-4 py-3 rounded-lg border bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    formik.touched.subject && formik.errors.subject 
-                      ? 'border-red-500 focus:ring-red-500' 
-                      : 'border-gray-300 dark:border-gray-600 focus:border-green-500'
-                  }`}
+                  className={`w-full px-4 py-3 rounded-lg border bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 ${formik.touched.subject && formik.errors.subject
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300 dark:border-gray-600 focus:border-green-500'
+                    }`}
                   placeholder="How can we help you?"
                 />
                 {formik.touched.subject && formik.errors.subject && (
@@ -248,15 +281,45 @@ const Contact = () => {
                   value={formik.values.message}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
-                  className={`w-full px-4 py-3 rounded-lg border bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 resize-none ${
-                    formik.touched.message && formik.errors.message 
-                      ? 'border-red-500 focus:ring-red-500' 
-                      : 'border-gray-300 dark:border-gray-600 focus:border-green-500'
-                  }`}
+                  className={`w-full px-4 py-3 rounded-lg border bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 resize-none ${formik.touched.message && formik.errors.message
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300 dark:border-gray-600 focus:border-green-500'
+                    }`}
                   placeholder="Tell us more about your inquiry..."
                 />
                 {formik.touched.message && formik.errors.message && (
                   <p className="text-sm text-red-500 mt-1">{formik.errors.message}</p>
+                )}
+              </div>
+              <div>
+                <label
+                  htmlFor="image"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                >
+                  Image <span className="text-gray-400">(optional)</span>
+                </label>
+
+                <input
+                  type="file"
+                  id="image"
+                  name="image"
+                  accept="image/*"
+                  onChange={(event) => {
+                    const file = event.currentTarget.files?.[0] || null;
+
+                    formik.setFieldValue("image", file);
+                  }}
+                  onBlur={formik.handleBlur}
+                  className={`w-full px-4 py-3 rounded-lg border bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 ${formik.touched.image && formik.errors.image
+                    ? "border-red-500 focus:ring-red-500"
+                    : "border-gray-300 dark:border-gray-600 focus:border-green-500"
+                    }`}
+                />
+
+                {formik.touched.image && formik.errors.image && (
+                  <p className="text-sm text-red-500 mt-1">
+                    {formik.errors.image}
+                  </p>
                 )}
               </div>
               <button
@@ -291,7 +354,7 @@ const Contact = () => {
             </div>
             <div className="space-y-4">
               {faqs.map((faq, index) => (
-                <div 
+                <div
                   key={index}
                   className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 overflow-hidden"
                 >
@@ -306,10 +369,9 @@ const Contact = () => {
                       <ChevronDown className="w-5 h-5 text-gray-400 flex-shrink-0" />
                     )}
                   </button>
-                  <div 
-                    className={`overflow-hidden transition-all duration-300 ${
-                      activeFaq === index ? 'max-h-48' : 'max-h-0'
-                    }`}
+                  <div
+                    className={`overflow-hidden transition-all duration-300 ${activeFaq === index ? 'max-h-48' : 'max-h-0'
+                      }`}
                   >
                     <p className="px-6 pb-4 text-gray-600 dark:text-gray-300">
                       {faq.answer}
@@ -351,7 +413,7 @@ const Contact = () => {
             Our support team is always ready to help. Reach out and we'll get back to you within 24 hours.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a 
+            <a
               href="mailto:olujidewealth3@gmail.com"
               className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
             >
