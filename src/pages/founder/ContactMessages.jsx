@@ -26,10 +26,9 @@ const FounderContactMessages = () => {
 
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [filterStatus, setFilterStatus] = useState('all'); // 'all', 'pending', 'resolved'
+    const [filterStatus, setFilterStatus] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
 
-    // Selected message for detail view / reply drawer
     const [selectedMessage, setSelectedMessage] = useState(null);
     const [replyText, setReplyText] = useState('');
     const [sendingReply, setSendingReply] = useState(false);
@@ -51,7 +50,19 @@ const FounderContactMessages = () => {
         fetchMessages();
     }, []);
 
-    // Handle Reply & Resolve
+    const handleSelectMessage = async (item) => {
+        setSelectedMessage(item);
+
+        if (item.status === 'pending' && !item.isRead) {
+            try {
+                await apiClient.patch(`/founder/contact/messages/${item._id}/read`);
+                setMessages(prev => prev.map(m => m._id === item._id ? { ...m, isRead: true } : m));
+            } catch (error) {
+                console.error("Failed to mark message as read", error);
+            }
+        }
+    };
+
     const handleSendReply = async (e) => {
         e.preventDefault();
         if (!replyText.trim()) {
@@ -61,12 +72,11 @@ const FounderContactMessages = () => {
 
         try {
             setSendingReply(true);
-            // Assuming you post to reply or patch message status
-            await apiClient.post(`/contact/message/${selectedMessage._id}/reply`, {
-                message: replyText.trim()
+            await apiClient.patch(`/founder/contact/messages/${selectedMessage._id}/resolve`, {
+                replyMessage: replyText.trim()
             });
 
-            showToast("Reply sent and marked as resolved!", "success");
+            showToast("Reply sent and message marked as resolved!", "success");
             setReplyText('');
             setSelectedMessage(null);
             fetchMessages();
@@ -77,12 +87,11 @@ const FounderContactMessages = () => {
         }
     };
 
-    // Handle Delete Message
     const handleDelete = async (id) => {
         if (!window.confirm("Are you sure you want to delete this message?")) return;
 
         try {
-            await apiClient.delete(`/contact/message/${id}`);
+            await apiClient.delete(`/founder/contact/messages/${id}`);
             showToast("Message deleted successfully.", "success");
             if (selectedMessage?._id === id) setSelectedMessage(null);
             fetchMessages();
@@ -91,7 +100,6 @@ const FounderContactMessages = () => {
         }
     };
 
-    // Filter messages
     const filteredMessages = messages.filter((item) => {
         const matchesSearch =
             item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -104,17 +112,15 @@ const FounderContactMessages = () => {
         return matchesSearch && matchesStatus;
     });
 
-    // Dynamic styling variables
-    const containerBg = isDark ? 'bg-zinc-950 text-white' : 'bg-gray-50 text-gray-900';
-    const cardBg = isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200';
-    const inputBg = isDark ? 'bg-zinc-900/50 border-zinc-700 text-white placeholder-zinc-500 focus:border-green-500' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-green-600';
-    const subText = isDark ? 'text-zinc-400' : 'text-gray-500';
+    const containerBg = isDark ? 'bg-bg-gray-800 text-white' : 'bg-gray-50 text-gray-900';
+    const cardBg = isDark ? 'bg-bg-gray-800 border-gray-600' : 'bg-white border-gray-200';
+    const inputBg = isDark ? 'bg-gray-900/50 border-zinc-700 text-white placeholder-zinc-500 focus:border-green-500' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-green-600';
+    const subText = isDark ? 'text-gray-400' : 'text-gray-500';
 
     return (
         <div className={`min-h-screen p-6 md:p-10 ${containerBg}`}>
             <div className="max-w-6xl mx-auto">
 
-                {/* Back Button */}
                 <button
                     onClick={() => navigate(-1)}
                     className={`group inline-flex items-center gap-2 text-sm transition-colors mb-6 rounded-full px-3 py-1.5 ${isDark
@@ -148,7 +154,6 @@ const FounderContactMessages = () => {
                     </button>
                 </div>
 
-                {/* Filters & Search Toolbar */}
                 <div className={`border rounded-2xl p-4 mb-6 shadow-sm flex flex-col sm:flex-row gap-4 justify-between items-center ${cardBg}`}>
                     <div className="relative w-full sm:w-80">
                         <input
@@ -179,20 +184,19 @@ const FounderContactMessages = () => {
                     </div>
                 </div>
 
-                {/* Content Layout Grid (List on Left, Details/Reply on Right) */}
+                {/* Content Layout Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-                    {/* Messages List */}
                     <div className={`lg:col-span-5 border rounded-2xl shadow-sm overflow-hidden flex flex-col h-[650px] ${cardBg}`}>
-                        <div className={`p-4 border-b text-xs font-semibold uppercase tracking-wider ${isDark ? 'border-zinc-800 text-zinc-400' : 'border-gray-100 text-gray-500'}`}>
+                        <div className={`p-4 border-b text-xs font-semibold uppercase tracking-wider ${isDark ? 'border-gray-600 text-gray-400' : 'border-gray-100 text-gray-500'}`}>
                             Inbox ({filteredMessages.length})
                         </div>
 
                         <div className="overflow-y-auto flex-1 divide-y divide-inherit">
                             {loading ? (
-                                <div className="p-8 text-center text-zinc-400 text-sm">Loading messages...</div>
+                                <div className="p-8 text-center text-gray-400 text-sm">Loading messages...</div>
                             ) : filteredMessages.length === 0 ? (
-                                <div className="p-12 text-center text-zinc-400 text-sm flex flex-col items-center justify-center gap-2">
+                                <div className="p-12 text-center text-gray-400 text-sm flex flex-col items-center justify-center gap-2">
                                     <MailOpen className="w-8 h-8 opacity-40" />
                                     <p>No messages found matching your criteria.</p>
                                 </div>
@@ -204,11 +208,11 @@ const FounderContactMessages = () => {
                                     return (
                                         <div
                                             key={item._id}
-                                            onClick={() => setSelectedMessage(item)}
+                                            onClick={() => handleSelectMessage(item)}
                                             className={`p-4 cursor-pointer transition-all border-l-4 ${isSelected
                                                 ? 'bg-green-500/10 border-green-500'
                                                 : isDark
-                                                    ? 'hover:bg-zinc-800/50 border-transparent'
+                                                    ? 'hover:bg-gray-700/50 border-transparent'
                                                     : 'hover:bg-gray-50 border-transparent'
                                                 }`}
                                         >
@@ -257,16 +261,14 @@ const FounderContactMessages = () => {
                                     </button>
                                 </div>
 
-                                {/* Message Body Scrollable */}
                                 <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-                                    <div className={`p-4 rounded-xl text-sm leading-relaxed ${isDark ? 'bg-zinc-950/60' : 'bg-gray-50'}`}>
+                                    <div className={`p-4 rounded-xl text-sm leading-relaxed ${isDark ? 'bg-gray-950/60' : 'bg-gray-50'}`}>
                                         <p className="whitespace-pre-wrap">{selectedMessage.message}</p>
                                         <span className="block text-[10px] text-zinc-500 mt-3">
                                             Received: {selectedMessage.createdAt ? new Date(selectedMessage.createdAt).toLocaleString() : 'N/A'}
                                         </span>
                                     </div>
 
-                                    {/* If already replied, show previous resolution info */}
                                     {selectedMessage.reply && (
                                         <div className="p-4 rounded-xl text-sm bg-green-500/5 border border-green-500/20">
                                             <p className="text-xs font-semibold text-green-500 mb-1">Founder Reply Sent:</p>
@@ -294,7 +296,7 @@ const FounderContactMessages = () => {
                                             disabled={sendingReply}
                                             className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-500 text-white font-medium text-sm rounded-xl transition-all shadow-sm shadow-green-600/20 disabled:opacity-50"
                                         >
-                                            <Send className="w-4 h-4" /> Send
+                                            <Send className="w-4 h-4" /> Resolve & Send
                                         </button>
                                     </div>
                                 </form>

@@ -39,7 +39,6 @@ const Navbar = () => {
     const { isDarkMode, toggleTheme } = useTheme();
     const { showToast } = useToast();
 
-    // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -50,7 +49,6 @@ const Navbar = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Fetch live search results with a debounce effect
     useEffect(() => {
         const trimmedQuery = searchQuery.trim();
         if (!trimmedQuery) {
